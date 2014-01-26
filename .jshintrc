@@ -1,0 +1,8 @@
+{
+    "curly" : true,
+    "eqeqeq" : true,
+    "eqnull" : true,
+    "browser" : true,
+
+    "-W069" : true
+}

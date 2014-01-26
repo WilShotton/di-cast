@@ -16,6 +16,7 @@ module.exports = function(grunt) {
 
             js: {
                 src: 'src',
+                dist: 'dist',
                 tests: 'tests/specs'
             },
 
@@ -65,7 +66,8 @@ module.exports = function(grunt) {
                 src: [
                     '<%= meta.js.src %>/**/*.js',
 
-                    '!<%= meta.js.src %>/my-dep.js'
+                    '!<%= meta.js.src %>/my-dep.js',
+                    '!<%= meta.js.src %>/sub-dep.js'
                 ],
 
                 options: {
@@ -103,6 +105,31 @@ module.exports = function(grunt) {
                         }
                     }
                 }
+            },
+
+            dist: {
+
+                src: [
+                    '<%= meta.js.dist %>/**/*.js'
+                ],
+
+                options: {
+
+                    specs: '<%= meta.js.tests %>/**/*.spec.js',
+
+                    template: require('grunt-template-jasmine-requirejs'),
+                    templateOptions: {
+
+                        requireConfig: {
+
+                            baseUrl: './<%= meta.js.src %>/',
+
+                            paths: {
+                                jquery: '/libs/jquery.min'
+                            }
+                        }
+                    }
+                }
             }
         },
 
@@ -136,6 +163,17 @@ module.exports = function(grunt) {
             }
         },
 
+        uglify: {
+            dist: {
+                options: {
+                  report: 'gzip'
+                },
+                files: {
+                    'dist/injector.js': ['src/injector.js']
+                }
+            }
+        },
+
         watch: {
 
             all: {
@@ -153,9 +191,11 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-jasmine');
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-contrib-watch');
+    grunt.loadNpmTasks('grunt-contrib-uglify');
 
     grunt.loadNpmTasks('grunt-plato');
 
     grunt.registerTask('test', ['connect:coverage', 'jasmine:coverage']);
     grunt.registerTask('default', ['jshint']);
+    grunt.registerTask('dist', ['jshint', 'plato', 'uglify:dist', 'jasmine:dist']);
 };

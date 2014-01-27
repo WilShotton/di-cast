@@ -33,20 +33,19 @@
         function Mapping(injector) {
 
             var isSingleton = false,
-                resolver = null;
+                resolver = null,
+                deps = [];
 
-            function validate(target, deps) {
+            function validate(target) {
 
                 validateType(target, 'function', INVALID_MAPPING_TYPE);
 
                 if (is(resolver, 'function')) {
                     throw new Error(MAPPING_EXISTS);
                 }
-
-                return deps || [];
             }
 
-            this.toFactory = function(value, deps) {
+            this.toFactory = function(value) {
 
                 var Builder = null,
 
@@ -57,7 +56,7 @@
                         }
                     };
 
-                deps = validate(value, deps);
+                validate(value);
 
                 resolver = function() {
 
@@ -82,11 +81,11 @@
                 return this;
             };
 
-            this.toType = function(value, deps) {
+            this.toType = function(value) {
 
                 var singleton = null;
 
-                deps = validate(value, deps);
+                validate(value);
 
                 function Builder() {
 
@@ -105,6 +104,13 @@
 
                     return singleton || new Builder();
                 };
+
+                return this;
+            };
+
+            this.using = function() {
+
+                deps = arguments.length > 0 ? slice.call(arguments, 0) : [];
 
                 return this;
             };
@@ -128,8 +134,8 @@
                 return injector;
             };
 
-            // @TODO: toValue - returns an injected(?) object
-            // @TODO: api - for duck typing...
+            // @TODO: toValue(...) - returns an (injected?) object
+            // @TODO: as([...]) - for duck typing...
         }
 
         // Injector
@@ -170,6 +176,8 @@
 
                 return mappings[key].resolve();
             };
+
+            // @TODO: removeMapping(key)
         }
 
         return Injector; 

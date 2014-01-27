@@ -53,15 +53,20 @@ define(
 
                 it(' should have a fluid interface', function() {
 
-                    var mapping = injector.map('FluidTest1');
+                    function test(mapping) {
 
-                    expect(mapping.toFactory(function(){})).toBe(mapping);
-                    expect(mapping.asSingleton()).toBe(mapping);
+                        expect(mapping.asSingleton()).toBe(mapping);
+                        expect(mapping.using()).toBe(mapping);
+                    }
 
-                    mapping = injector.map('FluidTest2');
+                    var factoryMapping = injector.map('FactoryFluidTest'),
+                        typeMapping = injector.map('TypeFluidTest');
 
-                    expect(mapping.toType(function(){})).toBe(mapping);
-                    expect(mapping.asSingleton()).toBe(mapping);
+                    expect(factoryMapping.toFactory(function(){})).toBe(factoryMapping);
+                    test(factoryMapping);
+
+                    expect(typeMapping.toType(function(){})).toBe(typeMapping);
+                    test(typeMapping);
                 });
 
                 it(' should should have a reference to the injector', function() {
@@ -176,7 +181,7 @@ define(
 
                     injector = new Injector();
                     injector.map('MyFactory').toFactory(MyFactory);
-                    injector.map('MyDependantFactory').toFactory(MyDependantFactory, ['MyFactory']);
+                    injector.map('MyDependantFactory').toFactory(MyDependantFactory).using('MyFactory');
                 });
 
                 it(' should retrieve a factory method for a mapping', function() {
@@ -186,6 +191,21 @@ define(
                     expect(factory.hasOwnProperty('make')).toBe(true);
                     expect(is(factory.make, 'function')).toBe(true);
                     expect(factory.make.name).toBe('Make');
+                });
+
+                it(' should be commutative', function() {
+
+                    var name = 'MyName';
+
+                    injector.map('MyCommutativeFactory')
+                        .using('MyFactory')
+                        .toFactory(MyDependantFactory);
+
+                    expect(injector
+                        .getMappingFor('MyDependantFactory')
+                        .make(name)
+                        .getName()
+                    ).toBe('Dependant > ' + name);
                 });
 
                 it(' should create an instance when its factory method is called', function() {
@@ -220,7 +240,7 @@ define(
                     }).toThrow(INVALID_MAPPING_TYPE);
 
                     expect(function() {
-                        injector.map('AnotherInvalidFactory').toFactory(null, ['MyFactory']);
+                        injector.map('AnotherInvalidFactory').toFactory(null);
                     }).toThrow(INVALID_MAPPING_TYPE);
                 });
             });
@@ -244,7 +264,7 @@ define(
 
                     injector = new Injector();
                     injector.map('MyType').toType(MyType);
-                    injector.map('MyDependantType').toType(MyDependantType, ['MyType']);
+                    injector.map('MyDependantType').toType(MyDependantType).using('MyType');
                 });
 
                 it(' should retrieve a typed instance for a mapping', function() {
@@ -256,6 +276,18 @@ define(
                     expect(instance.getName()).toBe('MyType');
                 });
 
+                it(' should be commutative', function() {
+
+                    injector.map('MyCommutativeType')
+                        .using('MyType')
+                        .asSingleton()
+                        .toType(MyDependantType);
+
+                    expect(
+                        injector.getMappingFor('MyCommutativeType').getName()
+                    ).toBe('MyDependantType > MyType');
+                });
+
                 it(' should should inject the instance with its dependencies', function() {
 
                     var instance = injector.getMappingFor('MyDependantType');
@@ -263,7 +295,26 @@ define(
                     expect(instance.constructor.name).toBe('MyDependantType');
                     expect(instance.hasOwnProperty('getName')).toBe(true);
                     expect(instance.getName()).toBe('MyDependantType > MyType');
+                });
 
+                it(' should take a list of strings as dependencies', function() {
+
+                    injector.map('MyUsingType')
+                        .toType(MyDependantType)
+                        .using('MyType');
+
+                    expect(injector
+                        .getMappingFor('MyUsingType')
+                        .getName()
+                    ).toBe('MyDependantType > MyType');
+
+                    injector.map('MyMissingType')
+                        .toFactory(MyDependantType)
+                        .using();
+
+                    expect(function() {
+                       injector.getMappingFor('MyMissingType')
+                    }).toThrow();
                 });
 
                 it(' should not be a singleton by default', function() {
@@ -287,7 +338,7 @@ define(
                     }).toThrow(INVALID_MAPPING_TYPE);
 
                     expect(function() {
-                        injector.map('AnotherInvalidType').toType(null, ['MyType']);
+                        injector.map('AnotherInvalidType').toType(null);
                     }).toThrow(INVALID_MAPPING_TYPE);
                 });
             });

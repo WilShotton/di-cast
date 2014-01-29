@@ -363,8 +363,40 @@ define(
                         .toBe('prop');
                 });
 
+                it(' should inject prototype properties prefixed with i_', function() {
+
+                    expect(injector.getMappingFor('MyDependant').i_MyProp.constructor.name)
+                        .toBe('prop');
+                });
+
                 it(' should inject inherited prefixed properties', function() {
 
+                    function MyRoot() {}
+                    MyRoot.prototype = {
+                      i_MyProp: null
+                    };
+
+                    function MyChild() {}
+                    MyChild.prototype = new MyRoot();
+
+                    function MyOtherChild() {}
+                    MyOtherChild.prototype = MyRoot.prototype;
+
+                    injector.map('MyRoot').toType(MyRoot);
+                    injector.map('MyChild').toType(MyChild);
+                    injector.map('MyOtherChild').toType(MyOtherChild);
+
+                    expect(injector.getMappingFor('MyChild').i_MyProp.constructor.name)
+                        .toBe('prop');
+
+                    expect(new MyRoot().i_MyProp)
+                        .toBeNull();
+
+                    expect(injector.getMappingFor('MyOtherChild').i_MyProp.constructor.name)
+                        .toBe('prop');
+
+                    expect(new MyRoot().i_MyProp)
+                        .toBeNull();
                 });
 
                 it(' should ignore non-prefixed properties', function() {
@@ -373,7 +405,7 @@ define(
                         .toBe('Not mutated');
                 });
 
-                it(' should throw for unmapped dependencies', function() {
+                it(' should throw if a dependency is unmapped', function() {
 
                     function MyMissing() {
                         this.i_Property = null;

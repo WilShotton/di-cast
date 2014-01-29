@@ -95,6 +95,7 @@
                         props = [];
 
                         for (var prop in instance) {
+
                             if (prop.indexOf('i_') === 0) {
                                 props[props.length] = prop;
                             }

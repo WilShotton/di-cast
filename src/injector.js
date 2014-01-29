@@ -83,9 +83,37 @@
 
             this.toType = function(value) {
 
-                var singleton = null;
+                var singleton = null,
+                    props = null;
 
                 validate(value);
+
+                function getProps(instance) {
+
+                    if (props === null) {
+
+                        props = [];
+
+                        for (var prop in instance) {
+                            if (prop.indexOf('i_') === 0) {
+                                props[props.length] = prop;
+                            }
+                        }
+                    }
+
+                    return props;
+                }
+
+                function make(Value) {
+
+                    var instance = new Value();
+
+                    getProps(instance).forEach(function(prop) {
+                        instance[prop] = injector.getMappingFor(prop.replace('i_', ''));
+                    });
+
+                    return instance;
+                }
 
                 function Builder() {
 
@@ -98,11 +126,11 @@
 
                 resolver = function() {
 
-                    if (isSingleton) {
-                        singleton = singleton || new Builder();
+                    if (isSingleton && singleton === null) {
+                        singleton = make(Builder);
                     }
 
-                    return singleton || new Builder();
+                    return singleton || make(Builder);
                 };
 
                 return this;

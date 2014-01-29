@@ -342,6 +342,48 @@ define(
                     }).toThrow(INVALID_MAPPING_TYPE);
                 });
             });
+
+            describe('injecting properties', function() {
+
+                function MyDependant() {
+                    this.i_MyProp = null;
+                    this.myProp = 'Not mutated';
+                }
+
+                beforeEach(function() {
+
+                    injector = new Injector();
+                    injector.map('MyProp').toType(function prop() {});
+                    injector.map('MyDependant').toType(MyDependant);
+                });
+
+                it(' should inject properties prefixed with i_', function() {
+
+                    expect(injector.getMappingFor('MyDependant').i_MyProp.constructor.name)
+                        .toBe('prop');
+                });
+
+                it(' should inject inherited prefixed properties', function() {
+
+                });
+
+                it(' should ignore non-prefixed properties', function() {
+
+                    expect(injector.getMappingFor('MyDependant').myProp)
+                        .toBe('Not mutated');
+                });
+
+                it(' should throw for unmapped dependencies', function() {
+
+                    function MyMissing() {
+                        this.i_Property = null;
+                    }
+
+                    expect(function() {
+                        injector.getMappingFor('MyMissing');
+                    }).toThrow(NO_MAPPING);
+                });
+            });
         });
     }
 );

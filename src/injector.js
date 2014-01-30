@@ -34,7 +34,10 @@
 
             var isSingleton = false,
                 resolver = null,
-                deps = [];
+                deps = {
+                    args: [],
+                    props: null
+                };
 
             function validate(target) {
 
@@ -45,14 +48,42 @@
                 }
             }
 
+            function getProps(instance) {
+
+                if (deps.props === null) {
+
+                    deps.props = [];
+
+                    for (var prop in instance) {
+                        if (prop.indexOf('i_') === 0) {
+                            deps.props[deps.props.length] = prop;
+                        }
+                    }
+                }
+
+                return deps.props;
+            }
+
+            function instantiate(Constructor) {
+
+                var instance = new Constructor(slice.call(arguments, 1));
+
+                getProps(instance).forEach(function(prop) {
+                    instance[prop] = injector.getMappingFor(prop.replace('i_', ''));
+                });
+
+                return instance;
+            }
+
             this.toFactory = function(value) {
 
                 var Builder = null,
 
                     facade = {
 
-                        make: function Make() {
-                            return new Builder(slice.call(arguments, 0));
+                        make: function() {
+
+                            return instantiate.apply(this, [Builder].concat(slice.call(arguments, 0)));
                         }
                     };
 
@@ -62,7 +93,7 @@
 
                     Builder = Builder || (function() {
 
-                        var constructor = value.apply(value, deps.map(function(key) {
+                        var constructor = value.apply(value, deps.args.map(function(key) {
                             return injector.getMappingFor(key);
                         }));
 
@@ -83,42 +114,13 @@
 
             this.toType = function(value) {
 
-                var singleton = null,
-                    props = null;
+                var singleton = null;
 
                 validate(value);
 
-                function getProps(instance) {
-
-                    if (props === null) {
-
-                        props = [];
-
-                        for (var prop in instance) {
-
-                            if (prop.indexOf('i_') === 0) {
-                                props[props.length] = prop;
-                            }
-                        }
-                    }
-
-                    return props;
-                }
-
-                function make(Value) {
-
-                    var instance = new Value();
-
-                    getProps(instance).forEach(function(prop) {
-                        instance[prop] = injector.getMappingFor(prop.replace('i_', ''));
-                    });
-
-                    return instance;
-                }
-
                 function Builder() {
 
-                    return value.apply(this, deps.map(function(key) {
+                    return value.apply(this, deps.args.map(function(key) {
                         return injector.getMappingFor(key);
                     }));
                 }
@@ -128,10 +130,10 @@
                 resolver = function() {
 
                     if (isSingleton && singleton === null) {
-                        singleton = make(Builder);
+                        singleton = instantiate(Builder);
                     }
 
-                    return singleton || make(Builder);
+                    return singleton || instantiate(Builder);
                 };
 
                 return this;
@@ -139,7 +141,7 @@
 
             this.using = function() {
 
-                deps = arguments.length > 0 ? slice.call(arguments, 0) : [];
+                deps.args = arguments.length > 0 ? slice.call(arguments, 0) : [];
 
                 return this;
             };

@@ -190,7 +190,6 @@ define(
 
                     expect(factory.hasOwnProperty('make')).toBe(true);
                     expect(is(factory.make, 'function')).toBe(true);
-                    expect(factory.make.name).toBe('Make');
                 });
 
                 it(' should be commutative', function() {

@@ -253,7 +253,15 @@ define(
                     };
                 }
 
-                function MyDependantType(myType) {
+                function MySingletonType() {
+                    this.getName = function() {
+                        return 'MySingletonType';
+                    };
+                }
+
+                function MyDependantType(myType, mySingletonType) {
+                    this.myType = myType;
+                    this.mySingletonType = mySingletonType;
                     this.getName = function() {
                         return 'MyDependantType > ' + myType.getName();
                     };
@@ -263,16 +271,37 @@ define(
 
                     injector = new Injector();
                     injector.map('MyType').toType(MyType);
-                    injector.map('MyDependantType').toType(MyDependantType).using('MyType');
+                    injector.map('MySingletonType').toType(MySingletonType).asSingleton();
+                    injector.map('MyDependantType').toType(MyDependantType).using('MyType', 'MySingletonType');
                 });
 
                 it(' should retrieve a typed instance for a mapping', function() {
 
-                    var instance = injector.getMappingFor('MyType');
+                    var myType = injector.getMappingFor('MyType'),
+                        mySingletonType = injector.getMappingFor('MySingletonType'),
+                        myDependantType = injector.getMappingFor('MyDependantType');
 
-                    expect(instance.constructor.name).toBe('MyType');
-                    expect(instance.hasOwnProperty('getName')).toBe(true);
-                    expect(instance.getName()).toBe('MyType');
+                    expect(myType.constructor.name).toBe('MyType');
+                    expect(myType.hasOwnProperty('getName')).toBe(true);
+                    expect(myType.getName()).toBe('MyType');
+
+                    expect(mySingletonType.constructor.name).toBe('MySingletonType');
+                    expect(mySingletonType.hasOwnProperty('getName')).toBe(true);
+                    expect(mySingletonType.getName()).toBe('MySingletonType');
+
+                    expect(myDependantType.constructor.name).toBe('MyDependantType');
+                    expect(myDependantType.hasOwnProperty('getName')).toBe(true);
+                    expect(myDependantType.getName()).toBe('MyDependantType > MyType');
+
+                    expect(myDependantType.hasOwnProperty('myType')).toBe(true);
+                    expect(myDependantType.myType.getName()).toBe('MyType');
+                    expect(myDependantType.myType.constructor.name).toBe('MyType');
+
+                    expect(myDependantType.hasOwnProperty('mySingletonType')).toBe(true);
+                    expect(myDependantType.mySingletonType.getName()).toBe('MySingletonType');
+                    expect(myDependantType.mySingletonType.constructor.name).toBe('MySingletonType');
+
+                    // @TODO: instanceof tests
                 });
 
                 it(' should be commutative', function() {
@@ -344,6 +373,13 @@ define(
 
             describe('injecting properties', function() {
 
+                function MyDependantFactory() {
+                    return function MyDependantFactoryInstance(name) {
+                        this.i_MyProp = null;
+                        this.myProp = 'Not mutated';
+                    };
+                }
+
                 function MyDependant() {
                     this.i_MyProp = null;
                     this.myProp = 'Not mutated';
@@ -353,10 +389,16 @@ define(
 
                     injector = new Injector();
                     injector.map('MyProp').toType(function prop() {});
+                    injector.map('MyDependantFactory').toFactory(MyDependantFactory);
                     injector.map('MyDependant').toType(MyDependant);
                 });
 
                 it(' should inject properties prefixed with i_', function() {
+
+                    expect(
+                        injector.getMappingFor('MyDependantFactory')
+                        .make().i_MyProp.constructor.name
+                    ).toBe('prop');
 
                     expect(injector.getMappingFor('MyDependant').i_MyProp.constructor.name)
                         .toBe('prop');
@@ -364,8 +406,73 @@ define(
 
                 it(' should inject prototype properties prefixed with i_', function() {
 
-                    expect(injector.getMappingFor('MyDependant').i_MyProp.constructor.name)
+                    function MyProtoFactory() {
+                        function MyProtoFactoryInstance() {}
+                        MyProtoFactoryInstance.prototype = {
+                            i_MyProp: null
+                        };
+                        return MyProtoFactoryInstance;
+                    }
+
+                    function MyProtoType() {}
+                    MyProtoType.prototype = {
+                        i_MyProp: null
+                    };
+
+                    injector.map('MyProtoFactory').toFactory(MyProtoFactory);
+                    injector.map('MyProtoType').toType(MyProtoType);
+
+                    expect(injector.getMappingFor('MyDependantFactory').make().i_MyProp.constructor.name)
                         .toBe('prop');
+
+                    expect(injector.getMappingFor('MyProtoType').i_MyProp.constructor.name)
+                        .toBe('prop');
+                });
+
+                it(' should inject constructor and property mappings', function() {
+
+                    function MyCombined(MyProp) {
+                        this.MyProp = MyProp;
+                    }
+                    MyCombined.prototype = {
+                        i_MyProp: null
+                    };
+                    // NOTE: explicitly set constructor to preserve type via constructor.name
+                    MyCombined.prototype.constructor = MyCombined;
+
+                    injector.map('MyCombined')
+                        .toType(MyCombined)
+                        .using('MyProp')
+                        .asSingleton();
+
+                    expect(injector.getMappingFor('MyCombined').MyProp.constructor.name)
+                        .toBe('prop');
+
+                    expect(injector.getMappingFor('MyCombined').i_MyProp.constructor.name)
+                        .toBe('prop');
+
+                    expect(injector.getMappingFor('MyCombined').MyProp)
+                        .not.toBe(injector.getMappingFor('MyCombined').i_MyProp);
+
+                    function MyCombinedSingleton(MyCombined) {
+                        this.myCombined = MyCombined;
+                    }
+                    MyCombinedSingleton.prototype = {
+                        i_MyCombined: null
+                    };
+
+                    injector.map('MyCombinedSingleton')
+                        .toType(MyCombinedSingleton)
+                        .using('MyCombined');
+
+                    expect(injector.getMappingFor('MyCombinedSingleton').myCombined.constructor.name)
+                        .toBe('MyCombined');
+
+                    expect(injector.getMappingFor('MyCombinedSingleton').i_MyCombined.constructor.name)
+                        .toBe('MyCombined');
+
+                    expect(injector.getMappingFor('MyCombinedSingleton').myCombined)
+                        .toBe(injector.getMappingFor('MyCombinedSingleton').i_MyCombined);
                 });
 
                 it(' should inject inherited prefixed properties', function() {
@@ -381,9 +488,23 @@ define(
                     function MyOtherChild() {}
                     MyOtherChild.prototype = MyRoot.prototype;
 
+                    function MyChildFactory() {
+                        function MyChildFactoryInstance() {}
+                        MyChildFactoryInstance.prototype = new MyRoot();
+                        return MyChildFactoryInstance;
+                    }
+
+                    function MyOtherChildFactory() {
+                        function MyOtherChildFactoryInstance() {}
+                        MyOtherChildFactoryInstance.prototype = MyRoot.prototype;
+                        return MyOtherChildFactoryInstance;
+                    }
+
                     injector.map('MyRoot').toType(MyRoot);
                     injector.map('MyChild').toType(MyChild);
                     injector.map('MyOtherChild').toType(MyOtherChild);
+                    injector.map('MyChildFactory').toFactory(MyChildFactory);
+                    injector.map('MyOtherChildFactory').toFactory(MyOtherChildFactory);
 
                     expect(injector.getMappingFor('MyChild').i_MyProp.constructor.name)
                         .toBe('prop');
@@ -396,11 +517,26 @@ define(
 
                     expect(new MyRoot().i_MyProp)
                         .toBeNull();
+
+                    expect(injector.getMappingFor('MyChildFactory').make().i_MyProp.constructor.name)
+                        .toBe('prop');
+
+                    expect(new MyRoot().i_MyProp)
+                        .toBeNull();
+
+                    expect(injector.getMappingFor('MyOtherChildFactory').make().i_MyProp.constructor.name)
+                        .toBe('prop');
+
+                    expect(new MyRoot().i_MyProp)
+                        .toBeNull();
                 });
 
                 it(' should ignore non-prefixed properties', function() {
 
                     expect(injector.getMappingFor('MyDependant').myProp)
+                        .toBe('Not mutated');
+
+                    expect(injector.getMappingFor('MyDependantFactory').make().myProp)
                         .toBe('Not mutated');
                 });
 
@@ -410,8 +546,21 @@ define(
                         this.i_Property = null;
                     }
 
+                    function MyMissingFactory() {
+                        return function MyMissingFactoryInstance() {
+                            this.i_Property = null;
+                        };
+                    }
+
+                    injector.map('MyMissing').toType(MyMissing);
+                    injector.map('MyMissingFactory').toFactory(MyMissingFactory);
+
                     expect(function() {
                         injector.getMappingFor('MyMissing');
+                    }).toThrow(NO_MAPPING);
+
+                    expect(function() {
+                        injector.getMappingFor('MyMissingFactory').make();
                     }).toThrow(NO_MAPPING);
                 });
             });

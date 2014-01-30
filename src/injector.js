@@ -43,7 +43,7 @@
 
                 validateType(target, 'function', INVALID_MAPPING_TYPE);
 
-                if (is(resolver, 'function')) {
+                if (resolver !== null) {
                     throw new Error(MAPPING_EXISTS);
                 }
             }
@@ -56,7 +56,7 @@
 
                     for (var prop in instance) {
                         if (prop.indexOf('i_') === 0) {
-                            deps.props[deps.props.length] = prop;
+                            deps.props.push(prop);
                         }
                     }
                 }

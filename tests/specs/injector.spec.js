@@ -192,6 +192,22 @@ define(
                     expect(is(factory.make, 'function')).toBe(true);
                 });
 
+                it(' should provide the name of the factory instance type', function() {
+
+                    var factory = injector.getMappingFor('MyFactory');
+
+                    expect(factory.hasOwnProperty('name')).toBe(true);
+                    expect(factory.name).toBe('MyFactoryInstance');
+                });
+
+                it(' should provide the factory instance type', function() {
+
+                    var factory = injector.getMappingFor('MyFactory');
+
+                    expect(factory.hasOwnProperty('type')).toBe(true);
+                    expect(factory.type).toBe(factory.make().constructor);
+                });
+
                 it(' should be commutative', function() {
 
                     var name = 'MyName';
@@ -275,33 +291,49 @@ define(
                     injector.map('MyDependantType').toType(MyDependantType).using('MyType', 'MySingletonType');
                 });
 
-                it(' should retrieve a typed instance for a mapping', function() {
+                it(' should create a typed instance for a mapping', function() {
 
-                    var myType = injector.getMappingFor('MyType'),
-                        mySingletonType = injector.getMappingFor('MySingletonType'),
-                        myDependantType = injector.getMappingFor('MyDependantType');
+                    var myType = injector.getMappingFor('MyType');
 
+                    expect(myType instanceof MyType).toBeTruthy();
+                    expect(myType.constructor).toBe(MyType);
                     expect(myType.constructor.name).toBe('MyType');
                     expect(myType.hasOwnProperty('getName')).toBe(true);
                     expect(myType.getName()).toBe('MyType');
+                });
 
+                it(' should retrieve a typed instance for a singleton mapping', function() {
+
+                    var mySingletonType = injector.getMappingFor('MySingletonType');
+
+                    expect(mySingletonType instanceof MySingletonType).toBeTruthy();
+                    expect(mySingletonType.constructor).toBe(MySingletonType);
                     expect(mySingletonType.constructor.name).toBe('MySingletonType');
                     expect(mySingletonType.hasOwnProperty('getName')).toBe(true);
                     expect(mySingletonType.getName()).toBe('MySingletonType');
+                });
 
+                it(' should create typed dependencies', function() {
+
+                    var myDependantType = injector.getMappingFor('MyDependantType');
+
+                    expect(myDependantType instanceof MyDependantType).toBeTruthy();
+                    expect(myDependantType.constructor).toBe(MyDependantType);
                     expect(myDependantType.constructor.name).toBe('MyDependantType');
                     expect(myDependantType.hasOwnProperty('getName')).toBe(true);
                     expect(myDependantType.getName()).toBe('MyDependantType > MyType');
 
                     expect(myDependantType.hasOwnProperty('myType')).toBe(true);
                     expect(myDependantType.myType.getName()).toBe('MyType');
+                    expect(myDependantType.myType instanceof MyType).toBeTruthy();
+                    expect(myDependantType.myType.constructor).toBe(MyType);
                     expect(myDependantType.myType.constructor.name).toBe('MyType');
 
                     expect(myDependantType.hasOwnProperty('mySingletonType')).toBe(true);
                     expect(myDependantType.mySingletonType.getName()).toBe('MySingletonType');
+                    expect(myDependantType.mySingletonType instanceof MySingletonType).toBeTruthy();
+                    expect(myDependantType.mySingletonType.constructor).toBe(MySingletonType);
                     expect(myDependantType.mySingletonType.constructor.name).toBe('MySingletonType');
-
-                    // @TODO: instanceof tests
                 });
 
                 it(' should be commutative', function() {

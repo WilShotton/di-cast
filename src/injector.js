@@ -77,36 +77,45 @@
 
             this.toFactory = function(value) {
 
-                var Builder = null,
+                var facade = null;
 
-                    facade = {
+                function makeFactory() {
+
+                    var Constructor = value.apply(value, deps.args.map(function(key) {
+                        return injector.getMappingFor(key);
+                    }));
+
+                    function Factory(args) {
+                        return Constructor.apply(this, args);
+                    }
+
+                    Factory.prototype = Constructor.prototype;
+
+                    return Factory;
+                }
+
+                function makeFacade(Constructor) {
+
+                    var instance = instantiate(Constructor);
+
+                    return {
 
                         make: function() {
 
-                            return instantiate.apply(this, [Builder].concat(slice.call(arguments, 0)));
-                        }
+                            return instantiate.apply(this, [Constructor].concat(slice.call(arguments, 0)));
+                        },
+
+                        name: instance.constructor.name,
+
+                        type: instance.constructor
                     };
+                }
 
                 validate(value);
 
                 resolver = function() {
 
-                    Builder = Builder || (function() {
-
-                        var constructor = value.apply(value, deps.args.map(function(key) {
-                            return injector.getMappingFor(key);
-                        }));
-
-                        function Builder(args) {
-                            return constructor.apply(this, args);
-                        }
-
-                        Builder.prototype = constructor.prototype;
-
-                        return Builder;
-                    })();
-
-                    return facade;
+                    return facade || (facade = makeFacade(makeFactory()));
                 };
 
                 return this;
@@ -208,7 +217,7 @@
                 return mappings[key].resolve();
             };
 
-            // @TODO: removeMapping(key)
+            // @TODO: unMap(key)
         }
 
         return Injector; 

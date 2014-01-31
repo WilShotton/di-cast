@@ -403,6 +403,11 @@ define(
                 });
             });
 
+            describe(' toValue mappings', function() {
+
+                // @TODO:...
+            });
+
             describe('injecting properties', function() {
 
                 function MyDependantFactory() {

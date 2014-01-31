@@ -148,6 +148,22 @@
                 return this;
             };
 
+            this.toValue = function(value) {
+
+                Object.keys(value).forEach(function(prop) {
+                    if (prop.indexOf('i_') === 0) {
+                        value[prop] = injector.getMappingFor(prop.replace('i_', ''));
+                    }
+                });
+
+                resolver = function() {
+
+                    return value;
+                };
+
+                return this;
+            };
+
             this.using = function() {
 
                 deps.args = arguments.length > 0 ? slice.call(arguments, 0) : [];

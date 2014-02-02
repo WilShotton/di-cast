@@ -42,7 +42,9 @@
                 deps = {
                     args: [],
                     props: null
-                };
+                },
+
+                target = null;
 
             function validate(target) {
 
@@ -118,6 +120,8 @@
 
                 validate(value);
 
+                target = value;
+
                 resolver = function() {
 
                     return facade || (facade = makeFacade(makeFactory()));
@@ -140,6 +144,8 @@
                 }
 
                 Builder.prototype = value.prototype;
+
+                target = value;
 
                 resolver = function() {
 
@@ -164,6 +170,8 @@
                         }
                     });
                 }
+
+                target = value;
 
                 resolver = function() {
 
@@ -199,6 +207,11 @@
                 return injector;
             };
 
+            this.destroy = function() {
+
+                return target;
+            };
+
             // @TODO: toValue(...) - returns an (injected?) object
             // @TODO: as([...]) - for duck typing...
         }
@@ -226,6 +239,20 @@
                 return (mappings[key] = new Mapping(self));
             };
 
+            this.unMap = function(key) {
+
+                var value = null;
+
+                if (self.hasMappingFor(key)) {
+
+                    value = mappings[key].destroy();
+
+                    delete mappings[key];
+                }
+
+                return value;
+            };
+
             this.hasMappingFor = function(key) {
 
                 return mappings.hasOwnProperty(key);
@@ -242,7 +269,6 @@
                 return mappings[key].resolve();
             };
 
-            // @TODO: unMap(key)
             // @TODO: inject(target) - could accept Objects as well
         }
 

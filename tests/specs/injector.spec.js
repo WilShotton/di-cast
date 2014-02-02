@@ -673,6 +673,59 @@ define(
                     }).toThrow(NO_MAPPING);
                 });
             });
+
+            describe(' unMap', function() {
+
+                var myValue = {};
+
+                function MyFactory() {
+                    return function MyFactoryInstance() {};
+                }
+
+                function MyType() {}
+
+                beforeEach(function() {
+
+                    injector = new Injector();
+                    injector.map('MyFactory').toFactory(MyFactory);
+                    injector.map('MyType').toType(MyType);
+                    injector.map('MyValue').toValue(myValue);
+                });
+
+                it(' should remove the remove the mapping', function() {
+
+                    injector.unMap('MyFactory');
+                    injector.unMap('MyType');
+                    injector.unMap('MyValue');
+
+                    expect(injector.hasMappingFor('MyFactory'))
+                        .toBe(false);
+
+                    expect(injector.hasMappingFor('MyType'))
+                        .toBe(false);
+
+                    expect(injector.hasMappingFor('MyValue'))
+                        .toBe(false);
+                });
+
+                it(' should return the mapping target value', function() {
+
+                    expect(injector.unMap('MyFactory'))
+                        .toBe(MyFactory);
+
+                    expect(injector.unMap('MyType'))
+                        .toBe(MyType);
+
+                    expect(injector.unMap('MyValue'))
+                        .toBe(myValue);
+                });
+
+                it(' should return null for an unmapped key', function() {
+
+                    expect(injector.unMap('MyMissing'))
+                        .toBe(null);
+                });
+            });
         });
     }
 );

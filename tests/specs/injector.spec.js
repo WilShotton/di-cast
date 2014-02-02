@@ -405,7 +405,79 @@ define(
 
             describe(' toValue mappings', function() {
 
-                // @TODO:...
+                function MyInstance() {
+                    this.name = 'MyInstance';
+                }
+
+                function MyPropertyInstance() {
+                    this.i_MyNumber = null;
+                }
+
+                beforeEach(function() {
+
+                    injector = new Injector();
+                    injector.map('MyArray').toValue([1, 2, 3]);
+                    injector.map('MyBoolean').toValue(true);
+                    injector.map('MyInstance').toValue(new MyInstance());
+                    injector.map('MyNumber').toValue(42);
+                    injector.map('MyObject').toValue({name:'MyObject'});
+                    injector.map('MyPropertyInstance').toValue(new MyPropertyInstance());
+                    injector.map('MyString').toValue('MyString');
+                });
+
+                it(' should map a value to a key', function() {
+
+                    expect(injector.getMappingFor('MyArray').length)
+                        .toBe(3);
+
+                    expect(injector.getMappingFor('MyBoolean'))
+                        .toBe(true);
+
+                    expect(injector.getMappingFor('MyInstance').name)
+                        .toBe('MyInstance');
+
+                    expect(injector.getMappingFor('MyNumber'))
+                        .toBe(42);
+
+                    expect(injector.getMappingFor('MyObject').name)
+                        .toBe('MyObject');
+
+                    expect(injector.getMappingFor('MyPropertyInstance').i_MyNumber)
+                        .toBe(42);
+
+                    expect(injector.getMappingFor('MyString'))
+                        .toBe('MyString');
+                });
+
+                it(' should map values as singletons', function() {
+
+                    expect(injector.getMappingFor('MyArray'))
+                        .toBe(injector.getMappingFor('MyArray'));
+
+                    expect(injector.getMappingFor('MyBoolean'))
+                        .toBe(injector.getMappingFor('MyBoolean'));
+
+                    expect(injector.getMappingFor('MyInstance'))
+                        .toBe(injector.getMappingFor('MyInstance'));
+
+                    expect(injector.getMappingFor('MyNumber'))
+                        .toBe(injector.getMappingFor('MyNumber'));
+
+                    expect(injector.getMappingFor('MyObject'))
+                        .toBe(injector.getMappingFor('MyObject'));
+
+                    expect(injector.getMappingFor('MyPropertyInstance'))
+                        .toBe(injector.getMappingFor('MyPropertyInstance'));
+
+                    expect(injector.getMappingFor('MyString'))
+                        .toBe(injector.getMappingFor('MyString'));
+                });
+
+                it(' should inject properties prefixed with i_', function() {
+
+                    expect(injector.getMappingFor('MyPropertyInstance').i_MyNumber)
+                        .toBe(injector.getMappingFor('MyNumber'));
+                });
             });
 
             describe('injecting properties', function() {

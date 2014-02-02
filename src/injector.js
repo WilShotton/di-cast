@@ -19,7 +19,12 @@
             slice = Array.prototype.slice;
 
         function is(value, type) {
-            return toString.call(value).toLowerCase().indexOf(type.toLowerCase()) !== -1;
+
+            return Object.prototype.toString
+                .call(value)
+                .split(' ')[1]
+                .toLowerCase()
+                .indexOf(type.toLowerCase()) !== -1;
         }
 
         function validateType(value, type, errorMsg) {
@@ -150,11 +155,15 @@
 
             this.toValue = function(value) {
 
-                Object.keys(value).forEach(function(prop) {
-                    if (prop.indexOf('i_') === 0) {
-                        value[prop] = injector.getMappingFor(prop.replace('i_', ''));
-                    }
-                });
+                // Not sure about this.
+                if (is(value, 'Object')) {
+
+                    Object.keys(value).forEach(function(prop) {
+                        if (prop.indexOf('i_') === 0) {
+                            value[prop] = injector.getMappingFor(prop.replace('i_', ''));
+                        }
+                    });
+                }
 
                 resolver = function() {
 
@@ -234,6 +243,7 @@
             };
 
             // @TODO: unMap(key)
+            // @TODO: inject(target) - could accept Objects as well
         }
 
         return Injector; 

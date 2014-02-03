@@ -2,6 +2,34 @@
  * Created by wil on 14/01/2014.
  */
 
+/**
+ * ++
+ * @TODO: injector.resolve(target, [deps])
+ *  - could accept Objects as well
+ *
+ * ++
+ * @TODO: invoke post construction method in Mapping.instantiate() if one is present on the instance
+ *  - instance.postConstruct()
+ *
+ * ++
+ * @TODO: postConstruct tests
+ *
+ * ++
+ * @TODO: Mapping public methods should be defined in the prototype for improved performance
+ *
+ * ++
+ * @TODO: Mapping.destroy() must tidy up Object
+ *  - reset deps.args -> deps.args.length = 0;
+ *  - reset deps.props -> deps.props.length = 0;
+ *  - clear resolver
+ *
+ * ++
+ * @TODO: Add YUIDocs
+ *
+ * ++
+ * @TODO: as([...]) - for duck typing...
+ */
+
 ;(function(root) {
 
     "use strict";
@@ -15,6 +43,7 @@
             NO_RESOLVER = '[#003] No resolver found',
             MAPPING_EXISTS = '[#004] A mapping already exists',
             NO_MAPPING = '[#005] No mapping found',
+            MAPPING_HAS_DEPENDANTS = '[#006] The mapping has dependants',
 
             slice = Array.prototype.slice;
 
@@ -78,6 +107,11 @@
                 getProps(instance).forEach(function(prop) {
                     instance[prop] = injector.getMappingFor(prop.replace('i_', ''));
                 });
+
+                //if (instance.hasOwnProperty('postConstruct')) {
+                if (instance['postConstruct'] != null) {
+                    instance.postConstruct();
+                }
 
                 return instance;
             }
@@ -161,12 +195,17 @@
 
             this.toValue = function(value) {
 
-                // Not sure about this.
+                // Not sure about this - why not inject constructor args too
+                // would be better to have injector.inject() method and then use...
+                // injector.map('MyKey').toValue(injector.resolve(MyFunction, [deps]))
+                deps.props = [];
+
                 if (is(value, 'Object')) {
 
                     Object.keys(value).forEach(function(prop) {
                         if (prop.indexOf('i_') === 0) {
                             value[prop] = injector.getMappingFor(prop.replace('i_', ''));
+                            deps.props.push(prop);
                         }
                     });
                 }
@@ -207,13 +246,19 @@
                 return injector;
             };
 
+            this.dependsOn = function(key) {
+
+                if (deps.props === null) {
+                    resolver();
+                }
+
+                return deps.args.indexOf(key) > -1 || deps.props.indexOf('i_' + key) > -1;
+            };
+
             this.destroy = function() {
 
                 return target;
             };
-
-            // @TODO: toValue(...) - returns an (injected?) object
-            // @TODO: as([...]) - for duck typing...
         }
 
         // Injector
@@ -245,6 +290,12 @@
 
                 if (self.hasMappingFor(key)) {
 
+                    Object.keys(mappings).forEach(function(name) {
+                        if (mappings[name].dependsOn(key)) {
+                            throw new Error(MAPPING_HAS_DEPENDANTS);
+                        }
+                    });
+
                     value = mappings[key].destroy();
 
                     delete mappings[key];
@@ -268,8 +319,6 @@
 
                 return mappings[key].resolve();
             };
-
-            // @TODO: inject(target) - could accept Objects as well
         }
 
         return Injector; 

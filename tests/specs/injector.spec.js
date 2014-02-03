@@ -17,7 +17,8 @@ define(
             INVALID_KEY_TYPE = '[#002] The key must be a String',
             NO_RESOLVER = '[#003] No resolver found',
             MAPPING_EXISTS = '[#004] A mapping already exists',
-            NO_MAPPING = '[#005] No mapping found';
+            NO_MAPPING = '[#005] No mapping found',
+            MAPPING_HAS_DEPENDANTS = '[#006] The mapping has dependants';
 
         function is(value, type) {
             return toString.call(value).toLowerCase().indexOf(type.toLowerCase()) !== -1;
@@ -373,7 +374,7 @@ define(
                         .using();
 
                     expect(function() {
-                       injector.getMappingFor('MyMissingType')
+                       injector.getMappingFor('MyMissingType');
                     }).toThrow();
                 });
 
@@ -491,6 +492,7 @@ define(
 
                 function MyDependant() {
                     this.i_MyProp = null;
+                    this.i_MyOtherProp = null;
                     this.myProp = 'Not mutated';
                 }
 
@@ -498,6 +500,7 @@ define(
 
                     injector = new Injector();
                     injector.map('MyProp').toType(function prop() {});
+                    injector.map('MyOtherProp').toType(function otherProp() {});
                     injector.map('MyDependantFactory').toFactory(MyDependantFactory);
                     injector.map('MyDependant').toType(MyDependant);
                 });
@@ -692,7 +695,7 @@ define(
                     injector.map('MyValue').toValue(myValue);
                 });
 
-                it(' should remove the remove the mapping', function() {
+                it(' should remove the mapping', function() {
 
                     injector.unMap('MyFactory');
                     injector.unMap('MyType');
@@ -706,6 +709,17 @@ define(
 
                     expect(injector.hasMappingFor('MyValue'))
                         .toBe(false);
+                });
+
+                it(' should throw if a mapping depends on the mapping to be removed', function() {
+
+                    injector.map('MyDependantFactory').toType(function() {
+                        this.i_MyType = null;
+                    });
+
+                    expect(function() {
+                        injector.unMap('MyType');
+                    }).toThrow(MAPPING_HAS_DEPENDANTS);
                 });
 
                 it(' should return the mapping target value', function() {

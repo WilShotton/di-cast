@@ -740,6 +740,124 @@ define(
                         .toBe(null);
                 });
             });
+
+            describe(' postConstruct', function() {
+
+                var MyPostValue = {
+
+                    isConstructed: false,
+
+                    i_MyProp: null,
+
+                    postConstruct: function() {
+
+                        this.isConstructed = true;
+                    }
+                };
+
+                function MyArg() {}
+                function MyProp() {}
+
+                function MyPostFactory(MyArg) {
+                    return function MyPostFactoryInstance() {
+
+                        var isConstructed = false;
+
+                        this.i_MyProp = null;
+
+                        this.myArg = MyArg;
+
+                        this.postConstruct = function() {
+                            isConstructed = true;
+                        };
+
+                        this.constructed = function() {
+                            return isConstructed;
+                        };
+                    };
+                }
+
+                function MyPostType(MyArg) {
+
+                    var isConstructed = false;
+
+                    this.i_MyProp = null;
+
+                    this.myArg = MyArg;
+
+                    this.postConstruct = function() {
+                        isConstructed = true;
+                    };
+
+                    this.constructed = function() {
+                        return isConstructed;
+                    };
+                }
+
+                function MyPostSingleton(MyArg) {
+
+                    var counter = 0;
+
+                    this.i_MyProp = null;
+
+                    this.myArg = MyArg;
+
+                    this.postConstruct = function() {
+                        counter++;
+                    };
+
+                    this.counter = function() {
+                        return counter;
+                    };
+                }
+
+                beforeEach(function() {
+
+                    injector = new Injector();
+                    injector.map('MyArg').toType(MyArg);
+                    injector.map('MyProp').toType(MyProp);
+                    injector.map('MyPostFactory').toFactory(MyPostFactory).using('MyArg');
+                    injector.map('MyPostSingleton').toType(MyPostSingleton).using('MyArg').asSingleton();
+                    injector.map('MyPostType').toType(MyPostType).using('MyArg');
+                    injector.map('MyPostValue').toValue(MyPostValue);
+                });
+
+                it(' should call postConstruct on toType mappings after injecting dependencies', function() {
+
+                    var myPostType = injector.getMappingFor('MyPostType');
+
+                    expect(myPostType.myArg.constructor).toBe(MyArg);
+                    expect(myPostType.i_MyProp.constructor).toBe(MyProp);
+                    expect(myPostType.constructed()).toBe(true);
+                });
+
+                it(' should call postConstruct on toFactory mappings after injecting dependencies', function() {
+
+                    var myPostInstance = injector.getMappingFor('MyPostFactory').make();
+
+                    expect(myPostInstance.myArg.constructor).toBe(MyArg);
+                    expect(myPostInstance.i_MyProp.constructor).toBe(MyProp);
+                    expect(myPostInstance.constructed()).toBe(true);
+                });
+
+                it(' should call postConstruct on toValue mappings after injecting dependencies', function() {
+
+                    var myPostValue = injector.getMappingFor('MyPostValue');
+
+                    expect(myPostValue.i_MyProp.constructor).toBe(MyProp);
+                    expect(myPostValue.isConstructed).toBe(true);
+                });
+
+                it(' should only call postConstruct once for a singleton', function() {
+
+                    var myPostSingleton_1 = injector.getMappingFor('MyPostSingleton'),
+                        myPostSingleton_2 = injector.getMappingFor('MyPostSingleton');
+
+                    expect(myPostSingleton_1).toBe(myPostSingleton_2);
+                    expect(myPostSingleton_1.counter()).toBe(1);
+                    expect(myPostSingleton_2.counter()).toBe(1);
+                });
+            });
         });
     }
 );

@@ -8,13 +8,6 @@
  *  - could accept Objects as well
  *
  * ++
- * @TODO: invoke post construction method in Mapping.instantiate() if one is present on the instance
- *  - instance.postConstruct()
- *
- * ++
- * @TODO: postConstruct tests
- *
- * ++
  * @TODO: Mapping public methods should be defined in the prototype for improved performance
  *
  * ++
@@ -208,6 +201,10 @@
                             deps.props.push(prop);
                         }
                     });
+                }
+
+                if (value.hasOwnProperty('postConstruct')) {
+                    value.postConstruct();
                 }
 
                 target = value;

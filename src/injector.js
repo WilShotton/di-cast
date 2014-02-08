@@ -8,6 +8,16 @@
  *  - could accept Objects as well
  *
  * ++
+ * @TODO: Write better tests for Mapping.using()
+ *  - no args
+ *  - null / undefined as first arg
+ *  - array as first arg
+ *  - strings as args
+ *
+ * ++
+ * @TODO: Property injection should only inject null / undefined values
+ *
+ * ++
  * @TODO: Mapping public methods should be defined in the prototype for improved performance
  *
  * ++
@@ -37,6 +47,7 @@
             MAPPING_EXISTS = '[#004] A mapping already exists',
             NO_MAPPING = '[#005] No mapping found',
             MAPPING_HAS_DEPENDANTS = '[#006] The mapping has dependants',
+            INVALID_RESOLVE_TARGET = '[#007] The resolve target must be an Object or Function',
 
             slice = Array.prototype.slice;
 
@@ -219,7 +230,9 @@
 
             this.using = function() {
 
-                deps.args = arguments.length > 0 ? slice.call(arguments, 0) : [];
+                if (arguments.length > 0 && arguments[0]) {
+                    deps.args = is(arguments[0], 'Array') ? arguments[0] : slice.call(arguments, 0);
+                }
 
                 return this;
             };
@@ -315,6 +328,35 @@
                 }
 
                 return mappings[key].resolve();
+            };
+
+            this.resolveFactory = function(target) {
+
+                validateType(target, 'Function', INVALID_RESOLVE_TARGET);
+
+                return new Mapping(self)
+                    .toFactory(target)
+                    .using(slice.call(arguments, 1))
+                    .resolve();
+            };
+
+            this.resolveType = function(target) {
+
+                validateType(target, 'Function', INVALID_RESOLVE_TARGET);
+
+                return new Mapping(self)
+                    .toType(target)
+                    .using(slice.call(arguments, 1))
+                    .resolve();
+            };
+
+            this.resolveValue = function(target) {
+
+                validateType(target, 'Object', INVALID_RESOLVE_TARGET);
+
+                return new Mapping(self)
+                    .toValue(target)
+                    .resolve();
             };
         }
 

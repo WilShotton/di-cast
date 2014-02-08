@@ -18,7 +18,8 @@ define(
             NO_RESOLVER = '[#003] No resolver found',
             MAPPING_EXISTS = '[#004] A mapping already exists',
             NO_MAPPING = '[#005] No mapping found',
-            MAPPING_HAS_DEPENDANTS = '[#006] The mapping has dependants';
+            MAPPING_HAS_DEPENDANTS = '[#006] The mapping has dependants',
+            INVALID_RESOLVE_TARGET = '[#007] The resolve target must be an Object or Function';
 
         function is(value, type) {
             return toString.call(value).toLowerCase().indexOf(type.toLowerCase()) !== -1;
@@ -856,6 +857,103 @@ define(
                     expect(myPostSingleton_1).toBe(myPostSingleton_2);
                     expect(myPostSingleton_1.counter()).toBe(1);
                     expect(myPostSingleton_2.counter()).toBe(1);
+                });
+            });
+
+            describe(' resolveFactory', function() {
+
+                function MyFactory(MyFactoryArg) {
+                    return function MyFactoryInstance(MyInstanceArg) {
+                        this.i_MyProp = null;
+                        this.myFactoryArg = MyFactoryArg;
+                        this.myInstanceArg = MyInstanceArg;
+                    };
+                }
+
+                beforeEach(function() {
+
+                    injector = new Injector();
+                    injector.map('MyFactoryArg').toType(function MyFactoryArg(){});
+                    injector.map('MyProp').toValue({name: 'MyProp'});
+                });
+
+                it(' should resolve the supplied target as a Factory', function() {
+
+                    var factory = injector.resolveFactory(MyFactory, 'MyFactoryArg'),
+                        instance = factory.make('MyInstanceArg');
+
+                    expect(is(factory.make, 'function')).toBe(true);
+                    expect(factory.name).toBe('MyFactoryInstance');
+                    expect(factory.type).toBe(factory.make().constructor);
+
+                    expect(instance.i_MyProp.name).toBe('MyProp');
+                    expect(instance.myFactoryArg.constructor.name).toBe('MyFactoryArg');
+                    expect(instance.myInstanceArg).toBe('MyInstanceArg');
+                });
+
+                it(' should throw if the target is not a function', function() {
+
+                    expect(function() {
+                        injector.resolveFactory('MyFactory');
+                    }).toThrow(INVALID_RESOLVE_TARGET);
+                });
+            });
+
+            describe(' resolveType', function() {
+
+                function MyType(MyArg) {
+                    this.i_MyProp = null;
+                    this.myArg = MyArg;
+                }
+
+                beforeEach(function() {
+
+                    injector = new Injector();
+                    injector.map('MyArg').toType(function MyArg(){});
+                    injector.map('MyProp').toValue({name: 'MyProp'});
+                });
+
+                it(' should resolve the supplied target as a Type', function() {
+
+                    var instance = injector.resolveType(MyType, 'MyArg');
+
+                    expect(instance.constructor).toBe(MyType);
+                    expect(instance.i_MyProp.name).toBe('MyProp');
+                    expect(instance.myArg.constructor.name).toBe('MyArg');
+                });
+
+                it(' should throw if the target is not a function', function() {
+
+                    expect(function() {
+                        injector.resolveType('MyType');
+                    }).toThrow(INVALID_RESOLVE_TARGET);
+                });
+            });
+
+            describe(' resolveValue', function() {
+
+                var myValue = {
+                    i_MyProp: null
+                };
+
+                beforeEach(function() {
+
+                    injector = new Injector();
+                    injector.map('MyProp').toValue({name: 'MyProp'});
+                });
+
+                it(' should resolve the supplied target as a Value', function() {
+
+                    var instance = injector.resolveValue(myValue);
+
+                    expect(instance.i_MyProp.name).toBe('MyProp');
+                });
+
+                it(' should throw if the target is not an object', function() {
+
+                    expect(function() {
+                        injector.resolveValue('myValue');
+                    }).toThrow(INVALID_RESOLVE_TARGET);
                 });
             });
         });

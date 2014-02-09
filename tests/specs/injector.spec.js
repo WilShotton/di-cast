@@ -860,7 +860,82 @@ define(
                 });
             });
 
-            describe(' resolveFactory', function() {
+            // Mapping.using()
+            // ------------------------------
+            describe(' Mapping.using()', function() {
+
+                beforeEach(function() {
+
+                    injector = new Injector();
+                    injector.map('DepA').toType(function DepA(){});
+                    injector.map('DepB').toType(function DepB(){});
+                });
+
+                it(' should do nothing if the arguments length is 0', function() {
+
+                    expect(function() {
+                        injector.map('MyA').toType(function MyA(){}).using();
+                        injector.getMappingFor('MyA')
+                    }).not.toThrow();
+
+                    injector.map('MyB').toType(function MyA(DepA){
+                        this.depA = DepA;
+                    }).using();
+
+                    expect(injector.getMappingFor('MyB').depA).toBe(undefined);
+                });
+
+                it(' should do nothing if the first argument is null', function() {
+
+                    expect(function() {
+                        injector.map('MyA').toType(function MyA(DepA){
+                            this.depA = DepA;
+                        }).using(null);
+                        injector.getMappingFor('MyA')
+                    }).not.toThrow();
+
+                    expect(injector.getMappingFor('MyA').depA).toBe(undefined);
+                });
+
+                it(' should do nothing if the first argument is undefined', function() {
+
+                    expect(function() {
+                        injector.map('MyA').toType(function MyA(DepA){
+                            this.depA = DepA;
+                        }).using(undefined);
+                        injector.getMappingFor('MyA')
+                    }).not.toThrow();
+
+                    expect(injector.getMappingFor('MyA').depA).toBe(undefined);
+                });
+
+                it(' should accept a list of strings as arguments and set them as dependencies', function() {
+
+                    expect(function() {
+                        injector.map('MyA').toType(function MyA(DepA, DepB){
+                            this.depA = DepA;
+                            this.depB = DepB;
+                        }).using('DepA', 'DepB');
+                        injector.getMappingFor('MyA')
+                    }).not.toThrow();
+                });
+
+                it(' should accept an array as the first argument and set that as dependencies', function() {
+
+                    expect(function() {
+                        injector.map('MyA').toType(function MyA(DepA, DepB){
+                            this.depA = DepA;
+                            this.depB = DepB;
+                        }).using(['DepA', 'DepB']);
+                        injector.getMappingFor('MyA')
+                    }).not.toThrow();
+                });
+            });
+
+
+            // Injector.resolve...
+            // ------------------------------
+            describe(' Injector.resolveFactory()', function() {
 
                 function MyFactory(MyFactoryArg) {
                     return function MyFactoryInstance(MyInstanceArg) {

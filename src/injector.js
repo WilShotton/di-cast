@@ -4,21 +4,18 @@
 
 /**
  * ++
- * @TODO: injector.resolve(target, [deps])
- *  - could accept Objects as well
- *
- * ++
- * @TODO: Write better tests for Mapping.using()
- *  - no args
- *  - null / undefined as first arg
- *  - array as first arg
- *  - strings as args
+ * @TODO: toValue() should not perform any sort of injection
+ *  - do this to avoid the following type of use case
+ *      - injector.map(...).toValue(new Fn(MyArg, MyDep), 'MyDep');
+ *  - use injector resolve to supply an injected value to toValue()
+ *  - see toValue() for more info
  *
  * ++
  * @TODO: Property injection should only inject null / undefined values
+ *  - ie. don't overwrite an existing value
  *
  * ++
- * @TODO: Mapping public methods should be defined in the prototype for improved performance
+ * @TODO: Mapping() public methods should be defined in the prototype for improved performance
  *
  * ++
  * @TODO: Mapping.destroy() must tidy up Object

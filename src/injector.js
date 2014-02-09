@@ -11,17 +11,7 @@
  *  - see toValue() for more info
  *
  * ++
- * @TODO: Property injection should only inject null / undefined values
- *  - ie. don't overwrite an existing value
- *
- * ++
  * @TODO: Mapping() public methods should be defined in the prototype for improved performance
- *
- * ++
- * @TODO: Mapping.destroy() must tidy up Object
- *  - reset deps.args -> deps.args.length = 0;
- *  - reset deps.props -> deps.props.length = 0;
- *  - clear resolver
  *
  * ++
  * @TODO: Add YUIDocs
@@ -106,7 +96,9 @@
                 var instance = new Constructor(slice.call(arguments, 1));
 
                 getProps(instance).forEach(function(prop) {
-                    instance[prop] = injector.getMappingFor(prop.replace('i_', ''));
+                    if (instance[prop] == null) {
+                        instance[prop] = injector.getMappingFor(prop.replace('i_', ''));
+                    }
                 });
 
                 //if (instance.hasOwnProperty('postConstruct')) {
@@ -264,7 +256,15 @@
 
             this.destroy = function() {
 
-                return target;
+                var rtn = target;
+
+                deps.args.length = 0;
+                deps.props.length = 0;
+
+                resolver = null;
+                target = null;
+
+                return rtn;
             };
         }
 

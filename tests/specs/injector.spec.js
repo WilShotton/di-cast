@@ -423,7 +423,9 @@ define(
                     injector.map('MyInstance').toValue(new MyInstance());
                     injector.map('MyNumber').toValue(42);
                     injector.map('MyObject').toValue({name:'MyObject'});
-                    injector.map('MyPropertyInstance').toValue(new MyPropertyInstance());
+                    injector.map('MyPropertyInstanceValue').toValue(new MyPropertyInstance());
+                    injector.map('MyPropertyInstanceInjected')
+                        .toValue(injector.resolveType(MyPropertyInstance));
                     injector.map('MyString').toValue('MyString');
                 });
 
@@ -444,11 +446,30 @@ define(
                     expect(injector.getMappingFor('MyObject').name)
                         .toBe('MyObject');
 
-                    expect(injector.getMappingFor('MyPropertyInstance').i_MyNumber)
-                        .toBe(42);
+                    expect(injector.getMappingFor('MyPropertyInstanceValue')
+                        .i_MyNumber).toBe(null);
+
+                    expect(injector.getMappingFor('MyPropertyInstanceInjected')
+                        .i_MyNumber).toBe(42);
 
                     expect(injector.getMappingFor('MyString'))
                         .toBe('MyString');
+                });
+
+                it(' should NOT resolve arguments of the target value', function() {
+
+                    injector.map('MyArgsValue')
+                        .toValue(function MyArgsValue(MyArray){
+                            this.myArray = MyArray;
+                        })
+                        .using('MyArray');
+
+                    expect(injector.getMappingFor('MyArgsValue').myArray).toBe(undefined);
+                });
+
+                it(' should NOT resolve properties of the target value', function() {
+
+                    expect(injector.getMappingFor('MyPropertyInstanceValue').i_MyNumber).toBe(null);
                 });
 
                 it(' should map values as singletons', function() {
@@ -468,20 +489,18 @@ define(
                     expect(injector.getMappingFor('MyObject'))
                         .toBe(injector.getMappingFor('MyObject'));
 
-                    expect(injector.getMappingFor('MyPropertyInstance'))
-                        .toBe(injector.getMappingFor('MyPropertyInstance'));
+                    expect(injector.getMappingFor('MyPropertyInstanceValue'))
+                        .toBe(injector.getMappingFor('MyPropertyInstanceValue'));
+
+                    expect(injector.getMappingFor('MyPropertyInstanceInjected'))
+                        .toBe(injector.getMappingFor('MyPropertyInstanceInjected'));
 
                     expect(injector.getMappingFor('MyString'))
                         .toBe(injector.getMappingFor('MyString'));
                 });
-
-                it(' should inject properties prefixed with i_', function() {
-
-                    expect(injector.getMappingFor('MyPropertyInstance').i_MyNumber)
-                        .toBe(injector.getMappingFor('MyNumber'));
-                });
             });
 
+            // ------------------------------
             describe('injecting properties', function() {
 
                 function MyDependantFactory() {
@@ -493,7 +512,7 @@ define(
 
                 function MyDependant() {
                     this.i_MyProp = null;
-                    this.i_MyOtherProp = null;
+                    this.i_MyOtherProp = 'i_MyOtherProp';
                     this.myProp = 'Not mutated';
                 }
 
@@ -653,6 +672,12 @@ define(
                         .toBe('Not mutated');
                 });
 
+                it(' should ignore non-null prefixed properties', function() {
+
+                    expect(injector.getMappingFor('MyDependant').i_MyOtherProp)
+                        .toBe('i_MyOtherProp');
+                });
+
                 it(' should throw if a dependency is unmapped', function() {
 
                     function MyMissing() {
@@ -678,7 +703,9 @@ define(
                 });
             });
 
-            describe(' unMap', function() {
+            // Injector.unMap()
+            // ------------------------------
+            describe(' Injector.unMap()', function() {
 
                 var myValue = {};
 
@@ -748,10 +775,7 @@ define(
 
                     isConstructed: false,
 
-                    i_MyProp: null,
-
                     postConstruct: function() {
-
                         this.isConstructed = true;
                     }
                 };
@@ -841,12 +865,11 @@ define(
                     expect(myPostInstance.constructed()).toBe(true);
                 });
 
-                it(' should call postConstruct on toValue mappings after injecting dependencies', function() {
+                it(' should NOT call postConstruct on toValue mappings', function() {
 
                     var myPostValue = injector.getMappingFor('MyPostValue');
 
-                    expect(myPostValue.i_MyProp.constructor).toBe(MyProp);
-                    expect(myPostValue.isConstructed).toBe(true);
+                    expect(myPostValue.isConstructed).toBe(false);
                 });
 
                 it(' should only call postConstruct once for a singleton', function() {
@@ -875,7 +898,7 @@ define(
 
                     expect(function() {
                         injector.map('MyA').toType(function MyA(){}).using();
-                        injector.getMappingFor('MyA')
+                        injector.getMappingFor('MyA');
                     }).not.toThrow();
 
                     injector.map('MyB').toType(function MyA(DepA){
@@ -891,7 +914,7 @@ define(
                         injector.map('MyA').toType(function MyA(DepA){
                             this.depA = DepA;
                         }).using(null);
-                        injector.getMappingFor('MyA')
+                        injector.getMappingFor('MyA');
                     }).not.toThrow();
 
                     expect(injector.getMappingFor('MyA').depA).toBe(undefined);
@@ -903,7 +926,7 @@ define(
                         injector.map('MyA').toType(function MyA(DepA){
                             this.depA = DepA;
                         }).using(undefined);
-                        injector.getMappingFor('MyA')
+                        injector.getMappingFor('MyA');
                     }).not.toThrow();
 
                     expect(injector.getMappingFor('MyA').depA).toBe(undefined);
@@ -916,7 +939,7 @@ define(
                             this.depA = DepA;
                             this.depB = DepB;
                         }).using('DepA', 'DepB');
-                        injector.getMappingFor('MyA')
+                        injector.getMappingFor('MyA');
                     }).not.toThrow();
                 });
 
@@ -927,7 +950,7 @@ define(
                             this.depA = DepA;
                             this.depB = DepB;
                         }).using(['DepA', 'DepB']);
-                        injector.getMappingFor('MyA')
+                        injector.getMappingFor('MyA');
                     }).not.toThrow();
                 });
             });
@@ -974,7 +997,7 @@ define(
                 });
             });
 
-            describe(' resolveType', function() {
+            describe(' Injector.resolveType()', function() {
 
                 function MyType(MyArg) {
                     this.i_MyProp = null;
@@ -1005,7 +1028,7 @@ define(
                 });
             });
 
-            describe(' resolveValue', function() {
+            describe(' Injector.resolveValue()', function() {
 
                 var myValue = {
                     i_MyProp: null
@@ -1017,11 +1040,17 @@ define(
                     injector.map('MyProp').toValue({name: 'MyProp'});
                 });
 
-                it(' should resolve the supplied target as a Value', function() {
+                it(' should return the identical mapped value', function() {
+
+                    expect(injector.resolveValue(myValue))
+                        .toBe(myValue);
+                });
+
+                it(' should NOT resolve properties of the target', function() {
 
                     var instance = injector.resolveValue(myValue);
 
-                    expect(instance.i_MyProp.name).toBe('MyProp');
+                    expect(instance.i_MyProp).toBe(null);
                 });
 
                 it(' should throw if the target is not an object', function() {

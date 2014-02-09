@@ -4,13 +4,6 @@
 
 /**
  * ++
- * @TODO: toValue() should not perform any sort of injection
- *  - do this to avoid the following type of use case
- *      - injector.map(...).toValue(new Fn(MyArg, MyDep), 'MyDep');
- *  - use injector resolve to supply an injected value to toValue()
- *  - see toValue() for more info
- *
- * ++
  * @TODO: Mapping() public methods should be defined in the prototype for improved performance
  *
  * ++
@@ -101,7 +94,6 @@
                     }
                 });
 
-                //if (instance.hasOwnProperty('postConstruct')) {
                 if (instance['postConstruct'] != null) {
                     instance.postConstruct();
                 }
@@ -188,24 +180,7 @@
 
             this.toValue = function(value) {
 
-                // Not sure about this - why not inject constructor args too
-                // would be better to have injector.inject() method and then use...
-                // injector.map('MyKey').toValue(injector.resolve(MyFunction, [deps]))
                 deps.props = [];
-
-                if (is(value, 'Object')) {
-
-                    Object.keys(value).forEach(function(prop) {
-                        if (prop.indexOf('i_') === 0) {
-                            value[prop] = injector.getMappingFor(prop.replace('i_', ''));
-                            deps.props.push(prop);
-                        }
-                    });
-                }
-
-                if (value.hasOwnProperty('postConstruct')) {
-                    value.postConstruct();
-                }
 
                 target = value;
 

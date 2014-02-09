@@ -5,12 +5,24 @@
 /**
  * ++
  * @TODO: Mapping() public methods should be defined in the prototype for improved performance
+ *  - NOTE: Using prototype should making testing easier
+ *
+ * ++
+ * @TODO: Update README
  *
  * ++
  * @TODO: Add YUIDocs
+ *  - Injector
+ *  - Mapping
  *
  * ++
- * @TODO: as([...]) - for duck typing...
+ * @TODO: Tidy up tests
+ *  - Each Mapping function should be a separate describe
+ *  - describe Injector ...
+ *  - describe Mapping ...
+ *
+ * ++
+ * @TODO: Mapping.as([...]) - for duck typing...
  */
 
 ;(function(root) {

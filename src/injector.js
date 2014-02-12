@@ -5,24 +5,12 @@
 /**
  * ++
  * @TODO: Mapping() public methods should be defined in the prototype for improved performance
- *  - NOTE: Using prototype should making testing easier
- *
- * ++
- * @TODO: Update README
  *
  * ++
  * @TODO: Add YUIDocs
- *  - Injector
- *  - Mapping
  *
  * ++
- * @TODO: Tidy up tests
- *  - Each Mapping function should be a separate describe
- *  - describe Injector ...
- *  - describe Mapping ...
- *
- * ++
- * @TODO: Mapping.as([...]) - for duck typing...
+ * @TODO: as([...]) - for duck typing...
  */
 
 ;(function(root) {
@@ -50,6 +38,15 @@
                 .split(' ')[1]
                 .toLowerCase()
                 .indexOf(type.toLowerCase()) !== -1;
+        }
+
+        function partial(fn) {
+
+            var args = slice.call(arguments, 1);
+
+            return function() {
+                return fn.apply(this, args.concat(slice.call(arguments, 0)));
+            };
         }
 
         function validateType(value, type, errorMsg) {
@@ -255,12 +252,23 @@
             };
         }
 
+
+
         // Injector
         // --------------------
         function Injector() {
-        
+
             var self = this,
                 mappings = {};
+
+            function resolve(vo) {
+
+                if (vo.resolver == null) {
+                    throw new Error(NO_RESOLVER);
+                }
+
+                return vo.resolver(vo);
+            }
 
             function validateKey(key) {
 
@@ -271,11 +279,188 @@
                 }
             }
 
+            function instantiate(vo) {
+
+                var instance = new vo.Builder(slice.call(arguments, 1));
+
+                if (vo.props === null) {
+
+                    vo.props = [];
+
+                    for (var prop in instance) {
+                        if (prop.indexOf('i_') === 0) {
+                            vo.props[vo.props.length] = prop;
+                        }
+                    }
+                }
+
+                vo.props.forEach(function(prop) {
+                    if (instance[prop] == null) {
+                        instance[prop] = vo.injector.getMappingFor(prop.replace('i_', ''));
+                    }
+                });
+
+                if (is(instance.postConstruct, 'Function')) {
+                    instance.postConstruct();
+                }
+
+                return instance;
+            }
+
+            function makeFactory(vo) {
+
+                function make() {
+
+                    var Factory = vo.target.apply(vo.target, vo.args.map(function(key) {
+
+                        return self.getMappingFor(key);
+                    }));
+
+                    // @TODO: Check if it is necessary to explicitly set args - could use arguments instead
+                    vo.Builder = function Builder(args) {
+
+                        return Factory.apply(this, args);
+                    };
+
+                    vo.Builder.prototype = Factory.prototype;
+
+                    vo.instance = {
+
+                        make: function() {
+
+                            return instantiate.apply(this, [vo].concat(slice.call(arguments, 0)));
+                        }
+                    };
+                }
+
+                if (vo.instance == null) {
+
+                    make();
+                }
+
+                return vo.instance;
+            }
+
+            function makeType(vo) {
+
+                if (vo.Builder == null) {
+
+                    vo.Builder = function Builder() {
+
+                        return vo.target.apply(this, vo.args.map(function(key) {
+
+                            return vo.injector.getMappingFor(key);
+                        }));
+                    };
+
+                    vo.Builder.prototype = vo.target.prototype;
+                }
+
+                if (vo.isSingleton && vo.instance === null) {
+
+                    vo.instance = instantiate(vo);
+                }
+
+                return vo.instance || instantiate(vo);
+            }
+
+            function makeValue() {
+
+                this.props = [];
+
+                return function resolve() {
+                    return this.target;
+                }
+            }
+
+            function toFactory(vo, target) {
+
+                if (vo.resolver !== null) {
+                    throw new Error(MAPPING_EXISTS);
+                }
+
+                validateType(target, 'function', INVALID_MAPPING_TYPE);
+
+                vo.target = target;
+                vo.resolver = makeFactory;
+
+                return makeFacade(vo);
+            }
+
+            function toType(vo, target) {
+
+                if (vo.resolver !== null) {
+                    throw new Error(MAPPING_EXISTS);
+                }
+
+                validateType(target, 'function', INVALID_MAPPING_TYPE);
+
+                vo.target = target;
+                vo.resolver = makeType;
+
+                return makeFacade(vo);
+            }
+
+            function toValue(vo, target) {
+
+                if (vo.resolver !== null) {
+                    throw new Error(MAPPING_EXISTS);
+                }
+
+                vo.target = target;
+                vo.resolver = makeValue.apply(vo);
+
+                return makeFacade(vo);
+            }
+
+            function asSingleton(vo) {
+
+                vo.isSingleton = true;
+
+                return makeFacade(vo);
+            }
+
+            function makeFacade(vo) {
+
+                return {
+
+                    injector: function() {
+                        return vo.injector;
+                    },
+
+                    toFactory: partial(toFactory, vo),
+                    toType: partial(toType, vo),
+                    toValue: partial(toValue, vo),
+
+                    asSingleton: partial(asSingleton, vo)
+                };
+            }
+
             this.map = function(key) {
 
                 validateKey(key);
 
-                return (mappings[key] = new Mapping(self));
+                mappings[key] = {
+
+                    target: null,
+
+                    isSingleton: false,
+                    resolver: null,
+                    args: [],
+                    props: null,
+
+                    Builder: null,
+                    instance: null
+                };
+
+                return makeFacade(mappings[key]);
+            };
+
+            this.hasMappingFor = function(key) {
+
+                validateType(key, 'String', INVALID_KEY_TYPE);
+
+                return mappings.hasOwnProperty(key);
             };
 
             this.unMap = function(key) {
@@ -298,11 +483,6 @@
                 return value;
             };
 
-            this.hasMappingFor = function(key) {
-
-                return mappings.hasOwnProperty(key);
-            };
-
             this.getMappingFor = function(key) {
 
                 validateType(key, 'string', INVALID_KEY_TYPE);
@@ -311,7 +491,7 @@
                     throw new Error(NO_MAPPING);
                 }
 
-                return mappings[key].resolve();
+                return resolve(mappings[key]);
             };
 
             this.resolveFactory = function(target) {
@@ -344,27 +524,27 @@
             };
         }
 
-        return Injector; 
+        return Injector;
     }
 
     // UMD style export.
-	// ----------------------------------------
+    // ----------------------------------------
     /* istanbul ignore next */
-	if (typeof define === 'function' && define.amd) {
+    if (typeof define === 'function' && define.amd) {
 
-		define(deps, factory);
+        define(deps, factory);
 
-	} else if (typeof module !== 'undefined' && module.exports) {
+    } else if (typeof module !== 'undefined' && module.exports) {
 
-		module.exports = factory.apply(factory, deps.map(function(dep) {
+        module.exports = factory.apply(factory, deps.map(function(dep) {
             return require(dep);
         }));
 
-	} else {
+    } else {
 
         root['Injector'] = factory.apply(factory, deps.map(function(dep) {
             return root[dep];
         }));
-	}
+    }
 
 })(this);

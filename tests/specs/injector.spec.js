@@ -21,7 +21,7 @@ define(
             MAPPING_HAS_DEPENDANTS = '[#006] The mapping has dependants',
             INVALID_RESOLVE_TARGET = '[#007] The resolve target must be an Object or Function';
 
-        var mappingKeys = ['injector', 'toFactory', 'toType', 'toValue', 'asSingleton'];
+        //var mappingKeys = ['injector', 'toFactory', 'toType', 'toValue', 'asSingleton', 'using']; //'as'
 
         function is(value, type) {
             return Object.prototype.toString
@@ -34,6 +34,9 @@ define(
         describe('Injector', function() {
 
             var injector;
+
+            // Injector methods
+            // ------------------------------
 
             // map()
             describe('map', function() {
@@ -49,7 +52,7 @@ define(
                     expect(injector.hasMappingFor('MyMapping')).toBe(true);
                 });
 
-                it(' should return mapping config options', function() {
+                xit(' should return mapping config options', function() {
 
                     var mapping = injector.map('NewMapping');
 
@@ -70,22 +73,6 @@ define(
                     expect(function() {
                         injector.map('MyMapping');
                     }).toThrow(MAPPING_EXISTS);
-                });
-
-
-                xit(' should be commutative', function() {
-
-                    var name = 'MyName';
-
-                    injector.map('MyCommutativeFactory')
-                        .using('MyFactory')
-                        .toFactory(MyDependantFactory);
-
-                    expect(injector
-                        .getMappingFor('MyDependantFactory')
-                        .make(name)
-                        .getName()
-                    ).toBe('Dependant > ' + name);
                 });
             });
 
@@ -155,6 +142,141 @@ define(
                 });
             });
 
+            // unMap()
+            xdescribe(' unMap()', function() {
+
+                var myValue = {};
+
+                function MyFactory() {
+                    return function MyFactoryInstance() {};
+                }
+
+                function MyType() {}
+
+                beforeEach(function() {
+
+                    injector = new Injector();
+                    injector.map('MyFactory').toFactory(MyFactory);
+                    injector.map('MyType').toType(MyType);
+                    injector.map('MyValue').toValue(myValue);
+                });
+
+                it(' should remove the mapping', function() {
+
+                    injector.unMap('MyFactory');
+                    injector.unMap('MyType');
+                    injector.unMap('MyValue');
+
+                    expect(injector.hasMappingFor('MyFactory'))
+                        .toBe(false);
+
+                    expect(injector.hasMappingFor('MyType'))
+                        .toBe(false);
+
+                    expect(injector.hasMappingFor('MyValue'))
+                        .toBe(false);
+                });
+
+                it(' should throw if a mapping depends on the mapping to be removed', function() {
+
+                    injector.map('MyDependantFactory').toType(function() {
+                        this.i_MyType = null;
+                    });
+
+                    expect(function() {
+                        injector.unMap('MyType');
+                    }).toThrow(MAPPING_HAS_DEPENDANTS);
+                });
+
+                it(' should return the mapping target value', function() {
+
+                    expect(injector.unMap('MyFactory'))
+                        .toBe(MyFactory);
+
+                    expect(injector.unMap('MyType'))
+                        .toBe(MyType);
+
+                    expect(injector.unMap('MyValue'))
+                        .toBe(myValue);
+                });
+
+                it(' should return null for an unmapped key', function() {
+
+                    expect(injector.unMap('MyMissing'))
+                        .toBe(null);
+                });
+            });
+
+            // Mapping methods
+            // ------------------------------
+
+            // mapping config options
+            describe('mapping config options', function() {
+
+                beforeEach(function() {
+
+                    injector = new Injector();
+                });
+
+                it(' should have a reference to the injector', function() {
+
+                    var mapping = injector.map('Map');
+
+                    expect(mapping.hasOwnProperty('injector')).toBe(true);
+                    expect(mapping.injector()).toBe(injector);
+                });
+
+                it(' should be fluid', function() {
+
+                    function test(mapping) {
+
+                        var keys = ['injector', 'toFactory', 'toType', 'toValue', 'asSingleton', 'using']; //'as'
+
+                        keys.forEach(function(key) {
+                            expect(is(mapping[key], 'Function')).toBe(true);
+                        });
+                    }
+
+                    test(injector.map('Map'));
+
+                    test(injector.map('Factory').toFactory(function Factory() {}));
+                    test(injector.map('Type').toType(function Type() {}));
+                    test(injector.map('Value').toValue(function Value() {}));
+
+                    test(injector.map('Singleton').toType(function Singleton() {}).asSingleton());
+                    test(injector.map('Using').toType(function Using() {}).using());
+                });
+
+                // @TODO
+                xit(' should be commutative', function() {
+
+                    var name = 'MyName';
+
+                    injector.map('MyCommutativeFactory')
+                        .using('MyFactory')
+                        .toFactory(MyDependantFactory);
+
+                    expect(injector
+                        .getMappingFor('MyDependantFactory')
+                        .make(name)
+                        .getName()
+                    ).toBe('Dependant > ' + name);
+                });
+
+                // @TODO
+                xit(' should be commutative', function() {
+
+                    injector.map('MyCommutativeType')
+                        .using('MyType')
+                        .asSingleton()
+                        .toType(MyDependantType);
+
+                    expect(
+                        injector.getMappingFor('MyCommutativeType').getName()
+                    ).toBe('MyDependantType > MyType');
+                });
+            });
+
             // toFactory()
             describe('toFactory', function() {
 
@@ -166,19 +288,10 @@ define(
                     };
                 }
 
-                function MyDependantFactory(MyFactory) {
-                    return function MyDependantFactoryInstance(name) {
-                        this.getName = function() {
-                            return 'Dependant > ' + MyFactory.make(name).getName();
-                        };
-                    };
-                }
-
                 beforeEach(function() {
 
                     injector = new Injector();
                     injector.map('MyFactory').toFactory(MyFactory);
-                    //injector.map('MyDependantFactory').toFactory(MyDependantFactory).using('MyFactory');
                 });
 
                 it(' should retrieve a factory method for a mapping', function() {
@@ -199,20 +312,25 @@ define(
                     expect(instance.getName()).toBe(name);
                 });
 
-                // @TODO: Move to a suite about using
-                xit(' should retrieve a constructor for a factory mapping with dependencies', function() {
-
-                    var name = 'MyName',
-                        factory = injector.getMappingFor('MyDependantFactory'),
-                        instance = factory.make(name);
-
-                    expect(instance.constructor.name).toBe('MyDependantFactoryInstance');
-                    expect(instance.getName()).toBe('Dependant > ' + name);
-                });
-
-                it(' should be a singleton', function() {
+                it(' should return a singleton', function() {
 
                     expect(injector.getMappingFor('MyFactory')).toBe(injector.getMappingFor('MyFactory'));
+                });
+
+                it(' should allow multiple mappings of the same factory with different keys', function() {
+
+                    expect(function() {
+                        injector.map('MyFactory1').toFactory(MyFactory);
+                        injector.map('MyFactory2').toFactory(MyFactory);
+                    }).not.toThrow();
+
+                    var f1 = injector.getMappingFor('MyFactory1'),
+                        f2 = injector.getMappingFor('MyFactory2');
+
+                    expect(f1).not.toBe(f2);
+
+                    // @TODO Set the instance.prototype.constructor in the factory resolver
+                    // expect(f1.make().constructor).toBe(f2.make().constructor);
                 });
 
                 it(' should throw if the factory is not a function', function() {
@@ -228,18 +346,16 @@ define(
 
                 it(' should throw if the mapping has already been set', function() {
 
-                    function MyValue() {}
-
                     expect(function() {
-                        injector.map('Factory->Factory').toFactory(MyValue).toFactory(MyValue);
+                        injector.map('Factory->Factory').toFactory(MyFactory).toFactory(MyFactory);
                     }).toThrow(MAPPING_EXISTS);
 
                     expect(function() {
-                        injector.map('Type->Factory').toType(MyValue).toFactory(MyValue);
+                        injector.map('Type->Factory').toType(MyFactory).toFactory(MyFactory);
                     }).toThrow(MAPPING_EXISTS);
 
                     expect(function() {
-                        injector.map('Value->Factory').toValue(MyValue).toFactory(MyValue);
+                        injector.map('Value->Factory').toValue(MyFactory).toFactory(MyFactory);
                     }).toThrow(MAPPING_EXISTS);
                 });
             });
@@ -247,44 +363,35 @@ define(
             // toType
             describe('toType', function() {
 
-                function MyType() {
-                    this.getName = function() {
-                        return 'MyType';
-                    };
-                }
-
-                /*
-                function MySingletonType() {
-                    this.getName = function() {
-                        return 'MySingletonType';
-                    };
-                }
-
-                function MyDependantType(myType, mySingletonType) {
-                    this.myType = myType;
-                    this.mySingletonType = mySingletonType;
-                    this.getName = function() {
-                        return 'MyDependantType > ' + myType.getName();
-                    };
-                }
-                */
+                function MyType() {}
 
                 beforeEach(function() {
 
                     injector = new Injector();
                     injector.map('MyType').toType(MyType);
-                    //injector.map('MySingletonType').toType(MySingletonType).asSingleton();
-                    //injector.map('MyDependantType').toType(MyDependantType).using('MyType', 'MySingletonType');
                 });
 
                 it(' should create a typed instance for a mapping', function() {
 
-                    var myType = injector.getMappingFor('MyType');
+                    expect(injector.getMappingFor('MyType').constructor)
+                        .toBe(MyType);
+                });
 
-                    expect(myType instanceof MyType).toBeTruthy();
-                    expect(myType.constructor).toBe(MyType);
-                    expect(myType.hasOwnProperty('getName')).toBe(true);
-                    expect(myType.getName()).toBe('MyType');
+                it(' should resolve a new instance each time', function() {
+
+                    expect(injector.getMappingFor('MyType'))
+                        .not.toBe(injector.getMappingFor('MyType'));
+                });
+
+                it(' should allow multiple mappings of the same function with different keys', function() {
+
+                    expect(function() {
+                        injector.map('MyType1').toType(MyType);
+                        injector.map('MyType2').toType(MyType);
+                    }).not.toThrow();
+
+                    expect(injector.getMappingFor('MyType1').constructor)
+                        .toBe(injector.getMappingFor('MyType2').constructor);
                 });
 
                 it(' should throw if the type is not a function', function() {
@@ -316,88 +423,17 @@ define(
 
                 it(' should throw if the mapping value has already been set', function() {
 
-                    function MyValue() {}
-
                     expect(function() {
-                        injector.map('Type->Type').toType(MyValue).toType(MyValue);
+                        injector.map('Type->Type').toType(MyType).toType(MyType);
                     }).toThrow(MAPPING_EXISTS);
 
                     expect(function() {
-                        injector.map('Factory->Type').toFactory(MyValue).toType(MyValue);
+                        injector.map('Factory->Type').toFactory(MyType).toType(MyType);
                     }).toThrow(MAPPING_EXISTS);
 
                     expect(function() {
-                        injector.map('Value->Type').toValue(MyValue).toType(MyValue);
+                        injector.map('Value->Type').toValue(MyType).toType(MyType);
                     }).toThrow(MAPPING_EXISTS);
-                });
-
-
-                // @TODO Move to using() spec
-                xit(' should create typed dependencies', function() {
-
-                    var myDependantType = injector.getMappingFor('MyDependantType');
-
-                    expect(myDependantType instanceof MyDependantType).toBeTruthy();
-                    expect(myDependantType.constructor).toBe(MyDependantType);
-                    expect(myDependantType.constructor.name).toBe('MyDependantType');
-                    expect(myDependantType.hasOwnProperty('getName')).toBe(true);
-                    expect(myDependantType.getName()).toBe('MyDependantType > MyType');
-
-                    expect(myDependantType.hasOwnProperty('myType')).toBe(true);
-                    expect(myDependantType.myType.getName()).toBe('MyType');
-                    expect(myDependantType.myType instanceof MyType).toBeTruthy();
-                    expect(myDependantType.myType.constructor).toBe(MyType);
-                    expect(myDependantType.myType.constructor.name).toBe('MyType');
-
-                    expect(myDependantType.hasOwnProperty('mySingletonType')).toBe(true);
-                    expect(myDependantType.mySingletonType.getName()).toBe('MySingletonType');
-                    expect(myDependantType.mySingletonType instanceof MySingletonType).toBeTruthy();
-                    expect(myDependantType.mySingletonType.constructor).toBe(MySingletonType);
-                    expect(myDependantType.mySingletonType.constructor.name).toBe('MySingletonType');
-                });
-
-                // @TODO Move to Mapping facade spec
-                xit(' should be commutative', function() {
-
-                    injector.map('MyCommutativeType')
-                        .using('MyType')
-                        .asSingleton()
-                        .toType(MyDependantType);
-
-                    expect(
-                        injector.getMappingFor('MyCommutativeType').getName()
-                    ).toBe('MyDependantType > MyType');
-                });
-
-                // @TODO Move to getMappingFor() spec
-                xit(' should should inject the instance with its dependencies', function() {
-
-                    var instance = injector.getMappingFor('MyDependantType');
-
-                    expect(instance.constructor.name).toBe('MyDependantType');
-                    expect(instance.hasOwnProperty('getName')).toBe(true);
-                    expect(instance.getName()).toBe('MyDependantType > MyType');
-                });
-
-                // @TODO Move to using() spec
-                xit(' should take a list of strings as dependencies', function() {
-
-                    injector.map('MyUsingType')
-                        .toType(MyDependantType)
-                        .using('MyType');
-
-                    expect(injector
-                        .getMappingFor('MyUsingType')
-                        .getName()
-                    ).toBe('MyDependantType > MyType');
-
-                    injector.map('MyMissingType')
-                        .toFactory(MyDependantType)
-                        .using();
-
-                    expect(function() {
-                       injector.getMappingFor('MyMissingType');
-                    }).toThrow();
                 });
             });
 
@@ -430,7 +466,6 @@ define(
                     injector.map('MyNumber').toValue(myNumber);
                     injector.map('MyObject').toValue(myObject);
                     injector.map('MyPropertyInstanceValue').toValue(new MyPropertyInstance());
-                    //injector.map('MyPropertyInstanceInjected').toValue(injector.resolveType(MyPropertyInstance));
                     injector.map('MyString').toValue(myString);
                 });
 
@@ -482,6 +517,19 @@ define(
                         .toBe(injector.getMappingFor('MyString'));
                 });
 
+                it(' should allow multiple mappings of the same value with different keys', function() {
+
+                    function MyValue() {}
+
+                    expect(function() {
+                        injector.map('MyValue1').toValue(MyValue);
+                        injector.map('MyValue2').toValue(MyValue);
+                    }).not.toThrow();
+
+                    expect(injector.getMappingFor('MyValue1'))
+                        .toBe(injector.getMappingFor('MyValue2'));
+                });
+
                 it(' should NOT resolve properties of the target value', function() {
 
                     expect(injector.getMappingFor('MyPropertyInstanceValue').i_MyNumber)
@@ -504,18 +552,6 @@ define(
                         injector.map('Type->Value').toType(MyValue).toValue(MyValue);
                     }).toThrow(MAPPING_EXISTS);
                 });
-
-                // @TODO Move to using()
-                xit(' should NOT resolve arguments of the target value', function() {
-
-                    injector.map('MyArgsValue')
-                        .toValue(function MyArgsValue(MyArray){
-                            this.myArray = MyArray;
-                        })
-                        .using('MyArray');
-
-                    expect(injector.getMappingFor('MyArgsValue').myArray).toBe(undefined);
-                });
             });
 
             // asSingleton()
@@ -532,18 +568,10 @@ define(
                     injector.map('MySingleton').toType(MySingleton).asSingleton();
                 });
 
-                it(' should NOT map types as singletons by default', function() {
-
-                    expect(injector.getMappingFor('MyType'))
-                        .not.toBe(injector.getMappingFor('MyType'));
-                });
-
                 it(' should retrieve a typed instance for a singleton mapping', function() {
 
-                    var mySingleton = injector.getMappingFor('MySingleton');
-
-                    expect(mySingleton instanceof MySingleton).toBeTruthy();
-                    expect(mySingleton.constructor).toBe(MySingleton);
+                    expect(injector.getMappingFor('MySingleton').constructor)
+                        .toBe(MySingleton);
                 });
 
                 it(' should be a singleton if asSingleton is set', function() {
@@ -551,10 +579,175 @@ define(
                     expect(injector.getMappingFor('MySingleton'))
                         .toBe(injector.getMappingFor('MySingleton'));
                 });
+
+                it(' should NOT map types as singletons by default', function() {
+
+                    expect(injector.getMappingFor('MyType'))
+                        .not.toBe(injector.getMappingFor('MyType'));
+                });
             });
 
+            // using()
+            describe(' using', function() {
+
+                function MyFactory() {
+                    return function MyFactoryInstance() {};
+                }
+
+                function MyUsingFactory(MyFactory) {
+                    return function MyUsingFactoryInstance() {
+                        this.myFactory = MyFactory;
+                    };
+                }
+
+                function MyType() {}
+
+                function MySingletonType() {}
+
+                function MyUsingType(myType, mySingletonType) {
+                    this.myType = myType;
+                    this.mySingletonType = mySingletonType;
+                }
+
+                beforeEach(function() {
+
+                    injector = new Injector();
+                    injector.map('MyType').toType(MyType);
+                    injector.map('MySingletonType').toType(MySingletonType).asSingleton();
+                });
+
+                it(' should do nothing if the arguments length is 0', function() {
+
+                    expect(function() {
+
+                        injector.map('MyA').toType(function MyA(DepA){
+                            this.depA = DepA;
+                        }).using();
+
+                    }).not.toThrow();
+
+                    expect(injector.getMappingFor('MyA').depA).toBe(undefined);
+                });
+
+                it(' should do nothing if the first argument is null', function() {
+
+                    expect(function() {
+                        injector.map('MyA').toType(function MyA(DepA){
+                            this.depA = DepA;
+                        }).using(null);
+                        injector.getMappingFor('MyA');
+                    }).not.toThrow();
+
+                    expect(injector.getMappingFor('MyA').depA).toBe(undefined);
+                });
+
+                it(' should do nothing if the first argument is undefined', function() {
+
+                    expect(function() {
+                        injector.map('MyA').toType(function MyA(DepA){
+                            this.depA = DepA;
+                        }).using(undefined);
+                        injector.getMappingFor('MyA');
+                    }).not.toThrow();
+
+                    expect(injector.getMappingFor('MyA').depA).toBe(undefined);
+                });
+
+
+                it(' should accept a list of strings as dependencies', function() {
+
+                    injector.map('MyUsingType')
+                        .toType(MyUsingType)
+                        .using('MyType', 'MySingletonType');
+
+                    expect(injector.getMappingFor('MyUsingType').myType.constructor)
+                        .toBe(MyType);
+
+                    expect(injector.getMappingFor('MyUsingType').mySingletonType.constructor)
+                        .toBe(MySingletonType);
+                });
+
+                it(' should accept an array as dependencies', function() {
+
+                    injector.map('MyUsingType')
+                        .toType(MyUsingType)
+                        .using(['MyType', 'MySingletonType']);
+
+                    expect(injector.getMappingFor('MyUsingType').myType.constructor)
+                        .toBe(MyType);
+
+                    expect(injector.getMappingFor('MyUsingType').mySingletonType.constructor)
+                        .toBe(MySingletonType);
+                });
+
+                it(' should NOT resolve arguments of a toValue mapping', function() {
+
+                    injector.map('MyArgsValue')
+                        .toValue(function MyArgsValue(MyArray){
+                            this.myArray = MyArray;
+                        })
+                        .using('MyArray');
+
+                    expect(injector.getMappingFor('MyArgsValue').myArray).toBe(undefined);
+                });
+            });
+
+            // as()
+            xdescribe(' duck typing', function() {
+
+            });
+
+            // Constructor injection
             // ------------------------------
-            xdescribe('injecting properties', function() {
+            xdescribe(' constructor injection', function() {
+
+                xit(' should retrieve a constructor for a factory mapping with dependencies', function() {
+
+                    var name = 'MyName',
+                        factory = injector.getMappingFor('MyDependantFactory'),
+                        instance = factory.make(name);
+
+                    expect(instance.constructor.name).toBe('MyDependantFactoryInstance');
+                    expect(instance.getName()).toBe('Dependant > ' + name);
+                });
+
+                xit(' should create typed dependencies', function() {
+
+                    var myDependantType = injector.getMappingFor('MyDependantType');
+
+                    expect(myDependantType instanceof MyDependantType).toBeTruthy();
+                    expect(myDependantType.constructor).toBe(MyDependantType);
+                    expect(myDependantType.constructor.name).toBe('MyDependantType');
+                    expect(myDependantType.hasOwnProperty('getName')).toBe(true);
+                    expect(myDependantType.getName()).toBe('MyDependantType > MyType');
+
+                    expect(myDependantType.hasOwnProperty('myType')).toBe(true);
+                    expect(myDependantType.myType.getName()).toBe('MyType');
+                    expect(myDependantType.myType instanceof MyType).toBeTruthy();
+                    expect(myDependantType.myType.constructor).toBe(MyType);
+                    expect(myDependantType.myType.constructor.name).toBe('MyType');
+
+                    expect(myDependantType.hasOwnProperty('mySingletonType')).toBe(true);
+                    expect(myDependantType.mySingletonType.getName()).toBe('MySingletonType');
+                    expect(myDependantType.mySingletonType instanceof MySingletonType).toBeTruthy();
+                    expect(myDependantType.mySingletonType.constructor).toBe(MySingletonType);
+                    expect(myDependantType.mySingletonType.constructor.name).toBe('MySingletonType');
+                });
+
+
+                xit(' should should inject the instance with its dependencies', function() {
+
+                    var instance = injector.getMappingFor('MyDependantType');
+
+                    expect(instance.constructor.name).toBe('MyDependantType');
+                    expect(instance.hasOwnProperty('getName')).toBe(true);
+                    expect(instance.getName()).toBe('MyDependantType > MyType');
+                });
+            });
+
+            // Property injection
+            // ------------------------------
+            xdescribe(' property injection', function() {
 
                 function MyDependantFactory() {
                     return function MyDependantFactoryInstance(name) {
@@ -756,72 +949,8 @@ define(
                 });
             });
 
-            // Injector.unMap()
+            // postConstruct()
             // ------------------------------
-            xdescribe(' Injector.unMap()', function() {
-
-                var myValue = {};
-
-                function MyFactory() {
-                    return function MyFactoryInstance() {};
-                }
-
-                function MyType() {}
-
-                beforeEach(function() {
-
-                    injector = new Injector();
-                    injector.map('MyFactory').toFactory(MyFactory);
-                    injector.map('MyType').toType(MyType);
-                    injector.map('MyValue').toValue(myValue);
-                });
-
-                it(' should remove the mapping', function() {
-
-                    injector.unMap('MyFactory');
-                    injector.unMap('MyType');
-                    injector.unMap('MyValue');
-
-                    expect(injector.hasMappingFor('MyFactory'))
-                        .toBe(false);
-
-                    expect(injector.hasMappingFor('MyType'))
-                        .toBe(false);
-
-                    expect(injector.hasMappingFor('MyValue'))
-                        .toBe(false);
-                });
-
-                it(' should throw if a mapping depends on the mapping to be removed', function() {
-
-                    injector.map('MyDependantFactory').toType(function() {
-                        this.i_MyType = null;
-                    });
-
-                    expect(function() {
-                        injector.unMap('MyType');
-                    }).toThrow(MAPPING_HAS_DEPENDANTS);
-                });
-
-                it(' should return the mapping target value', function() {
-
-                    expect(injector.unMap('MyFactory'))
-                        .toBe(MyFactory);
-
-                    expect(injector.unMap('MyType'))
-                        .toBe(MyType);
-
-                    expect(injector.unMap('MyValue'))
-                        .toBe(myValue);
-                });
-
-                it(' should return null for an unmapped key', function() {
-
-                    expect(injector.unMap('MyMissing'))
-                        .toBe(null);
-                });
-            });
-
             xdescribe(' postConstruct', function() {
 
                 var MyPostValue = {
@@ -936,77 +1065,7 @@ define(
                 });
             });
 
-            // Mapping.using()
-            // ------------------------------
-            xdescribe(' Mapping.using()', function() {
 
-                beforeEach(function() {
-
-                    injector = new Injector();
-                    injector.map('DepA').toType(function DepA(){});
-                    injector.map('DepB').toType(function DepB(){});
-                });
-
-                it(' should do nothing if the arguments length is 0', function() {
-
-                    expect(function() {
-                        injector.map('MyA').toType(function MyA(){}).using();
-                        injector.getMappingFor('MyA');
-                    }).not.toThrow();
-
-                    injector.map('MyB').toType(function MyA(DepA){
-                        this.depA = DepA;
-                    }).using();
-
-                    expect(injector.getMappingFor('MyB').depA).toBe(undefined);
-                });
-
-                it(' should do nothing if the first argument is null', function() {
-
-                    expect(function() {
-                        injector.map('MyA').toType(function MyA(DepA){
-                            this.depA = DepA;
-                        }).using(null);
-                        injector.getMappingFor('MyA');
-                    }).not.toThrow();
-
-                    expect(injector.getMappingFor('MyA').depA).toBe(undefined);
-                });
-
-                it(' should do nothing if the first argument is undefined', function() {
-
-                    expect(function() {
-                        injector.map('MyA').toType(function MyA(DepA){
-                            this.depA = DepA;
-                        }).using(undefined);
-                        injector.getMappingFor('MyA');
-                    }).not.toThrow();
-
-                    expect(injector.getMappingFor('MyA').depA).toBe(undefined);
-                });
-
-                it(' should accept a list of strings as arguments and set them as dependencies', function() {
-
-                    expect(function() {
-                        injector.map('MyA').toType(function MyA(DepA, DepB){
-                            this.depA = DepA;
-                            this.depB = DepB;
-                        }).using('DepA', 'DepB');
-                        injector.getMappingFor('MyA');
-                    }).not.toThrow();
-                });
-
-                it(' should accept an array as the first argument and set that as dependencies', function() {
-
-                    expect(function() {
-                        injector.map('MyA').toType(function MyA(DepA, DepB){
-                            this.depA = DepA;
-                            this.depB = DepB;
-                        }).using(['DepA', 'DepB']);
-                        injector.getMappingFor('MyA');
-                    }).not.toThrow();
-                });
-            });
 
 
             // Injector.resolve...

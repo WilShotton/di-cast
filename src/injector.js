@@ -3,14 +3,15 @@
  */
 
 /**
- * ++
- * @TODO: Mapping() public methods should be defined in the prototype for improved performance
  *
  * ++
  * @TODO: Add YUIDocs
  *
  * ++
  * @TODO: as([...]) - for duck typing...
+ *
+ * ++
+ * @TODO: README
  */
 
 ;(function(root) {
@@ -281,6 +282,8 @@
 
             function instantiate(vo) {
 
+                // @TODO Set instance.prototype.constructor
+
                 var instance = new vo.Builder(slice.call(arguments, 1));
 
                 if (vo.props === null) {
@@ -420,6 +423,17 @@
                 return makeFacade(vo);
             }
 
+            function using(vo) {
+
+                var args = slice.call(arguments, 1);
+
+                if (args.length > 0 && args[0]) {
+                    vo.args = is(args[0], 'Array') ? args[0] : args;
+                }
+
+                return makeFacade(vo);
+            }
+
             function makeFacade(vo) {
 
                 return {
@@ -432,7 +446,22 @@
                     toType: partial(toType, vo),
                     toValue: partial(toValue, vo),
 
-                    asSingleton: partial(asSingleton, vo)
+                    asSingleton: partial(asSingleton, vo),
+                    using: partial(using, vo)
+                };
+            }
+
+            function makeMapping() {
+
+                return {
+                    injector: self,
+                    target: null,
+                    isSingleton: false,
+                    resolver: null,
+                    args: [],
+                    props: null,
+                    Builder: null,
+                    instance: null
                 };
             }
 
@@ -440,19 +469,9 @@
 
                 validateKey(key);
 
-                mappings[key] = {
+                mappings[key] = makeMapping();
 
-                    target: null,
-
-                    isSingleton: false,
-                    resolver: null,
-                    args: [],
-                    props: null,
-
-                    Builder: null,
-                    instance: null
-                };
-
+                // @TODO: the facade should be created once and then passed as an argument
                 return makeFacade(mappings[key]);
             };
 
@@ -463,6 +482,19 @@
                 return mappings.hasOwnProperty(key);
             };
 
+            this.getMappingFor = function(key) {
+
+                validateType(key, 'String', INVALID_KEY_TYPE);
+
+                if (!self.hasMappingFor(key)) {
+                    throw new Error(NO_MAPPING);
+                }
+
+                return resolve(mappings[key]);
+            };
+
+
+            // @TODO - test unMap
             this.unMap = function(key) {
 
                 var value = null;
@@ -483,20 +515,13 @@
                 return value;
             };
 
-            this.getMappingFor = function(key) {
 
-                validateType(key, 'string', INVALID_KEY_TYPE);
-
-                if (!self.hasMappingFor(key)) {
-                    throw new Error(NO_MAPPING);
-                }
-
-                return resolve(mappings[key]);
-            };
-
+            // @TODO - Replace Mapping dependency
             this.resolveFactory = function(target) {
 
                 validateType(target, 'Function', INVALID_RESOLVE_TARGET);
+
+                //return resolve(toFactory(makeVO, target).using(slice.call(arguments, 1)));
 
                 return new Mapping(self)
                     .toFactory(target)
@@ -504,9 +529,12 @@
                     .resolve();
             };
 
+            // @TODO - Replace Mapping dependency
             this.resolveType = function(target) {
 
                 validateType(target, 'Function', INVALID_RESOLVE_TARGET);
+
+                //return resolve(toType(makeVO, target).using(slice.call(arguments, 1)));
 
                 return new Mapping(self)
                     .toType(target)
@@ -514,9 +542,12 @@
                     .resolve();
             };
 
+            // @TODO - Replace Mapping dependency
             this.resolveValue = function(target) {
 
                 validateType(target, 'Object', INVALID_RESOLVE_TARGET);
+
+                //return resolve(toValue(makeVO, target));
 
                 return new Mapping(self)
                     .toValue(target)

@@ -515,49 +515,37 @@
                 return value;
             };
 
-
-            // @TODO - Replace Mapping dependency
             this.resolveFactory = function(target) {
 
                 validateType(target, 'Function', INVALID_RESOLVE_TARGET);
 
-                return resolve(toFactory(makeMapping(), target).using(slice.call(arguments, 1)));
+                var vo = makeMapping();
 
-                /*
-                return new Mapping(self)
-                    .toFactory(target)
-                    .using(slice.call(arguments, 1))
-                    .resolve();
-                */
+                toFactory(vo, target).using(slice.call(arguments, 1));
+
+                return resolve(vo);
             };
 
-            // @TODO - Replace Mapping dependency
             this.resolveType = function(target) {
 
                 validateType(target, 'Function', INVALID_RESOLVE_TARGET);
 
-                return resolve(toType(makeMapping(), target).using(slice.call(arguments, 1)));
+                var vo = makeMapping();
 
-                /*
-                return new Mapping(self)
-                    .toType(target)
-                    .using(slice.call(arguments, 1))
-                    .resolve();
-                */
+                toType(vo, target).using(slice.call(arguments, 1));
+
+                return resolve(vo);
             };
 
-            // @TODO - Replace Mapping dependency
             this.resolveValue = function(target) {
 
                 validateType(target, 'Object', INVALID_RESOLVE_TARGET);
 
-                return resolve(toValue(makeMapping(), target));
+                var vo = makeMapping();
 
-                /*
-                return new Mapping(self)
-                    .toValue(target)
-                    .resolve();
-                */
+                toValue(vo, target);
+
+                return resolve(vo);
             };
         }
 

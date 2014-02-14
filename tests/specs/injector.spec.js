@@ -354,6 +354,11 @@ define(
             // @TODO: toFactory Facade
             xdescribe('toFactory Facade', function() {
 
+                it(' should have lazy instantiation', function() {
+
+                    // ie. i_Properties will only be evaluated on a call to make()
+                });
+
                 it(' should create an Object with a make() function', function() {
 
                 });
@@ -362,7 +367,7 @@ define(
 
                 });
 
-                it(' should supply and arguments as instance constructor arguments', function() {
+                it(' should supply arguments as instance constructor arguments', function() {
 
                 });
             });
@@ -595,7 +600,7 @@ define(
             });
 
             // using()
-            describe(' using', function() {
+            describe('using', function() {
 
                 function MyFactory() {
                     return function MyFactoryInstance() {};
@@ -704,9 +709,11 @@ define(
 
             });
 
-            // Constructor injection
+            // Injection
             // ------------------------------
-            describe(' constructor injection', function() {
+
+            // Constructor
+            describe('constructor injection', function() {
 
                 function MyFactory() {
                     return function MyFactoryInstance() {};
@@ -850,8 +857,7 @@ define(
             });
 
             // Property injection
-            // ------------------------------
-            describe(' property injection', function() {
+            describe('property injection', function() {
 
                 beforeEach(function() {
 
@@ -925,7 +931,7 @@ define(
                     function MyRoot() {}
                     MyRoot.prototype = {
                         i_MyNull: null,
-                        i_MyUndefined: null
+                        i_MyUndefined: undefined
                     };
                     MyRoot.prototype.constructor = MyRoot;
 
@@ -972,10 +978,7 @@ define(
                         expect(instance.i_MyNull).toEqual('Null');
                         expect(instance.i_MyUndefined).toEqual('Undefined');
 
-                        myRoot = injector.getMappingFor('MyRoot');
-                        expect(myRoot.i_MyNull).toBeNull();
-                        expect(myRoot.i_MyUndefined).toBeUndefined();
-
+                        // Control to ensure the prototype is NOT being mutated
                         myRoot = new MyRoot();
                         expect(myRoot.i_MyNull).toBeNull();
                         expect(myRoot.i_MyUndefined).toBeUndefined();
@@ -1051,223 +1054,200 @@ define(
 
                 it(' should NOT inject non prefixed properties', function() {
 
+                    var myString = 'MyString',
 
-                });
+                        myInjectedString = 'MyInjectedString',
+                        myEmptyString = 'MyEmptyString',
+                        myNullString = 'MyNullString',
+                        myUndefinedString = 'MyUndefinedString';
 
-                xit(' should ignore properties with no mapping', function() {
-
-                });
-
-                xit(' should throw if a dependency is unmapped', function() {
-
-                    function MyMissing() {
-                        this.i_Property = null;
+                    function MyType() {
+                        this.i_MyString = undefined;
+                        this.MyString = myString;
+                        this.MyEmptyString = '';
+                        this.MyNullString = null;
+                        this.MyUndefinedString = undefined;
                     }
 
-                    function MyMissingFactory() {
+                    injector.map('MyString').toValue(myInjectedString);
+                    injector.map('MyEmptyString').toValue(myEmptyString);
+                    injector.map('MyNullString').toValue(myNullString);
+                    injector.map('MyUndefinedString').toValue(myUndefinedString);
+                    injector.map('MyType').toType(MyType);
+
+                    var myType = injector.getMappingFor('MyType');
+
+                    expect(myType.i_MyString).toEqual(myInjectedString);
+                    expect(myType.MyString).toEqual(myString);
+                    expect(myType.MyEmptyString).toEqual('');
+                    expect(myType.MyNullString).toEqual(null);
+                    expect(myType.MyUndefinedString).toEqual(undefined);
+                });
+
+                it(' should throw if a dependency is unmapped', function() {
+
+                    function MyType() {
+                        this.i_MyString = null;
+                    }
+
+                    function MyFactory() {
                         return function MyMissingFactoryInstance() {
-                            this.i_Property = null;
+                            this.i_MyString = null;
                         };
                     }
 
-                    injector.map('MyMissing').toType(MyMissing);
-                    injector.map('MyMissingFactory').toFactory(MyMissingFactory);
+                    injector.map('MyType').toType(MyType);
+                    injector.map('MyFactory').toFactory(MyFactory);
 
                     expect(function() {
-                        injector.getMappingFor('MyMissing');
+                        injector.getMappingFor('MyType');
                     }).toThrow(NO_MAPPING);
 
                     expect(function() {
-                        injector.getMappingFor('MyMissingFactory').make();
+                        injector.getMappingFor('MyFactory').make();
                     }).toThrow(NO_MAPPING);
                 });
             });
 
-            xdescribe(' combined injection', function() {
+            // Combined
+            describe('combined injection', function() {
+
+                beforeEach(function() {
+
+                    injector = new Injector();
+                });
 
                 it(' should inject constructor and property mappings', function() {
 
-                    function MyCombined(MyProp) {
-                        this.MyProp = MyProp;
+                    function MyType(myConstructor) {
+                        this.myConstructor = myConstructor;
+                        this.i_MyProperty = null;
                     }
-                    MyCombined.prototype = {
-                        i_MyProp: null
+                    MyType.prototype = {
+                        i_MyPrototypeProperty: null
                     };
-                    // NOTE: explicitly set constructor to preserve type via constructor.name
-                    MyCombined.prototype.constructor = MyCombined;
+                    MyType.prototype.constructor = MyType;
 
-                    injector.map('MyCombined')
-                        .toType(MyCombined)
-                        .using('MyProp')
-                        .asSingleton();
+                    function MyFactory(myConstructor) {
 
-                    expect(injector.getMappingFor('MyCombined').MyProp.constructor.name)
-                        .toBe('prop');
+                        function MyFactoryInstance() {
+                            this.myConstructor = myConstructor;
+                            this.i_MyProperty = null;
+                        }
+                        MyFactoryInstance.prototype = {
+                            i_MyPrototypeProperty: null
+                        };
+                        MyFactoryInstance.prototype.constructor = MyFactoryInstance;
 
-                    expect(injector.getMappingFor('MyCombined').i_MyProp.constructor.name)
-                        .toBe('prop');
-
-                    expect(injector.getMappingFor('MyCombined').MyProp)
-                        .not.toBe(injector.getMappingFor('MyCombined').i_MyProp);
-
-                    function MyCombinedSingleton(MyCombined) {
-                        this.myCombined = MyCombined;
+                        return MyFactoryInstance;
                     }
-                    MyCombinedSingleton.prototype = {
-                        i_MyCombined: null
-                    };
 
-                    injector.map('MyCombinedSingleton')
-                        .toType(MyCombinedSingleton)
-                        .using('MyCombined');
+                    injector.map('MyConstructor').toValue('MyConstructor');
+                    injector.map('MyProperty').toValue('MyProperty');
+                    injector.map('MyPrototypeProperty').toValue('MyPrototypeProperty');
 
-                    expect(injector.getMappingFor('MyCombinedSingleton').myCombined.constructor.name)
-                        .toBe('MyCombined');
+                    injector.map('MyType').toType(MyType).using('MyConstructor');
+                    injector.map('MyFactory').toFactory(MyFactory).using('MyConstructor');
 
-                    expect(injector.getMappingFor('MyCombinedSingleton').i_MyCombined.constructor.name)
-                        .toBe('MyCombined');
+                    function test(instance) {
 
-                    expect(injector.getMappingFor('MyCombinedSingleton').myCombined)
-                        .toBe(injector.getMappingFor('MyCombinedSingleton').i_MyCombined);
+                        expect(instance.myConstructor).toEqual('MyConstructor');
+                        expect(instance.i_MyProperty).toEqual('MyProperty');
+                        expect(instance.i_MyPrototypeProperty).toEqual('MyPrototypeProperty');
+                    }
+
+                    test(injector.getMappingFor('MyType'));
+                    test(injector.getMappingFor('MyFactory').make());
                 });
             });
 
-            // @TODO: postConstruct()
+            // postConstruct()
             // ------------------------------
-            xdescribe(' postConstruct', function() {
+            describe('postConstruct', function() {
 
-                var MyPostValue = {
-
+                var MyValue = {
                     isConstructed: false,
-
                     postConstruct: function() {
                         this.isConstructed = true;
                     }
                 };
 
-                function MyArg() {}
-                function MyProp() {}
-
-                function MyPostFactory(MyArg) {
+                function MyFactory() {
                     return function MyPostFactoryInstance() {
-
-                        var isConstructed = false;
-
-                        this.i_MyProp = null;
-
-                        this.myArg = MyArg;
-
+                        this.isConstructed = false;
                         this.postConstruct = function() {
-                            isConstructed = true;
-                        };
-
-                        this.constructed = function() {
-                            return isConstructed;
+                            this.isConstructed = true;
                         };
                     };
                 }
 
-                function MyPostType(MyArg) {
-
-                    var isConstructed = false;
-
-                    this.i_MyProp = null;
-
-                    this.myArg = MyArg;
-
+                function MySingleton() {
+                    this.counter = 0;
                     this.postConstruct = function() {
-                        isConstructed = true;
-                    };
-
-                    this.constructed = function() {
-                        return isConstructed;
+                        this.counter++;
                     };
                 }
 
-                function MyPostSingleton(MyArg) {
-
-                    var counter = 0;
-
-                    this.i_MyProp = null;
-
-                    this.myArg = MyArg;
-
+                function MyType() {
+                    this.isConstructed = false;
                     this.postConstruct = function() {
-                        counter++;
-                    };
-
-                    this.counter = function() {
-                        return counter;
+                        this.isConstructed = true;
                     };
                 }
 
                 beforeEach(function() {
 
                     injector = new Injector();
-                    injector.map('MyArg').toType(MyArg);
-                    injector.map('MyProp').toType(MyProp);
-                    injector.map('MyPostFactory').toFactory(MyPostFactory).using('MyArg');
-                    injector.map('MyPostSingleton').toType(MyPostSingleton).using('MyArg').asSingleton();
-                    injector.map('MyPostType').toType(MyPostType).using('MyArg');
-                    injector.map('MyPostValue').toValue(MyPostValue);
-                });
-
-                it(' should call postConstruct on toType mappings after injecting dependencies', function() {
-
-                    var myPostType = injector.getMappingFor('MyPostType');
-
-                    expect(myPostType.myArg.constructor).toBe(MyArg);
-                    expect(myPostType.i_MyProp.constructor).toBe(MyProp);
-                    expect(myPostType.constructed()).toBe(true);
+                    injector.map('MyFactory').toFactory(MyFactory);
+                    injector.map('MySingleton').toType(MySingleton).asSingleton();
+                    injector.map('MyType').toType(MyType);
+                    injector.map('MyValue').toValue(MyValue);
                 });
 
                 it(' should call postConstruct on toFactory mappings after injecting dependencies', function() {
 
-                    var myPostInstance = injector.getMappingFor('MyPostFactory').make();
-
-                    expect(myPostInstance.myArg.constructor).toBe(MyArg);
-                    expect(myPostInstance.i_MyProp.constructor).toBe(MyProp);
-                    expect(myPostInstance.constructed()).toBe(true);
+                    expect(injector.getMappingFor('MyFactory').make().isConstructed).toBe(true);
                 });
 
-                it(' should NOT call postConstruct on toValue mappings', function() {
+                it(' should call postConstruct on toType mappings after injecting dependencies', function() {
 
-                    var myPostValue = injector.getMappingFor('MyPostValue');
-
-                    expect(myPostValue.isConstructed).toBe(false);
+                    expect(injector.getMappingFor('MyType').isConstructed).toBe(true);
                 });
 
                 it(' should only call postConstruct once for a singleton', function() {
 
-                    var myPostSingleton_1 = injector.getMappingFor('MyPostSingleton'),
-                        myPostSingleton_2 = injector.getMappingFor('MyPostSingleton');
+                    var mySingleton_1 = injector.getMappingFor('MySingleton'),
+                        mySingleton_2 = injector.getMappingFor('MySingleton');
 
-                    expect(myPostSingleton_1).toBe(myPostSingleton_2);
-                    expect(myPostSingleton_1.counter()).toBe(1);
-                    expect(myPostSingleton_2.counter()).toBe(1);
+                    expect(mySingleton_1).toBe(mySingleton_2);
+                    expect(mySingleton_1.counter).toBe(1);
+                    expect(mySingleton_2.counter).toBe(1);
+                });
+
+                it(' should NOT call postConstruct on toValue mappings', function() {
+
+                    expect(injector.getMappingFor('MyValue').isConstructed).toBe(false);
                 });
             });
 
 
-
-
-            // @TODO: Injector.resolve...
+            // Injector.resolve methods
             // ------------------------------
-            xdescribe(' Injector.resolveFactory()', function() {
+            describe('resolveFactory()', function() {
 
-                function MyFactory(MyFactoryArg) {
-                    return function MyFactoryInstance(MyInstanceArg) {
+                function MyFactory(myFactoryArg) {
+                    return function MyFactoryInstance(myInstanceArg) {
                         this.i_MyProp = null;
-                        this.myFactoryArg = MyFactoryArg;
-                        this.myInstanceArg = MyInstanceArg;
+                        this.myFactoryArg = myFactoryArg;
+                        this.myInstanceArg = myInstanceArg;
                     };
                 }
 
                 beforeEach(function() {
 
                     injector = new Injector();
-                    injector.map('MyFactoryArg').toType(function MyFactoryArg(){});
-                    injector.map('MyProp').toValue({name: 'MyProp'});
+                    injector.map('MyFactoryArg').toValue('MyFactoryArg');
+                    injector.map('MyProp').toValue('MyProp');
                 });
 
                 it(' should resolve the supplied target as a Factory', function() {
@@ -1276,12 +1256,36 @@ define(
                         instance = factory.make('MyInstanceArg');
 
                     expect(is(factory.make, 'function')).toBe(true);
-                    expect(factory.name).toBe('MyFactoryInstance');
-                    expect(factory.type).toBe(factory.make().constructor);
 
-                    expect(instance.i_MyProp.name).toBe('MyProp');
-                    expect(instance.myFactoryArg.constructor.name).toBe('MyFactoryArg');
+                    expect(instance.constructor.name).toBe('MyFactoryInstance');
+
+                    expect(instance.i_MyProp).toBe('MyProp');
+                    expect(instance.myFactoryArg).toBe('MyFactoryArg');
                     expect(instance.myInstanceArg).toBe('MyInstanceArg');
+                });
+
+                it(' should throw if a constructor dependency cannot be resolved', function() {
+
+                    function MyFactory(myMissingArg) {
+                        return function MyFactoryInstance() {};
+                    }
+
+                    expect(function() {
+                        injector.resolveFactory(MyFactory, 'MyMissingArg');
+                    }).toThrow(NO_MAPPING);
+                });
+
+                it(' should throw if a property dependency cannot be resolved', function() {
+
+                    function MyFactory() {
+                        return function MyFactoryInstance() {
+                            this.i_MyMissingProp = null;
+                        };
+                    }
+
+                    expect(function() {
+                        injector.resolveFactory(MyFactory).make();
+                    }).toThrow(NO_MAPPING);
                 });
 
                 it(' should throw if the target is not a function', function() {
@@ -1292,7 +1296,7 @@ define(
                 });
             });
 
-            xdescribe(' Injector.resolveType()', function() {
+            describe('resolveType()', function() {
 
                 function MyType(MyArg) {
                     this.i_MyProp = null;
@@ -1302,8 +1306,8 @@ define(
                 beforeEach(function() {
 
                     injector = new Injector();
-                    injector.map('MyArg').toType(function MyArg(){});
-                    injector.map('MyProp').toValue({name: 'MyProp'});
+                    injector.map('MyArg').toValue('MyArg');
+                    injector.map('MyProp').toValue('MyProp');
                 });
 
                 it(' should resolve the supplied target as a Type', function() {
@@ -1311,8 +1315,28 @@ define(
                     var instance = injector.resolveType(MyType, 'MyArg');
 
                     expect(instance.constructor).toBe(MyType);
-                    expect(instance.i_MyProp.name).toBe('MyProp');
-                    expect(instance.myArg.constructor.name).toBe('MyArg');
+                    expect(instance.i_MyProp).toBe('MyProp');
+                    expect(instance.myArg).toBe('MyArg');
+                });
+
+                it(' should throw if a constructor dependency cannot be resolved', function() {
+
+                    function MyType(myMissingArg) {}
+
+                    expect(function() {
+                        injector.resolveType(MyType, 'MyMissingArg');
+                    }).toThrow(NO_MAPPING);
+                });
+
+                it(' should throw if a property dependency cannot be resolved', function() {
+
+                    function MyType() {
+                        this.i_MyMissingProp = null;
+                    }
+
+                    expect(function() {
+                        injector.resolveType(MyType);
+                    }).toThrow(NO_MAPPING);
                 });
 
                 it(' should throw if the target is not a function', function() {
@@ -1323,7 +1347,7 @@ define(
                 });
             });
 
-            xdescribe(' Injector.resolveValue()', function() {
+            describe('resolveValue()', function() {
 
                 var myValue = {
                     i_MyProp: null
@@ -1332,20 +1356,17 @@ define(
                 beforeEach(function() {
 
                     injector = new Injector();
-                    injector.map('MyProp').toValue({name: 'MyProp'});
+                    injector.map('MyProp').toValue('MyProp');
                 });
 
                 it(' should return the identical mapped value', function() {
 
-                    expect(injector.resolveValue(myValue))
-                        .toBe(myValue);
+                    expect(injector.resolveValue(myValue)).toBe(myValue);
                 });
 
                 it(' should NOT resolve properties of the target', function() {
 
-                    var instance = injector.resolveValue(myValue);
-
-                    expect(instance.i_MyProp).toBe(null);
+                    expect(injector.resolveValue(myValue).i_MyProp).toBe(null);
                 });
 
                 it(' should throw if the target is not an object', function() {

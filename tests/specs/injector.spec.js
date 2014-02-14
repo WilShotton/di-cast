@@ -52,15 +52,6 @@ define(
                     expect(injector.hasMappingFor('MyMapping')).toBe(true);
                 });
 
-                xit(' should return mapping config options', function() {
-
-                    var mapping = injector.map('NewMapping');
-
-                    mappingKeys.forEach(function(key) {
-                        expect(is(mapping[key], 'Function')).toBe(true);
-                    })
-                });
-
                 it(' should throw if the key is not a string', function() {
 
                     expect(function() {
@@ -142,7 +133,7 @@ define(
                 });
             });
 
-            // unMap()
+            // TODO: unMap()
             xdescribe(' unMap()', function() {
 
                 var myValue = {};
@@ -357,6 +348,22 @@ define(
                     expect(function() {
                         injector.map('Value->Factory').toValue(MyFactory).toFactory(MyFactory);
                     }).toThrow(MAPPING_EXISTS);
+                });
+            });
+
+            // @TODO: toFactory Facade
+            xdescribe('toFactory Facade', function() {
+
+                it(' should create an Object with a make() function', function() {
+
+                });
+
+                it(' should make an instance of the factory instance', function() {
+
+                });
+
+                it(' should supply and arguments as instance constructor arguments', function() {
+
                 });
             });
 
@@ -692,120 +699,391 @@ define(
                 });
             });
 
-            // as()
+            // TODO: as()
             xdescribe(' duck typing', function() {
 
             });
 
             // Constructor injection
             // ------------------------------
-            xdescribe(' constructor injection', function() {
+            describe(' constructor injection', function() {
 
-                xit(' should retrieve a constructor for a factory mapping with dependencies', function() {
+                function MyFactory() {
+                    return function MyFactoryInstance() {};
+                }
 
-                    var name = 'MyName',
-                        factory = injector.getMappingFor('MyDependantFactory'),
-                        instance = factory.make(name);
+                function MyType() {}
 
-                    expect(instance.constructor.name).toBe('MyDependantFactoryInstance');
-                    expect(instance.getName()).toBe('Dependant > ' + name);
-                });
+                function MyValue() {}
 
-                xit(' should create typed dependencies', function() {
+                function MySingletonFactory() {
+                    return function MySingletonFactoryInstance() {};
+                }
 
-                    var myDependantType = injector.getMappingFor('MyDependantType');
+                function MySingletonType() {}
 
-                    expect(myDependantType instanceof MyDependantType).toBeTruthy();
-                    expect(myDependantType.constructor).toBe(MyDependantType);
-                    expect(myDependantType.constructor.name).toBe('MyDependantType');
-                    expect(myDependantType.hasOwnProperty('getName')).toBe(true);
-                    expect(myDependantType.getName()).toBe('MyDependantType > MyType');
-
-                    expect(myDependantType.hasOwnProperty('myType')).toBe(true);
-                    expect(myDependantType.myType.getName()).toBe('MyType');
-                    expect(myDependantType.myType instanceof MyType).toBeTruthy();
-                    expect(myDependantType.myType.constructor).toBe(MyType);
-                    expect(myDependantType.myType.constructor.name).toBe('MyType');
-
-                    expect(myDependantType.hasOwnProperty('mySingletonType')).toBe(true);
-                    expect(myDependantType.mySingletonType.getName()).toBe('MySingletonType');
-                    expect(myDependantType.mySingletonType instanceof MySingletonType).toBeTruthy();
-                    expect(myDependantType.mySingletonType.constructor).toBe(MySingletonType);
-                    expect(myDependantType.mySingletonType.constructor.name).toBe('MySingletonType');
-                });
-
-
-                xit(' should should inject the instance with its dependencies', function() {
-
-                    var instance = injector.getMappingFor('MyDependantType');
-
-                    expect(instance.constructor.name).toBe('MyDependantType');
-                    expect(instance.hasOwnProperty('getName')).toBe(true);
-                    expect(instance.getName()).toBe('MyDependantType > MyType');
-                });
-            });
-
-            // Property injection
-            // ------------------------------
-            xdescribe(' property injection', function() {
-
-                function MyDependantFactory() {
-                    return function MyDependantFactoryInstance(name) {
-                        this.i_MyProp = null;
-                        this.myProp = 'Not mutated';
+                function MyDependantFactory(myFactory, myType, mySingletonFactory, mySingletonType, myValue) {
+                    return function MyDependantFactoryInstance() {
+                        this.myFactory = myFactory;
+                        this.myType = myType;
+                        this.mySingletonFactory = mySingletonFactory;
+                        this.mySingletonType = mySingletonType;
+                        this.myValue = myValue;
                     };
                 }
 
-                function MyDependant() {
-                    this.i_MyProp = null;
-                    this.i_MyOtherProp = 'i_MyOtherProp';
-                    this.myProp = 'Not mutated';
+                function MyDependantType(myFactory, myType, mySingletonFactory, mySingletonType, myValue) {
+                    this.myFactory = myFactory;
+                    this.myType = myType;
+                    this.mySingletonFactory = mySingletonFactory;
+                    this.mySingletonType = mySingletonType;
+                    this.myValue = myValue;
+                }
+
+                function MyNestedDependantFactory(myDependantFactory, myDependantType) {
+                    return function MyNestedDependantFactoryInstance() {
+                        this.myFactory = myDependantFactory;
+                        this.myType = myDependantType;
+                    };
+                }
+
+                function MyNestedDependantType(myDependantFactory, myDependantType) {
+                    this.myFactory = myDependantFactory;
+                    this.myType = myDependantType;
                 }
 
                 beforeEach(function() {
 
                     injector = new Injector();
-                    injector.map('MyProp').toType(function prop() {});
-                    injector.map('MyOtherProp').toType(function otherProp() {});
-                    injector.map('MyDependantFactory').toFactory(MyDependantFactory);
-                    injector.map('MyDependant').toType(MyDependant);
+
+                    injector.map('MyFactory')
+                        .toFactory(MyFactory);
+
+                    injector.map('MySingletonFactory')
+                        .toFactory(MySingletonFactory)
+                        .asSingleton();
+
+                    injector.map('MyDependantFactory')
+                        .toFactory(MyDependantFactory)
+                        .using('MyFactory', 'MyType', 'MySingletonFactory', 'MySingletonType', 'MyValue');
+
+                    injector.map('MyNestedDependantFactory')
+                        .toFactory(MyNestedDependantFactory)
+                        .using('MyDependantFactory', 'MyDependantType');
+
+                    injector.map('MyType')
+                        .toType(MyType);
+
+                    injector.map('MySingletonType')
+                        .toType(MySingletonType)
+                        .asSingleton();
+
+                    injector.map('MyDependantType')
+                        .toType(MyDependantType)
+                        .using('MyFactory', 'MyType', 'MySingletonFactory', 'MySingletonType', 'MyValue');
+
+                    injector.map('MyNestedDependantType')
+                        .toType(MyNestedDependantType)
+                        .using('MyDependantFactory', 'MyDependantType');
+
+                    injector.map('MyValue')
+                        .toValue(new MyValue());
                 });
 
-                it(' should inject properties prefixed with i_', function() {
+                it(' should throw for an arity / dependency length mismatch', function() {
 
-                    expect(
-                        injector.getMappingFor('MyDependantFactory')
-                        .make().i_MyProp.constructor.name
-                    ).toBe('prop');
-
-                    expect(injector.getMappingFor('MyDependant').i_MyProp.constructor.name)
-                        .toBe('prop');
+                    // @TODO.
                 });
 
-                it(' should inject prototype properties prefixed with i_', function() {
+                it(' should map on dependencies by index, not name', function() {
 
-                    function MyProtoFactory() {
-                        function MyProtoFactoryInstance() {}
-                        MyProtoFactoryInstance.prototype = {
-                            i_MyProp: null
-                        };
-                        return MyProtoFactoryInstance;
+                    function DepA(Foo) {
+                        this.foo = Foo;
                     }
 
-                    function MyProtoType() {}
-                    MyProtoType.prototype = {
-                        i_MyProp: null
-                    };
+                    function DepB(Bar) {
+                        this.bar = Bar;
+                    }
 
-                    injector.map('MyProtoFactory').toFactory(MyProtoFactory);
-                    injector.map('MyProtoType').toType(MyProtoType);
+                    injector.map('DepA').toType(DepA).using('MyType');
+                    injector.map('DepB').toType(DepB).using('MyType');
 
-                    expect(injector.getMappingFor('MyDependantFactory').make().i_MyProp.constructor.name)
-                        .toBe('prop');
-
-                    expect(injector.getMappingFor('MyProtoType').i_MyProp.constructor.name)
-                        .toBe('prop');
+                    expect(injector.getMappingFor('DepA').foo.constructor)
+                        .toBe(injector.getMappingFor('DepB').bar.constructor);
                 });
+
+                it(' should inject a factory constructor with dependencies specified in using()', function() {
+
+                    var instance = injector.getMappingFor('MyDependantFactory').make();
+
+                    expect(instance.constructor.name).toBe('MyDependantFactoryInstance');
+                    expect(instance.myFactory.make().constructor.name).toBe('MyFactoryInstance');
+                    expect(instance.myType.constructor.name).toBe('MyType');
+                    expect(instance.mySingletonFactory.make().constructor.name).toBe('MySingletonFactoryInstance');
+                    expect(instance.mySingletonType.constructor.name).toBe('MySingletonType');
+                    expect(instance.myValue.constructor.name).toBe('MyValue');
+
+                    instance = injector.getMappingFor('MyNestedDependantFactory').make();
+
+                    expect(instance.constructor.name).toBe('MyNestedDependantFactoryInstance');
+                    expect(instance.myFactory.make().constructor.name).toBe('MyDependantFactoryInstance');
+                    expect(instance.myType.constructor.name).toBe('MyDependantType');
+                });
+
+                it(' should inject a type constructor with dependencies specified in using()', function() {
+
+                    var instance = injector.getMappingFor('MyDependantType');
+
+                    expect(instance.constructor).toBe(MyDependantType);
+                    expect(instance.myFactory.make().constructor.name).toBe('MyFactoryInstance');
+                    expect(instance.myType.constructor.name).toBe('MyType');
+                    expect(instance.mySingletonFactory.make().constructor.name).toBe('MySingletonFactoryInstance');
+                    expect(instance.mySingletonType.constructor.name).toBe('MySingletonType');
+                    expect(instance.myValue.constructor.name).toBe('MyValue');
+
+                    instance = injector.getMappingFor('MyNestedDependantType');
+
+                    expect(instance.constructor).toBe(MyNestedDependantType);
+                    expect(instance.myFactory.make().constructor.name).toBe('MyDependantFactoryInstance');
+                    expect(instance.myType.constructor.name).toBe('MyDependantType');
+                });
+            });
+
+            // Property injection
+            // ------------------------------
+            describe(' property injection', function() {
+
+                beforeEach(function() {
+
+                    injector = new Injector();
+
+                    injector.map('MyNull').toValue('Null');
+                    injector.map('MyUndefined').toValue('Undefined');
+                });
+
+                it(' should inject null and undefined properties prefixed with i_', function() {
+
+                    function MyFactory() {
+                        return function MyFactoryInstance() {
+                            this.i_MyNull = null;
+                            this.i_MyUndefined = null;
+                        };
+                    }
+
+                    function MyType() {
+                        this.i_MyNull = null;
+                        this.i_MyUndefined = undefined;
+                    }
+
+                    injector.map('MyFactory').toFactory(MyFactory);
+                    injector.map('MyType').toType(MyType);
+
+                    function test(instance) {
+
+                        expect(instance.i_MyNull).toEqual('Null');
+                        expect(instance.i_MyUndefined).toEqual('Undefined');
+                    }
+
+                    test(injector.getMappingFor('MyFactory').make());
+                    test(injector.getMappingFor('MyType'));
+                });
+
+                it(' should inject null and undefined prototype properties prefixed with i_', function() {
+
+                    function MyFactory() {
+                        function MyFactoryInstance() {}
+                        MyFactoryInstance.prototype = {
+                            i_MyNull: null,
+                            i_MyUndefined: null
+                        };
+                        MyFactoryInstance.prototype.constructor = MyFactoryInstance;
+                        return MyFactoryInstance;
+                    }
+
+                    function MyType() {}
+                    MyType.prototype = {
+                        i_MyNull: null,
+                        i_MyUndefined: null
+                    };
+                    MyType.prototype.constructor = MyType;
+
+                    injector.map('MyFactory').toFactory(MyFactory);
+                    injector.map('MyType').toType(MyType);
+
+                    function test(instance) {
+
+                        expect(instance.i_MyNull).toEqual('Null');
+                        expect(instance.i_MyUndefined).toEqual('Undefined');
+                    }
+
+                    test(injector.getMappingFor('MyFactory').make());
+                    test(injector.getMappingFor('MyType'));
+                });
+
+                it(' should inject inherited null and undefined properties prefixed with i_', function() {
+
+                    function MyRoot() {}
+                    MyRoot.prototype = {
+                        i_MyNull: null,
+                        i_MyUndefined: null
+                    };
+                    MyRoot.prototype.constructor = MyRoot;
+
+                    function MyInstantiatedPrototype_Factory() {
+                        function MyInstantiatedPrototype_Instance() {}
+                        MyInstantiatedPrototype_Instance.prototype = new MyRoot();
+                        MyInstantiatedPrototype_Instance.prototype.constructor = MyInstantiatedPrototype_Instance;
+                        return MyInstantiatedPrototype_Instance;
+                    }
+
+                    function MyBorrowedPrototype_Factory() {
+                        function MyBorrowedPrototype_Instance() {}
+                        MyBorrowedPrototype_Instance.prototype = MyRoot.prototype;
+                        MyBorrowedPrototype_Instance.prototype.constructor = MyBorrowedPrototype_Instance;
+                        return MyBorrowedPrototype_Instance;
+                    }
+
+                    function MyInstantiatedPrototype_Type() {}
+                    MyInstantiatedPrototype_Type.prototype = new MyRoot();
+                    MyInstantiatedPrototype_Type.prototype.constructor = MyInstantiatedPrototype_Type;
+
+                    function MyBorrowedPrototype_Type() {}
+                    MyBorrowedPrototype_Type.prototype = MyRoot.prototype;
+                    MyBorrowedPrototype_Type.prototype.constructor = MyBorrowedPrototype_Type;
+
+                    injector.map('MyRoot').toType(MyRoot);
+
+                    injector.map('MyInstantiatedPrototype_Factory')
+                        .toFactory(MyInstantiatedPrototype_Factory);
+
+                    injector.map('MyBorrowedPrototype_Factory')
+                        .toFactory(MyBorrowedPrototype_Factory);
+
+                    injector.map('MyInstantiatedPrototype_Type')
+                        .toType(MyInstantiatedPrototype_Type);
+
+                    injector.map('MyBorrowedPrototype_Type')
+                        .toType(MyBorrowedPrototype_Type);
+
+                    function test(instance) {
+
+                        var myRoot;
+
+                        expect(instance.i_MyNull).toEqual('Null');
+                        expect(instance.i_MyUndefined).toEqual('Undefined');
+
+                        myRoot = injector.getMappingFor('MyRoot');
+                        expect(myRoot.i_MyNull).toBeNull();
+                        expect(myRoot.i_MyUndefined).toBeUndefined();
+
+                        myRoot = new MyRoot();
+                        expect(myRoot.i_MyNull).toBeNull();
+                        expect(myRoot.i_MyUndefined).toBeUndefined();
+                    }
+
+                    test(injector.getMappingFor('MyInstantiatedPrototype_Factory').make());
+                    test(injector.getMappingFor('MyBorrowedPrototype_Factory').make());
+
+                    test(injector.getMappingFor('MyInstantiatedPrototype_Type'));
+                    test(injector.getMappingFor('MyBorrowedPrototype_Type'));
+                });
+
+                it(' should NOT inject non null and undefined properties prefixed with an i_', function() {
+
+                    function Props() {
+
+                        this.i_MyArray = [1, 2, 3];
+                        this.i_MyArray_Empty = [];
+
+                        this.i_MyBoolean_False = false;
+                        this.i_MyBoolean_True = true;
+
+                        this.i_MyFunction = function Props() {};
+
+                        this.i_MyNumber = 42;
+                        this.i_MyNumber_Zero = 0;
+
+                        this.i_MyObject = {foo:'bar'};
+                        this.i_MyObject_Empty = {};
+
+                        this.i_MyString = 'Hello World';
+                        this.i_MyString_Empty = '';
+                    }
+
+                    injector.map('MyArray').toValue([10, 11, 12]);
+                    injector.map('MyArray_Empty').toValue(['empty']);
+
+                    injector.map('MyBoolean_False').toValue(true);
+                    injector.map('MyBoolean_True').toValue(false);
+
+                    injector.map('MyFunction').toValue(function() {});
+
+                    injector.map('MyNumber').toValue(180);
+                    injector.map('MyNumber_Zero').toValue(100);
+
+                    injector.map('MyObject').toValue({foo:'OOPS'});
+                    injector.map('MyObject_Empty').toValue({foo:'Not empty'});
+
+                    injector.map('MyString').toValue('Goodbye');
+                    injector.map('MyString_Empty').toValue('Not empty');
+
+                    injector.map('Props').toType(Props);
+
+                    var props = injector.getMappingFor('Props');
+
+                    expect(props.i_MyArray).toEqual([1, 2, 3]);
+                    expect(props.i_MyArray_Empty).toEqual([]);
+
+                    expect(props.i_MyBoolean_False).toEqual(false);
+                    expect(props.i_MyBoolean_True).toEqual(true);
+
+                    expect(new props.i_MyFunction().constructor.name).toEqual('Props');
+
+                    expect(props.i_MyNumber).toEqual(42);
+                    expect(props.i_MyNumber_Zero).toEqual(0);
+
+                    expect(props.i_MyObject.foo).toEqual('bar');
+                    expect(props.i_MyObject_Empty).toEqual({});
+
+                    expect(props.i_MyString).toEqual('Hello World');
+                    expect(props.i_MyString_Empty).toEqual('');
+                });
+
+                it(' should NOT inject non prefixed properties', function() {
+
+
+                });
+
+                xit(' should ignore properties with no mapping', function() {
+
+                });
+
+                xit(' should throw if a dependency is unmapped', function() {
+
+                    function MyMissing() {
+                        this.i_Property = null;
+                    }
+
+                    function MyMissingFactory() {
+                        return function MyMissingFactoryInstance() {
+                            this.i_Property = null;
+                        };
+                    }
+
+                    injector.map('MyMissing').toType(MyMissing);
+                    injector.map('MyMissingFactory').toFactory(MyMissingFactory);
+
+                    expect(function() {
+                        injector.getMappingFor('MyMissing');
+                    }).toThrow(NO_MAPPING);
+
+                    expect(function() {
+                        injector.getMappingFor('MyMissingFactory').make();
+                    }).toThrow(NO_MAPPING);
+                });
+            });
+
+            xdescribe(' combined injection', function() {
 
                 it(' should inject constructor and property mappings', function() {
 
@@ -852,104 +1130,9 @@ define(
                     expect(injector.getMappingFor('MyCombinedSingleton').myCombined)
                         .toBe(injector.getMappingFor('MyCombinedSingleton').i_MyCombined);
                 });
-
-                it(' should inject inherited prefixed properties', function() {
-
-                    function MyRoot() {}
-                    MyRoot.prototype = {
-                      i_MyProp: null
-                    };
-
-                    function MyChild() {}
-                    MyChild.prototype = new MyRoot();
-
-                    function MyOtherChild() {}
-                    MyOtherChild.prototype = MyRoot.prototype;
-
-                    function MyChildFactory() {
-                        function MyChildFactoryInstance() {}
-                        MyChildFactoryInstance.prototype = new MyRoot();
-                        return MyChildFactoryInstance;
-                    }
-
-                    function MyOtherChildFactory() {
-                        function MyOtherChildFactoryInstance() {}
-                        MyOtherChildFactoryInstance.prototype = MyRoot.prototype;
-                        return MyOtherChildFactoryInstance;
-                    }
-
-                    injector.map('MyRoot').toType(MyRoot);
-                    injector.map('MyChild').toType(MyChild);
-                    injector.map('MyOtherChild').toType(MyOtherChild);
-                    injector.map('MyChildFactory').toFactory(MyChildFactory);
-                    injector.map('MyOtherChildFactory').toFactory(MyOtherChildFactory);
-
-                    expect(injector.getMappingFor('MyChild').i_MyProp.constructor.name)
-                        .toBe('prop');
-
-                    expect(new MyRoot().i_MyProp)
-                        .toBeNull();
-
-                    expect(injector.getMappingFor('MyOtherChild').i_MyProp.constructor.name)
-                        .toBe('prop');
-
-                    expect(new MyRoot().i_MyProp)
-                        .toBeNull();
-
-                    expect(injector.getMappingFor('MyChildFactory').make().i_MyProp.constructor.name)
-                        .toBe('prop');
-
-                    expect(new MyRoot().i_MyProp)
-                        .toBeNull();
-
-                    expect(injector.getMappingFor('MyOtherChildFactory').make().i_MyProp.constructor.name)
-                        .toBe('prop');
-
-                    expect(new MyRoot().i_MyProp)
-                        .toBeNull();
-                });
-
-                it(' should ignore non-prefixed properties', function() {
-
-                    expect(injector.getMappingFor('MyDependant').myProp)
-                        .toBe('Not mutated');
-
-                    expect(injector.getMappingFor('MyDependantFactory').make().myProp)
-                        .toBe('Not mutated');
-                });
-
-                it(' should ignore non-null prefixed properties', function() {
-
-                    expect(injector.getMappingFor('MyDependant').i_MyOtherProp)
-                        .toBe('i_MyOtherProp');
-                });
-
-                it(' should throw if a dependency is unmapped', function() {
-
-                    function MyMissing() {
-                        this.i_Property = null;
-                    }
-
-                    function MyMissingFactory() {
-                        return function MyMissingFactoryInstance() {
-                            this.i_Property = null;
-                        };
-                    }
-
-                    injector.map('MyMissing').toType(MyMissing);
-                    injector.map('MyMissingFactory').toFactory(MyMissingFactory);
-
-                    expect(function() {
-                        injector.getMappingFor('MyMissing');
-                    }).toThrow(NO_MAPPING);
-
-                    expect(function() {
-                        injector.getMappingFor('MyMissingFactory').make();
-                    }).toThrow(NO_MAPPING);
-                });
             });
 
-            // postConstruct()
+            // @TODO: postConstruct()
             // ------------------------------
             xdescribe(' postConstruct', function() {
 
@@ -1068,7 +1251,7 @@ define(
 
 
 
-            // Injector.resolve...
+            // @TODO: Injector.resolve...
             // ------------------------------
             xdescribe(' Injector.resolveFactory()', function() {
 

@@ -521,12 +521,14 @@
 
                 validateType(target, 'Function', INVALID_RESOLVE_TARGET);
 
-                //return resolve(toFactory(makeVO, target).using(slice.call(arguments, 1)));
+                return resolve(toFactory(makeMapping(), target).using(slice.call(arguments, 1)));
 
+                /*
                 return new Mapping(self)
                     .toFactory(target)
                     .using(slice.call(arguments, 1))
                     .resolve();
+                */
             };
 
             // @TODO - Replace Mapping dependency
@@ -534,12 +536,14 @@
 
                 validateType(target, 'Function', INVALID_RESOLVE_TARGET);
 
-                //return resolve(toType(makeVO, target).using(slice.call(arguments, 1)));
+                return resolve(toType(makeMapping(), target).using(slice.call(arguments, 1)));
 
+                /*
                 return new Mapping(self)
                     .toType(target)
                     .using(slice.call(arguments, 1))
                     .resolve();
+                */
             };
 
             // @TODO - Replace Mapping dependency
@@ -547,11 +551,13 @@
 
                 validateType(target, 'Object', INVALID_RESOLVE_TARGET);
 
-                //return resolve(toValue(makeVO, target));
+                return resolve(toValue(makeMapping(), target));
 
+                /*
                 return new Mapping(self)
                     .toValue(target)
                     .resolve();
+                */
             };
         }
 

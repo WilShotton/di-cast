@@ -32,6 +32,10 @@
 
             slice = Array.prototype.slice;
 
+        function identity(n) {
+            return n;
+        }
+
         function is(value, type) {
 
             return Object.prototype.toString
@@ -168,13 +172,9 @@
                 return vo.instance || instantiate(vo);
             }
 
-            function makeValue() {
+            function makeValue(vo) {
 
-                this.props = [];
-
-                return function resolve() {
-                    return this.target;
-                }
+                return vo.target;
             }
 
             function toFactory(vo, target) {
@@ -188,7 +188,7 @@
                 vo.target = target;
                 vo.resolver = makeFactory;
 
-                return makeFacade(vo);
+                return vo;
             }
 
             function toType(vo, target) {
@@ -202,7 +202,7 @@
                 vo.target = target;
                 vo.resolver = makeType;
 
-                return makeFacade(vo);
+                return vo;
             }
 
             function toValue(vo, target) {
@@ -211,28 +211,25 @@
                     throw new Error(MAPPING_EXISTS);
                 }
 
+                vo.props = [];
                 vo.target = target;
-                vo.resolver = makeValue.apply(vo);
+                vo.resolver = makeValue;
 
-                return makeFacade(vo);
+                return vo;
             }
 
             function asSingleton(vo) {
 
                 vo.isSingleton = true;
 
-                return makeFacade(vo);
+                return vo;
             }
 
-            function using(vo) {
+            function using(vo, deps) {
 
-                var args = slice.call(arguments, 1);
+                vo.args = (is(deps[0], 'Array') ? deps[0] : deps).filter(identity);
 
-                if (args.length > 0 && args[0]) {
-                    vo.args = is(args[0], 'Array') ? args[0] : args;
-                }
-
-                return makeFacade(vo);
+                return vo;
             }
 
             function makeFacade(vo) {
@@ -240,15 +237,34 @@
                 return {
 
                     injector: function() {
+
                         return vo.injector;
                     },
 
-                    toFactory: partial(toFactory, vo),
-                    toType: partial(toType, vo),
-                    toValue: partial(toValue, vo),
+                    toFactory: function(target) {
 
-                    asSingleton: partial(asSingleton, vo),
-                    using: partial(using, vo)
+                        return makeFacade(toFactory(vo, target));
+                    },
+
+                    toType: function(target) {
+
+                        return makeFacade(toType(vo, target));
+                    },
+
+                    toValue: function(target) {
+
+                        return makeFacade(toValue(vo, target));
+                    },
+
+                    asSingleton: function() {
+
+                        return makeFacade(asSingleton(vo));
+                    },
+
+                    using: function() {
+
+                        return makeFacade(using(vo, slice.call(arguments)));
+                    }
                 };
             }
 
@@ -264,6 +280,13 @@
                     Builder: null,
                     instance: null
                 };
+            }
+
+            function makeResolver(resolver, type, target) {
+
+                validateType(target, type, INVALID_RESOLVE_TARGET);
+
+                return resolve(using(resolver(makeMapping(), target), slice.call(arguments, makeResolver.length)));
             }
 
             this.map = function(key) {
@@ -294,21 +317,33 @@
                 return resolve(mappings[key]);
             };
 
-
-            // @TODO - test unMap
             this.unMap = function(key) {
 
                 var value = null;
 
+                function contains(list, key) {
+
+                    return list.indexOf(key) !== -1;
+                }
+
                 if (self.hasMappingFor(key)) {
 
                     Object.keys(mappings).forEach(function(name) {
-                        if (mappings[name].dependsOn(key)) {
+
+                        var mapping = mappings[name];
+
+                        if (mapping.props === null) {
+                            if (resolve(mapping).hasOwnProperty('make')) {
+                                mapping.instance.make();
+                            }
+                        }
+
+                        if (contains(mapping.args, key) || contains(mapping.props, 'i_' + key)) {
                             throw new Error(MAPPING_HAS_DEPENDANTS);
                         }
                     });
 
-                    value = mappings[key].destroy();
+                    value = mappings[key].target;
 
                     delete mappings[key];
                 }
@@ -316,38 +351,11 @@
                 return value;
             };
 
-            this.resolveFactory = function(target) {
+            this.resolveFactory = partial(makeResolver, toFactory, 'Function');
 
-                validateType(target, 'Function', INVALID_RESOLVE_TARGET);
+            this.resolveType = partial(makeResolver, toType, 'Function');
 
-                var vo = makeMapping();
-
-                toFactory(vo, target).using(slice.call(arguments, 1));
-
-                return resolve(vo);
-            };
-
-            this.resolveType = function(target) {
-
-                validateType(target, 'Function', INVALID_RESOLVE_TARGET);
-
-                var vo = makeMapping();
-
-                toType(vo, target).using(slice.call(arguments, 1));
-
-                return resolve(vo);
-            };
-
-            this.resolveValue = function(target) {
-
-                validateType(target, 'Object', INVALID_RESOLVE_TARGET);
-
-                var vo = makeMapping();
-
-                toValue(vo, target);
-
-                return resolve(vo);
-            };
+            this.resolveValue = partial(makeResolver, toValue, 'Object');
         }
 
         return Injector;

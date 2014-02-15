@@ -133,8 +133,8 @@ define(
                 });
             });
 
-            // TODO: unMap()
-            xdescribe(' unMap()', function() {
+            // unMap()
+            describe('unMap()', function() {
 
                 var myValue = {};
 
@@ -158,19 +158,14 @@ define(
                     injector.unMap('MyType');
                     injector.unMap('MyValue');
 
-                    expect(injector.hasMappingFor('MyFactory'))
-                        .toBe(false);
-
-                    expect(injector.hasMappingFor('MyType'))
-                        .toBe(false);
-
-                    expect(injector.hasMappingFor('MyValue'))
-                        .toBe(false);
+                    expect(injector.hasMappingFor('MyFactory')).toBe(false);
+                    expect(injector.hasMappingFor('MyType')).toBe(false);
+                    expect(injector.hasMappingFor('MyValue')).toBe(false);
                 });
 
                 it(' should throw if a mapping depends on the mapping to be removed', function() {
 
-                    injector.map('MyDependantFactory').toType(function() {
+                    injector.map('MyDependantType').toType(function() {
                         this.i_MyType = null;
                     });
 
@@ -181,20 +176,14 @@ define(
 
                 it(' should return the mapping target value', function() {
 
-                    expect(injector.unMap('MyFactory'))
-                        .toBe(MyFactory);
-
-                    expect(injector.unMap('MyType'))
-                        .toBe(MyType);
-
-                    expect(injector.unMap('MyValue'))
-                        .toBe(myValue);
+                    expect(injector.unMap('MyFactory')).toBe(MyFactory);
+                    expect(injector.unMap('MyType')).toBe(MyType);
+                    expect(injector.unMap('MyValue')).toBe(myValue);
                 });
 
                 it(' should return null for an unmapped key', function() {
 
-                    expect(injector.unMap('MyMissing'))
-                        .toBe(null);
+                    expect(injector.unMap('MyMissing')).toBe(null);
                 });
             });
 

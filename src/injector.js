@@ -3,24 +3,33 @@
  */
 
 /**
- *
  * ++
- * @TODO: Add YUIDocs
+ * @TODO: makeValue should resolve i_ properties
+ *  - for Arrays and Objects
+ *  - then reinstate resolveValue
  *
  * ++
  * @TODO: as([...]) - for duck typing...
+ *  - [{name: '...', numArgs: n, returns: [Boolean]}, ...]
+ *  - target.hasOwnProperty(name), target[name].length = numArgs,
  *
  * ++
  * @TODO: README
+ *
+ * ++
+ * @TODO: Add API Docs
+ *
+ * ++
+ * @TODO: NPM
+ *
+ * ++
+ * @TODO: Bower
  *
  * ++
  * @TODO: autoConstruct for Angular style constructor injection
  *
  * ++
  * @TODO: Add parent injector stuff...
- *
- * ++
- * @TODO: makeValue should resolve i_ properties
  */
 
 ;(function(root) {
@@ -59,6 +68,7 @@
         }
 
         function validateType(value, type, errorMsg) {
+
             if (!is(value, type)) {
                 throw new TypeError(errorMsg);
             }
@@ -90,8 +100,6 @@
             }
 
             function instantiate(vo) {
-
-                // @TODO Set instance.prototype.constructor
 
                 var instance = new vo.Builder(slice.call(arguments, 1));
 

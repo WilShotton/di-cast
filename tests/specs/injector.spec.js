@@ -298,6 +298,12 @@ define(
 
                 it(' should allow multiple mappings of the same factory with different keys', function() {
 
+                    /**
+                     * NOTE: Not sure why you'd want to though.
+                     * This is really just a proof of concept and demonstrates some
+                     * possibly unexpected behaviour regarding identity.
+                     */
+
                     expect(function() {
                         injector.map('MyFactory1').toFactory(MyFactory);
                         injector.map('MyFactory2').toFactory(MyFactory);
@@ -308,8 +314,12 @@ define(
 
                     expect(f1).not.toBe(f2);
 
-                    // @TODO Set the instance.prototype.constructor in the factory resolver
-                    // expect(f1.make().constructor).toBe(f2.make().constructor);
+                    // Although the Constructor 'looks' the same...
+                    expect(f1.make().constructor.name).toBe(f2.make().constructor.name);
+                    expect(f1.make().constructor.toString()).toEqual(f2.make().constructor.toString());
+
+                    // ...it's not.
+                    expect(f1.make().constructor).not.toEqual(f2.make().constructor);
                 });
 
                 it(' should throw if the factory is not a function', function() {

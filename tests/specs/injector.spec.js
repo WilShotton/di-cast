@@ -13,13 +13,12 @@ define(
 
         "use strict";
 
-        var INVALID_MAPPING_TYPE = '[#001] The mapping must be a function',
+        var INVALID_TARGET = '[#001] The target must be an Object or Function',
             INVALID_KEY_TYPE = '[#002] The key must be a String',
             NO_RESOLVER = '[#003] No resolver found',
             MAPPING_EXISTS = '[#004] A mapping already exists',
             NO_MAPPING = '[#005] No mapping found',
-            MAPPING_HAS_DEPENDANTS = '[#006] The mapping has dependants',
-            INVALID_RESOLVE_TARGET = '[#007] The resolve target must be an Object or Function';
+            MAPPING_HAS_DEPENDANTS = '[#006] The mapping has dependants';
 
         //var mappingKeys = ['injector', 'toFactory', 'toType', 'toValue', 'asSingleton', 'using']; //'as'
 
@@ -317,11 +316,11 @@ define(
 
                     expect(function() {
                         injector.map('InvalidFactory').toFactory({});
-                    }).toThrow(INVALID_MAPPING_TYPE);
+                    }).toThrow(INVALID_TARGET);
 
                     expect(function() {
                         injector.map('AnotherInvalidFactory').toFactory(null);
-                    }).toThrow(INVALID_MAPPING_TYPE);
+                    }).toThrow(INVALID_TARGET);
                 });
 
                 it(' should throw if the mapping has already been set', function() {
@@ -399,27 +398,27 @@ define(
 
                     expect(function() {
                         injector.map('ArrayType').toType([]);
-                    }).toThrow(INVALID_MAPPING_TYPE);
+                    }).toThrow(INVALID_TARGET);
 
                     expect(function() {
                         injector.map('NullType').toType(null);
-                    }).toThrow(INVALID_MAPPING_TYPE);
+                    }).toThrow(INVALID_TARGET);
 
                     expect(function() {
                         injector.map('NumberType').toType(42);
-                    }).toThrow(INVALID_MAPPING_TYPE);
+                    }).toThrow(INVALID_TARGET);
 
                     expect(function() {
                         injector.map('ObjectType').toType({});
-                    }).toThrow(INVALID_MAPPING_TYPE);
+                    }).toThrow(INVALID_TARGET);
 
                     expect(function() {
                         injector.map('StringType').toType('FN');
-                    }).toThrow(INVALID_MAPPING_TYPE);
+                    }).toThrow(INVALID_TARGET);
 
                     expect(function() {
                         injector.map('UndefinedType').toType(undefined);
-                    }).toThrow(INVALID_MAPPING_TYPE);
+                    }).toThrow(INVALID_TARGET);
                 });
 
                 it(' should throw if the mapping value has already been set', function() {
@@ -1281,7 +1280,7 @@ define(
 
                     expect(function() {
                         injector.resolveFactory('MyFactory');
-                    }).toThrow(INVALID_RESOLVE_TARGET);
+                    }).toThrow(INVALID_TARGET);
                 });
             });
 
@@ -1332,7 +1331,7 @@ define(
 
                     expect(function() {
                         injector.resolveType('MyType');
-                    }).toThrow(INVALID_RESOLVE_TARGET);
+                    }).toThrow(INVALID_TARGET);
                 });
             });
 
@@ -1362,7 +1361,7 @@ define(
 
                     expect(function() {
                         injector.resolveValue('myValue');
-                    }).toThrow(INVALID_RESOLVE_TARGET);
+                    }).toThrow(INVALID_TARGET);
                 });
             });
         });

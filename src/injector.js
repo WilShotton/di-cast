@@ -22,19 +22,14 @@
 
     function factory() {
 
-        var INVALID_MAPPING_TYPE = '[#001] The mapping must be a function',
+        var INVALID_TARGET = '[#001] The target must be an Object or Function',
             INVALID_KEY_TYPE = '[#002] The key must be a String',
             NO_RESOLVER = '[#003] No resolver found',
             MAPPING_EXISTS = '[#004] A mapping already exists',
             NO_MAPPING = '[#005] No mapping found',
             MAPPING_HAS_DEPENDANTS = '[#006] The mapping has dependants',
-            INVALID_RESOLVE_TARGET = '[#007] The resolve target must be an Object or Function',
 
             slice = Array.prototype.slice;
-
-        function identity(n) {
-            return n;
-        }
 
         function is(value, type) {
 
@@ -174,7 +169,34 @@
 
             function makeValue(vo) {
 
+                vo.props = [];
+
                 return vo.target;
+            }
+
+            // @TODO: Abstract toFactory, toType and toValue
+            // @TODO: combining setResolver and makeResolver
+
+            // NOTE: Note currently used...
+            function setResolver(vo, target, resolver) {
+
+                if (vo.resolver !== null) {
+                    throw new Error(MAPPING_EXISTS);
+                }
+
+                validateType(target, 'function', INVALID_TARGET);
+
+                vo.target = target;
+                vo.resolver = resolver;
+
+                return vo;
+            }
+
+            function makeResolver(resolver, expectingType, target) {
+
+                validateType(target, expectingType, INVALID_TARGET);
+
+                return resolve(using(resolver(makeMapping(), target), slice.call(arguments, makeResolver.length)));
             }
 
             function toFactory(vo, target) {
@@ -183,7 +205,7 @@
                     throw new Error(MAPPING_EXISTS);
                 }
 
-                validateType(target, 'function', INVALID_MAPPING_TYPE);
+                validateType(target, 'function', INVALID_TARGET);
 
                 vo.target = target;
                 vo.resolver = makeFactory;
@@ -197,7 +219,7 @@
                     throw new Error(MAPPING_EXISTS);
                 }
 
-                validateType(target, 'function', INVALID_MAPPING_TYPE);
+                validateType(target, 'function', INVALID_TARGET);
 
                 vo.target = target;
                 vo.resolver = makeType;
@@ -211,7 +233,6 @@
                     throw new Error(MAPPING_EXISTS);
                 }
 
-                vo.props = [];
                 vo.target = target;
                 vo.resolver = makeValue;
 
@@ -225,14 +246,26 @@
                 return vo;
             }
 
-            function using(vo, deps) {
+            function using(vo) {
 
-                vo.args = (is(deps[0], 'Array') ? deps[0] : deps).filter(identity);
+                var args = slice.call(arguments, 1);
+
+                if (args.length > 0 && args[0]) {
+                    vo.args = is(args[0], 'Array') ? args[0] : args;
+                }
 
                 return vo;
             }
 
             function makeFacade(vo) {
+
+                function mutate(mutator, vo) {
+
+                    return function() {
+
+                        return makeFacade(partial(mutator, vo).apply(null, arguments));
+                    };
+                }
 
                 return {
 
@@ -241,30 +274,15 @@
                         return vo.injector;
                     },
 
-                    toFactory: function(target) {
+                    toFactory: mutate(toFactory, vo),
 
-                        return makeFacade(toFactory(vo, target));
-                    },
+                    toType: mutate(toType, vo),
 
-                    toType: function(target) {
+                    toValue: mutate(toValue, vo),
 
-                        return makeFacade(toType(vo, target));
-                    },
+                    asSingleton: mutate(asSingleton, vo),
 
-                    toValue: function(target) {
-
-                        return makeFacade(toValue(vo, target));
-                    },
-
-                    asSingleton: function() {
-
-                        return makeFacade(asSingleton(vo));
-                    },
-
-                    using: function() {
-
-                        return makeFacade(using(vo, slice.call(arguments)));
-                    }
+                    using: mutate(using, vo)
                 };
             }
 
@@ -282,20 +300,12 @@
                 };
             }
 
-            function makeResolver(resolver, type, target) {
-
-                validateType(target, type, INVALID_RESOLVE_TARGET);
-
-                return resolve(using(resolver(makeMapping(), target), slice.call(arguments, makeResolver.length)));
-            }
-
             this.map = function(key) {
 
                 validateKey(key);
 
                 mappings[key] = makeMapping();
 
-                // @TODO: the facade should be created once and then passed as an argument
                 return makeFacade(mappings[key]);
             };
 

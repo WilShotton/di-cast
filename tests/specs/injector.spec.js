@@ -1335,7 +1335,9 @@ define(
                 });
             });
 
-            describe('resolveValue()', function() {
+            // This is pointless in its current form as all it does is return the value
+             // possibly toValue should resolve i_ properties on Arrays and Objects
+            xdescribe('resolveValue()', function() {
 
                 var myValue = {
                     i_MyProp: null

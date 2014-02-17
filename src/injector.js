@@ -12,6 +12,15 @@
  *
  * ++
  * @TODO: README
+ *
+ * ++
+ * @TODO: autoConstruct for Angular style constructor injection
+ *
+ * ++
+ * @TODO: Add parent injector stuff...
+ *
+ * ++
+ * @TODO: makeValue should resolve i_ properties
  */
 
 ;(function(root) {
@@ -116,10 +125,9 @@
 
                     var Factory = vo.target.apply(vo.target, vo.args.map(function(key) {
 
-                        return self.getMappingFor(key);
+                        return vo.injector.getMappingFor(key);
                     }));
 
-                    // @TODO: Check if it is necessary to explicitly set args - could use arguments instead
                     vo.Builder = function Builder(args) {
 
                         return Factory.apply(this, args);
@@ -174,67 +182,18 @@
                 return vo.target;
             }
 
-            // @TODO: Abstract toFactory, toType and toValue
-            // @TODO: combining setResolver and makeResolver
-
-            // NOTE: Note currently used...
-            function setResolver(vo, target, resolver) {
+            function setResolver(resolver, type, vo, target) {
 
                 if (vo.resolver !== null) {
                     throw new Error(MAPPING_EXISTS);
                 }
 
-                validateType(target, 'function', INVALID_TARGET);
+                if (type !== null) {
+                    validateType(target, type, INVALID_TARGET);
+                }
 
                 vo.target = target;
                 vo.resolver = resolver;
-
-                return vo;
-            }
-
-            function makeResolver(resolver, expectingType, target) {
-
-                validateType(target, expectingType, INVALID_TARGET);
-
-                return resolve(using(resolver(makeMapping(), target), slice.call(arguments, makeResolver.length)));
-            }
-
-            function toFactory(vo, target) {
-
-                if (vo.resolver !== null) {
-                    throw new Error(MAPPING_EXISTS);
-                }
-
-                validateType(target, 'function', INVALID_TARGET);
-
-                vo.target = target;
-                vo.resolver = makeFactory;
-
-                return vo;
-            }
-
-            function toType(vo, target) {
-
-                if (vo.resolver !== null) {
-                    throw new Error(MAPPING_EXISTS);
-                }
-
-                validateType(target, 'function', INVALID_TARGET);
-
-                vo.target = target;
-                vo.resolver = makeType;
-
-                return vo;
-            }
-
-            function toValue(vo, target) {
-
-                if (vo.resolver !== null) {
-                    throw new Error(MAPPING_EXISTS);
-                }
-
-                vo.target = target;
-                vo.resolver = makeValue;
 
                 return vo;
             }
@@ -257,6 +216,13 @@
                 return vo;
             }
 
+            function makeResolver(resolver, type, target) {
+
+                var deps = slice.call(arguments, makeResolver.length);
+
+                return resolve(using(setResolver(resolver, type, makeMapping(), target), deps));
+            }
+
             function makeFacade(vo) {
 
                 function mutate(mutator, vo) {
@@ -274,11 +240,11 @@
                         return vo.injector;
                     },
 
-                    toFactory: mutate(toFactory, vo),
+                    toFactory: mutate(partial(setResolver, makeFactory, 'Function'), vo),
 
-                    toType: mutate(toType, vo),
+                    toType: mutate(partial(setResolver, makeType, 'Function'), vo),
 
-                    toValue: mutate(toValue, vo),
+                    toValue: mutate(partial(setResolver, makeValue, null), vo),
 
                     asSingleton: mutate(asSingleton, vo),
 
@@ -361,11 +327,13 @@
                 return value;
             };
 
-            this.resolveFactory = partial(makeResolver, toFactory, 'Function');
+            this.resolveFactory = partial(makeResolver, makeFactory, 'Function');
 
-            this.resolveType = partial(makeResolver, toType, 'Function');
+            this.resolveType = partial(makeResolver, makeType, 'Function');
 
-            this.resolveValue = partial(makeResolver, toValue, 'Object');
+            // This is pointless in its current form as toValue does not mutate the target
+            // possibly toValue should resolve i_ properties on Arrays and Objects
+            // this.resolveValue = partial(makeResolver, toValue, 'Object');
         }
 
         return Injector;

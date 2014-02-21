@@ -5,8 +5,18 @@
 /**
  * ++
  * @TODO: makeValue should resolve i_ properties
- *  - for Arrays and Objects
  *  - then reinstate resolveValue
+ *
+ * ++
+ * @TODO: Do not reset the api array once it has been checked
+ *  - Check against the instance?
+ *  - or add another property to the vo
+ *
+ * ++
+ * @TODO: Mapping vo interface refactor
+ *  - a setter can only be called once then it becomes a getter
+ *  - mapping.as() should return the Interface if no args are supplied
+ *  - mapping.asSingleton() should return the value if no args are supplied
  *
  * ++
  * @TODO: Custom InjectorError class
@@ -26,7 +36,8 @@
  * @TODO: Bower
  *
  * ++
- * @TODO: autoConstruct for Angular style constructor injection
+ * @TODO: autoConstruct() for Angular style constructor injection
+ *  - NOTE: Will need to split tests into pre / post compile
  *
  * ++
  * @TODO: Add parent injector stuff...
@@ -212,9 +223,16 @@
                     checkInterface(vo.target, vo.api);
                 }
 
-                // @TODO inject props for objects and arrays
-                vo.props = [];
+                if (vo.props === null) {
 
+                    vo.props = [];
+
+                    for (var prop in vo.target) {
+                        if (prop.indexOf('i_') === 0) {
+                            vo.target[prop] = vo.injector.getMappingFor(prop.replace('i_', ''));
+                        }
+                    }
+                }
 
                 return vo.target;
             }
@@ -378,6 +396,7 @@
 
             this.resolveType = partial(makeResolver, makeType, 'Function');
 
+            // @TODO: Objects will now have properties resolved - so this should be reinstated
             // This is pointless in its current form as toValue does not mutate the target
             // possibly toValue should resolve i_ properties on Arrays and Objects
             // this.resolveValue = partial(makeResolver, toValue, 'Object');

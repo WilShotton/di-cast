@@ -454,7 +454,11 @@ define(
                     myBoolean = true,
                     myNumber = 42,
                     myObject = {name:'MyObject'},
-                    myString = 'MyString';
+                    myString = 'MyString',
+
+                    myPropertyArray = ['i_MyNumber'],
+                    myPropertyObject = {i_MyNumber: null},
+                    myPropertyString = 'i_MyNumber';
 
                 function MyFunction() {}
 
@@ -462,7 +466,7 @@ define(
                     this.name = 'MyInstance';
                 }
 
-                function MyPropertyInstance() {
+                function MyPropertyFunction() {
                     this.i_MyNumber = null;
                 }
 
@@ -475,8 +479,13 @@ define(
                     injector.map('MyInstance').toValue(new MyInstance());
                     injector.map('MyNumber').toValue(myNumber);
                     injector.map('MyObject').toValue(myObject);
-                    injector.map('MyPropertyInstanceValue').toValue(new MyPropertyInstance());
                     injector.map('MyString').toValue(myString);
+
+                    injector.map('MyPropertyArray').toValue(myPropertyArray);
+                    injector.map('MyPropertyFunction').toValue(MyPropertyFunction);
+                    injector.map('MyPropertyInstance').toValue(new MyPropertyFunction());
+                    injector.map('MyPropertyObject').toValue(myPropertyObject);
+                    injector.map('MyPropertyString').toValue(myPropertyString);
                 });
 
                 it(' should map a value to a key', function() {
@@ -540,10 +549,31 @@ define(
                         .toBe(injector.getMappingFor('MyValue2'));
                 });
 
-                it(' should NOT resolve properties of the target value', function() {
+                it(' should resolve properties of target Objects', function() {
 
-                    expect(injector.getMappingFor('MyPropertyInstanceValue').i_MyNumber)
-                        .toBe(null);
+                    expect(injector.getMappingFor('MyPropertyInstance').i_MyNumber).toBe(42);
+                    expect(injector.getMappingFor('MyPropertyObject').i_MyNumber).toBe(42);
+                });
+
+                // @TODO
+                it(' should resolve prototypical properties of target Objects', function() {
+
+                });
+
+                // @TODO
+                it(' should resolve inherited properties of target Objects', function() {
+
+                });
+
+                it(' should NOT resolve non Object target values', function() {
+
+                    var MyPropertyFunction = injector.getMappingFor('MyPropertyFunction'),
+                        myPropertyInstance = new MyPropertyFunction();
+
+                    expect(myPropertyInstance.i_MyNumber).toBeNull();
+
+                    expect(injector.getMappingFor('MyPropertyArray')[0]).toBe('i_MyNumber');
+                    expect(injector.getMappingFor('MyPropertyString')).toBe('i_MyNumber');
                 });
 
                 it(' should throw if the mapping value has already been set', function() {
@@ -824,18 +854,8 @@ define(
                     expect(IMyInterface.length).toBe(4);
                 });
 
+                // @TODO: Still need a way to test the interface check has only been called once
                 it(' should only test the Interface on the first instantiation', function() {
-
-                    /**
-                     * ++
-                     * @TODO: mapping.as() should return the Interface reference if no args are supplied
-                     *  - possibly do the same for asSingleton
-                     *
-                     * ++
-                     * @TODO: Do not reset the api array
-                     *  - Check against the instance?
-                     *  - or add another property to the vo
-                     */
 
                     injector.map('MyMissing').toType(function(){}).as(IMyInterface);
 
@@ -1533,8 +1553,9 @@ define(
                 });
             });
 
+            // @TODO: Objects will now have properties resolved - so this should be reinstated
             // This is pointless in its current form as all it does is return the value
-             // possibly toValue should resolve i_ properties on Arrays and Objects
+            // possibly toValue should resolve i_ properties on Arrays and Objects
             xdescribe('resolveValue()', function() {
 
                 var myValue = {

@@ -18,9 +18,9 @@ define(
             NO_RESOLVER = '[#003] No resolver found',
             MAPPING_EXISTS = '[#004] A mapping already exists',
             NO_MAPPING = '[#005] No mapping found',
-            MAPPING_HAS_DEPENDANTS = '[#006] The mapping has dependants';
-
-        //var mappingKeys = ['injector', 'toFactory', 'toType', 'toValue', 'asSingleton', 'using']; //'as'
+            MAPPING_HAS_DEPENDANTS = '[#006] The mapping has dependants',
+            INTERFACE_MEMBER_MISSING = '[#007] The mapping is missing a required member',
+            INTERFACE_METHOD_ARITY_MISMATCH = '[#008] The mapping has an interface method with an incorrect arity';
 
         function is(value, type) {
             return Object.prototype.toString
@@ -702,9 +702,197 @@ define(
                 });
             });
 
-            // TODO: as()
-            xdescribe(' duck typing', function() {
+            describe('as - duck typing', function() {
 
+                /*
+                IMyType = {
+                    myMethod: {
+                        arity: 1
+                    }
+                };
+                */
+
+                var IMyInterface = [
+
+                    {name: 'myMethod', arity: 1},
+                    {name: 'myProperty'},
+                    {name: 'myPrototypeMethod', arity: 1},
+                    {name: 'myPrototypeProperty'}
+                ];
+
+                var MyValue = {
+
+                    myMethod: function(myArg) {},
+                    myProperty: 'MyProperty',
+                    myPrototypeMethod: function(myArg) {},
+                    myPrototypeProperty: 'MyPrototypeProperty'
+                };
+
+                function MyFactory() {
+
+                    function MyInstance() {
+                        this.myMethod = function(myArg) {};
+                        this.myProperty = 'My property';
+                    }
+                    MyInstance.prototype.myPrototypeMethod = function(myArg) {};
+                    MyInstance.prototype.myPrototypeProperty = 'MyPrototypeProperty';
+                    MyInstance.prototype.constructor = MyInstance.prototype;
+
+                    return MyInstance;
+                }
+
+                function MyType() {
+                    this.myMethod = function(myArg) {};
+                    this.myProperty = 'My property';
+                }
+                MyType.prototype.myPrototypeMethod = function(myArg) {};
+                MyType.prototype.myPrototypeProperty = 'MyPrototypeProperty';
+                MyType.prototype.constructor = MyType.prototype;
+
+                beforeEach(function() {
+
+                    injector = new Injector();
+
+                    injector.map('MyFactory').toFactory(MyFactory).as(IMyInterface);
+                    injector.map('MyType').toType(MyType).as(IMyInterface);
+                    injector.map('MyValue').toValue(MyValue).as(IMyInterface);
+                });
+
+                it(' should ensure a defined public API for a toFactory mapping instance', function() {
+
+                    var instance = null;
+
+                    expect(function() {
+                        instance = injector.getMappingFor('MyFactory').make();
+                    }).not.toThrow();
+
+                    expect(instance.myMethod).toBeDefined();
+                    expect(instance.myMethod.length).toBe(1);
+
+                    expect(instance.myPrototypeMethod).toBeDefined();
+                    expect(instance.myPrototypeMethod.length).toBe(1);
+
+                    expect(instance.myProperty).toBeDefined();
+                    expect(instance.myPrototypeProperty).toBeDefined();
+                });
+
+                it(' should ensure a defined public API for a toType mapping', function() {
+
+                    var instance = null;
+
+                    expect(function() {
+                        instance = injector.getMappingFor('MyType');
+                    }).not.toThrow();
+
+                    expect(instance.myMethod).toBeDefined();
+                    expect(instance.myMethod.length).toBe(1);
+
+                    expect(instance.myPrototypeMethod).toBeDefined();
+                    expect(instance.myPrototypeMethod.length).toBe(1);
+
+                    expect(instance.myProperty).toBeDefined();
+                    expect(instance.myPrototypeProperty).toBeDefined();
+                });
+
+                it(' should ensure a defined public API for a toValue mapping', function() {
+
+                    var target = null;
+
+                    expect(function() {
+                        target = injector.getMappingFor('MyValue');
+                    }).not.toThrow();
+
+                    expect(target.myMethod).toBeDefined();
+                    expect(target.myMethod.length).toBe(1);
+
+                    expect(target.myPrototypeMethod).toBeDefined();
+                    expect(target.myPrototypeMethod.length).toBe(1);
+
+                    expect(target.myProperty).toBeDefined();
+                    expect(target.myPrototypeProperty).toBeDefined();
+                });
+
+                it(' should NOT mutate the interface', function() {
+
+                    injector.getMappingFor('MyFactory');
+                    expect(IMyInterface.length).toBe(4);
+
+                    injector.getMappingFor('MyType');
+                    expect(IMyInterface.length).toBe(4);
+
+                    injector.getMappingFor('MyValue');
+                    expect(IMyInterface.length).toBe(4);
+                });
+
+                it(' should only test the Interface on the first instantiation', function() {
+
+                    /**
+                     * ++
+                     * @TODO: mapping.as() should return the Interface reference if no args are supplied
+                     *  - possibly do the same for asSingleton
+                     *
+                     * ++
+                     * @TODO: Do not reset the api array
+                     *  - Check against the instance?
+                     *  - or add another property to the vo
+                     */
+
+                    injector.map('MyMissing').toType(function(){}).as(IMyInterface);
+
+                    expect(function() {
+                        injector.getMappingFor('MyMissing');
+                    }).toThrow(INTERFACE_MEMBER_MISSING);
+                });
+
+                it(' should throw if an interface member is missing', function() {
+
+                    var IMemberTest = [
+                        {name: 'myMethod'}
+                    ];
+
+                    function MyCorrect() {
+                        this.myMethod = function(myArg) {};
+                    }
+
+                    function MyMissing() {}
+
+                    expect(function() {
+                        injector.map('MyCorrect').toType(MyCorrect).as(IMemberTest);
+                        injector.map('MyMissing').toType(MyMissing).as(IMemberTest);
+                    }).not.toThrow();
+
+                    expect(function() {
+                        injector.getMappingFor('MyMissing');
+                    }).toThrow(INTERFACE_MEMBER_MISSING);
+                });
+
+                it(' should throw if an interface method has the wrong arity', function() {
+
+                    var IArityTest = [
+                        {name: 'myMethod', arity: 1}
+                    ];
+
+                    function MyCorrect() {
+                        this.myMethod = function(myArg) {};
+                    }
+
+                    function MyMissing() {
+                        this.myMethod = function() {};
+                    }
+
+                    expect(function() {
+                        injector.map('MyCorrect').toType(MyCorrect).as(IArityTest);
+                        injector.map('MyMissing').toType(MyMissing).as(IArityTest);
+                    }).not.toThrow();
+
+                    expect(function() {
+                        injector.getMappingFor('MyCorrect');
+                    }).not.toThrow();
+
+                    expect(function() {
+                        injector.getMappingFor('MyMissing');
+                    }).toThrow(INTERFACE_METHOD_ARITY_MISMATCH);
+                });
             });
 
             // Injection

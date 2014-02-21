@@ -9,9 +9,9 @@
  *  - then reinstate resolveValue
  *
  * ++
- * @TODO: as([...]) - for duck typing...
- *  - [{name: '...', numArgs: n, returns: [Boolean]}, ...]
- *  - target.hasOwnProperty(name), target[name].length = numArgs,
+ * @TODO: Custom InjectorError class
+ *  - Message - to be used for testing expect(...).toThrow([message]);
+ *  - Info - for better debugging
  *
  * ++
  * @TODO: README
@@ -46,6 +46,9 @@
             MAPPING_EXISTS = '[#004] A mapping already exists',
             NO_MAPPING = '[#005] No mapping found',
             MAPPING_HAS_DEPENDANTS = '[#006] The mapping has dependants',
+
+            INTERFACE_MEMBER_MISSING = '[#007] The mapping is missing a required member',
+            INTERFACE_METHOD_ARITY_MISMATCH = '[#008] The mapping has an interface method with an incorrect arity',
 
             slice = Array.prototype.slice;
 
@@ -99,9 +102,29 @@
                 }
             }
 
+            function checkInterface(instance, api) {
+
+                api.forEach(function(item) {
+
+                    if(instance[item.name] == null) {
+
+                        throw new Error(INTERFACE_MEMBER_MISSING);
+                    }
+
+                    if (item.hasOwnProperty('arity') && instance[item.name].length !== item.arity) {
+
+                        throw new Error(INTERFACE_METHOD_ARITY_MISMATCH);
+                    }
+                });
+
+                api = [];
+            }
+
             function instantiate(vo) {
 
                 var instance = new vo.Builder(slice.call(arguments, 1));
+
+                checkInterface(instance, vo.api);
 
                 if (vo.props === null) {
 
@@ -185,7 +208,13 @@
 
             function makeValue(vo) {
 
+                if (vo.api.length > 0) {
+                    checkInterface(vo.target, vo.api);
+                }
+
+                // @TODO inject props for objects and arrays
                 vo.props = [];
+
 
                 return vo.target;
             }
@@ -224,6 +253,13 @@
                 return vo;
             }
 
+            function as(vo, api) {
+
+                vo.api = api;
+
+                return vo;
+            }
+
             function makeResolver(resolver, type, target) {
 
                 var deps = slice.call(arguments, makeResolver.length);
@@ -256,7 +292,9 @@
 
                     asSingleton: mutate(asSingleton, vo),
 
-                    using: mutate(using, vo)
+                    using: mutate(using, vo),
+
+                    as: mutate(as, vo)
                 };
             }
 
@@ -270,7 +308,8 @@
                     args: [],
                     props: null,
                     Builder: null,
-                    instance: null
+                    instance: null,
+                    api: []
                 };
             }
 

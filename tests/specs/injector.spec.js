@@ -349,24 +349,60 @@ define(
                 });
             });
 
-            // @TODO: toFactory Facade
-            xdescribe('toFactory Facade', function() {
+            describe('toFactory Facade', function() {
+
+                function MyFactory() {
+                    return function MyFactoryInstance(myArg) {
+                        this.myArg = myArg;
+                    };
+                }
+
+                beforeEach(function() {
+
+                    injector = new Injector();
+                    injector.map('MyFactory').toFactory(MyFactory);
+                });
 
                 it(' should have lazy instantiation', function() {
 
-                    // ie. i_Properties will only be evaluated on a call to make()
+                    function MyMissingFactory() {
+                        return function MyFactoryInstance() {
+                            this.i_MyMissingProp = null;
+                        };
+                    }
+
+                    injector.map('MyMissingFactory').toFactory(MyMissingFactory);
+
+                    var myMissingFactory = null;
+
+                    expect(function() {
+                        myMissingFactory = injector.getMappingFor('MyMissingFactory');
+                    }).not.toThrow();
+
+                    expect(function() {
+                        myMissingFactory.make();
+                    }).toThrow(NO_MAPPING);
                 });
 
                 it(' should create an Object with a make() function', function() {
 
+                    var factory = injector.getMappingFor('MyFactory');
+
+                    expect(is(factory, 'Object')).toBe(true);
+                    expect(factory.hasOwnProperty('make')).toBe(true);
                 });
 
                 it(' should make an instance of the factory instance', function() {
 
+                    expect(injector.getMappingFor('MyFactory').make().constructor.name)
+                        .toBe('MyFactoryInstance');
                 });
 
                 it(' should supply arguments as instance constructor arguments', function() {
 
+                    var instance = injector.getMappingFor('MyFactory').make('foo');
+
+                    expect(instance.myArg).toBe('foo');
                 });
             });
 
@@ -470,6 +506,20 @@ define(
                     this.i_MyNumber = null;
                 }
 
+                function MyPrototypeFunction() {}
+                MyPrototypeFunction.prototype = {
+                    i_MyNumber: null
+                };
+                MyPrototypeFunction.prototype.constructor = MyPrototypeFunction;
+
+                function MyBorrowedFunction() {}
+                MyBorrowedFunction.prototype = MyPrototypeFunction.prototype;
+                MyBorrowedFunction.prototype.constructor = MyBorrowedFunction;
+
+                function MyInheritedFunction() {}
+                MyInheritedFunction.prototype = new MyPrototypeFunction();
+                MyInheritedFunction.prototype.constructor = MyInheritedFunction;
+
                 beforeEach(function() {
 
                     injector = new Injector();
@@ -486,6 +536,11 @@ define(
                     injector.map('MyPropertyInstance').toValue(new MyPropertyFunction());
                     injector.map('MyPropertyObject').toValue(myPropertyObject);
                     injector.map('MyPropertyString').toValue(myPropertyString);
+
+                    injector.map('MyPrototypeInstance').toValue(new MyPropertyFunction());
+
+                    injector.map('MyBorrowedInstance').toValue(new MyBorrowedFunction());
+                    injector.map('MyInheritedInstance').toValue(new MyInheritedFunction());
                 });
 
                 it(' should map a value to a key', function() {
@@ -555,14 +610,15 @@ define(
                     expect(injector.getMappingFor('MyPropertyObject').i_MyNumber).toBe(42);
                 });
 
-                // @TODO
                 it(' should resolve prototypical properties of target Objects', function() {
 
+                    expect(injector.getMappingFor('MyPrototypeInstance').i_MyNumber).toBe(42);
                 });
 
-                // @TODO
                 it(' should resolve inherited properties of target Objects', function() {
 
+                    expect(injector.getMappingFor('MyBorrowedInstance').i_MyNumber).toBe(42);
+                    expect(injector.getMappingFor('MyInheritedInstance').i_MyNumber).toBe(42);
                 });
 
                 it(' should NOT resolve non Object target values', function() {
@@ -766,7 +822,7 @@ define(
                     }
                     MyInstance.prototype.myPrototypeMethod = function(myArg) {};
                     MyInstance.prototype.myPrototypeProperty = 'MyPrototypeProperty';
-                    MyInstance.prototype.constructor = MyInstance.prototype;
+                    MyInstance.prototype.constructor = MyInstance;
 
                     return MyInstance;
                 }
@@ -777,7 +833,7 @@ define(
                 }
                 MyType.prototype.myPrototypeMethod = function(myArg) {};
                 MyType.prototype.myPrototypeProperty = 'MyPrototypeProperty';
-                MyType.prototype.constructor = MyType.prototype;
+                MyType.prototype.constructor = MyType;
 
                 beforeEach(function() {
 
@@ -1553,10 +1609,7 @@ define(
                 });
             });
 
-            // @TODO: Objects will now have properties resolved - so this should be reinstated
-            // This is pointless in its current form as all it does is return the value
-            // possibly toValue should resolve i_ properties on Arrays and Objects
-            xdescribe('resolveValue()', function() {
+            describe('resolveValue()', function() {
 
                 var myValue = {
                     i_MyProp: null
@@ -1568,14 +1621,9 @@ define(
                     injector.map('MyProp').toValue('MyProp');
                 });
 
-                it(' should return the identical mapped value', function() {
+                it(' should resolve properties of the target', function() {
 
-                    expect(injector.resolveValue(myValue)).toBe(myValue);
-                });
-
-                it(' should NOT resolve properties of the target', function() {
-
-                    expect(injector.resolveValue(myValue).i_MyProp).toBe(null);
+                    expect(injector.resolveValue(myValue).i_MyProp).toBe('MyProp');
                 });
 
                 it(' should throw if the target is not an object', function() {

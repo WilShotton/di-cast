@@ -4,10 +4,6 @@
 
 /**
  * ++
- * @TODO: makeValue should resolve i_ properties
- *  - then reinstate resolveValue
- *
- * ++
  * @TODO: Do not reset the api array once it has been checked
  *  - Check against the instance?
  *  - or add another property to the vo
@@ -17,6 +13,16 @@
  *  - a setter can only be called once then it becomes a getter
  *  - mapping.as() should return the Interface if no args are supplied
  *  - mapping.asSingleton() should return the value if no args are supplied
+ *
+ *  - injector.map('key').toFactory({...}):injector;
+ *  - injector.map('key').toType({...}):injector;
+ *  - injector.map('key').toValue({...}):injector;
+ *
+ *  - config => {
+ *      isSingleton: <Boolean>,
+ *      as: <Interface>,
+ *      using: <Array>
+ *    }
  *
  * ++
  * @TODO: Custom InjectorError class
@@ -396,10 +402,7 @@
 
             this.resolveType = partial(makeResolver, makeType, 'Function');
 
-            // @TODO: Objects will now have properties resolved - so this should be reinstated
-            // This is pointless in its current form as toValue does not mutate the target
-            // possibly toValue should resolve i_ properties on Arrays and Objects
-            // this.resolveValue = partial(makeResolver, toValue, 'Object');
+            this.resolveValue = partial(makeResolver, makeValue, 'Object');
         }
 
         return Injector;

@@ -173,17 +173,17 @@
 
                 function make() {
 
-                    var Factory = vo.target.apply(vo.target, vo.args.map(function(key) {
+                    vo.Factory = vo.target.apply(vo.target, vo.args.map(function(key) {
 
                         return vo.injector.getMappingFor(key);
                     }));
 
                     vo.Builder = function Builder(args) {
 
-                        return Factory.apply(this, args);
+                        return vo.Factory.apply(this, args);
                     };
 
-                    vo.Builder.prototype = Factory.prototype;
+                    vo.Builder.prototype = vo.Factory.prototype;
 
                     vo.instance = {
 

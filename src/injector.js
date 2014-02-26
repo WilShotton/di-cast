@@ -451,24 +451,31 @@
 
                 if (_injector.hasMappingFor(key)) {
 
-                    Object.keys(mappings).forEach(function(name) {
+                    Object.keys(mappings)
+                        .filter(function(name) {
 
-                        var mapping = mappings[name];
+                            return name !== key;
+                        })
+                        .map(function(name) {
 
-                        if (mapping.hasOwnProperty('args') && mapping.args.indexOf(key) !== -1) {
-                            throw new Error(MAPPING_HAS_DEPENDANTS);
-                        }
+                            return mappings[name];
+                        })
+                        .forEach(function(mapping) {
 
-                        if (!mapping.hasOwnProperty('props')) {
-                            if (mapping.resolver(mapping).hasOwnProperty('make')) {
-                                mapping.instance.make();
+                            if (mapping.hasOwnProperty('args') && mapping.args.indexOf(key) !== -1) {
+                                throw new Error(MAPPING_HAS_DEPENDANTS);
                             }
-                        }
 
-                        if (mapping.props.indexOf('i_' + key) !== -1) {
-                            throw new Error(MAPPING_HAS_DEPENDANTS);
-                        }
-                    });
+                            if (!mapping.hasOwnProperty('props')) {
+                                if (mapping.resolver(mapping).hasOwnProperty('make')) {
+                                    mapping.instance.make();
+                                }
+                            }
+
+                            if (mapping.props.indexOf('i_' + key) !== -1) {
+                                throw new Error(MAPPING_HAS_DEPENDANTS);
+                            }
+                        });
 
                     value = mappings[key].target;
 

@@ -16,6 +16,7 @@ define(
         "use strict";
 
         var INVALID_TARGET = '[#001] The target must be an Object or Function',
+            INCORRECT_METHOD_SIGNATURE = 'Incorrect method signature supplied',
             INVALID_KEY_TYPE = '[#002] The key must be a String',
             NO_RESOLVER = '[#003] No resolver found',
             MAPPING_EXISTS = '[#004] A mapping already exists',
@@ -45,12 +46,29 @@ define(
                 beforeEach(function() {
 
                     injector = new Injector();
-                    injector.map('MyMapping');
+                    injector.map('MyMapping').toType({target: function() {}});
                 });
 
-                it(' should index a mapping to a key', function() {
+                it(' should index a successful mapping to a key', function() {
 
                     expect(injector.hasMappingFor('MyMapping')).toBe(true);
+                });
+
+                it(' should not index an incomplete / unsuccessful mapping', function() {
+
+                    injector.map('MyMissingMapping');
+
+                    expect(injector.hasMappingFor('MyMissingMapping')).toBe(false);
+                });
+
+                it(' should return mapping options', function() {
+
+                    var mapping = injector.map('Map'),
+                        keys = ['toType', 'toValue']; //'toFactory',
+
+                    keys.forEach(function(key) {
+                        expect(is(mapping[key], 'Function')).toBe(true);
+                    });
                 });
 
                 it(' should throw if the key is not a string', function() {
@@ -74,7 +92,7 @@ define(
                 beforeEach(function() {
 
                     injector = new Injector();
-                    injector.map('MyMapping');
+                    injector.map('MyMapping').toType({target: function() {}});
                 });
 
                 it(' should return true for a mapping', function() {
@@ -100,23 +118,12 @@ define(
 
                 it(' should retrieve a mapping for a key', function() {
 
-                    injector = new Injector();
-                    injector.map('MyFactory').toFactory(function MyFactory() {
-                        return function MyInstance() {};
-                    });
-
-                    expect(is(injector.getMappingFor('MyFactory').make, 'Function'))
-                        .toBe(true);
-                });
-
-                it(' should throw if no resolver has been set', function() {
+                    function MyType() {}
 
                     injector = new Injector();
-                    injector.map('MyFactory');
+                    injector.map('MyType').toType({target: MyType});
 
-                    expect(function() {
-                        injector.getMappingFor('MyFactory');
-                    }).toThrow(NO_RESOLVER);
+                    expect(injector.getMappingFor('MyType').constructor).toBe(MyType);
                 });
 
                 it(' should throw if the key is not a string', function() {
@@ -148,9 +155,9 @@ define(
                 beforeEach(function() {
 
                     injector = new Injector();
-                    injector.map('MyFactory').toFactory(MyFactory);
-                    injector.map('MyType').toType(MyType);
-                    injector.map('MyValue').toValue(myValue);
+                    injector.map('MyFactory').toFactory({target: MyFactory});
+                    injector.map('MyType').toType({target: MyType});
+                    injector.map('MyValue').toValue({target: myValue});
                 });
 
                 it(' should remove the mapping', function() {
@@ -166,8 +173,10 @@ define(
 
                 it(' should throw if a mapping depends on the mapping to be removed', function() {
 
-                    injector.map('MyDependantType').toType(function() {
-                        this.i_MyType = null;
+                    injector.map('MyDependantType').toType({
+                        target: function() {
+                            this.i_MyType = null;
+                        }
                     });
 
                     expect(function() {
@@ -191,8 +200,8 @@ define(
             // Mapping methods
             // ------------------------------
 
-            // mapping config options
-            describe('mapping config options', function() {
+            // @TODO: deprecate > mapping config options
+            xdescribe('mapping config options', function() {
 
                 beforeEach(function() {
 
@@ -272,10 +281,11 @@ define(
                 beforeEach(function() {
 
                     injector = new Injector();
-                    injector.map('MyFactory').toFactory(MyFactory);
+                    injector.map('MyFactory').toFactory({target: MyFactory});
                 });
 
-                it(' should retrieve a factory method for a mapping', function() {
+                // @TODO: deprecate > is duplicated in toFactory facade suite
+                xit(' should retrieve a factory method for a mapping', function() {
 
                     var factory = injector.getMappingFor('MyFactory');
 
@@ -283,7 +293,8 @@ define(
                     expect(is(factory.make, 'function')).toBe(true);
                 });
 
-                it(' should create an instance when its factory method is called', function() {
+                // @TODO: deprecate > is duplicated in toFactory facade suite
+                xit(' should create an instance when its factory method is called', function() {
 
                     var name = 'MyName',
                         factory = injector.getMappingFor('MyFactory'),
@@ -301,14 +312,14 @@ define(
                 it(' should allow multiple mappings of the same factory with different keys', function() {
 
                     /**
-                     * NOTE: Not sure why you'd want to though.
-                     * This is really just a proof of concept and demonstrates some
+                     * NOTE: Not sure why you'd want to do this.
+                     * It is really just a proof of concept and demonstrates some
                      * possibly unexpected behaviour regarding identity.
                      */
 
                     expect(function() {
-                        injector.map('MyFactory1').toFactory(MyFactory);
-                        injector.map('MyFactory2').toFactory(MyFactory);
+                        injector.map('MyFactory1').toFactory({target: MyFactory});
+                        injector.map('MyFactory2').toFactory({target: MyFactory});
                     }).not.toThrow();
 
                     var f1 = injector.getMappingFor('MyFactory1'),
@@ -324,30 +335,27 @@ define(
                     expect(f1.make().constructor).not.toEqual(f2.make().constructor);
                 });
 
-                it(' should throw if the factory is not a function', function() {
+                it(' should throw if no config object is provided', function() {
 
                     expect(function() {
-                        injector.map('InvalidFactory').toFactory({});
-                    }).toThrow(INVALID_TARGET);
+                        injector.map('MyFactory1').toFactory();
+                    }).toThrow(INCORRECT_METHOD_SIGNATURE);
+                });
+
+                it(' should should throw if the config does not have a target property', function() {
 
                     expect(function() {
-                        injector.map('AnotherInvalidFactory').toFactory(null);
+                        injector.map('MyFactory1').toFactory({});
                     }).toThrow(INVALID_TARGET);
                 });
 
-                it(' should throw if the mapping has already been set', function() {
+                it(' should throw if config.target is not a function', function() {
 
                     expect(function() {
-                        injector.map('Factory->Factory').toFactory(MyFactory).toFactory(MyFactory);
-                    }).toThrow(MAPPING_EXISTS);
-
-                    expect(function() {
-                        injector.map('Type->Factory').toType(MyFactory).toFactory(MyFactory);
-                    }).toThrow(MAPPING_EXISTS);
-
-                    expect(function() {
-                        injector.map('Value->Factory').toValue(MyFactory).toFactory(MyFactory);
-                    }).toThrow(MAPPING_EXISTS);
+                        injector.map('MyFactory1').toFactory({
+                            target: {}
+                        });
+                    }).toThrow(INVALID_TARGET);
                 });
             });
 
@@ -362,7 +370,9 @@ define(
                 beforeEach(function() {
 
                     injector = new Injector();
-                    injector.map('MyFactory').toFactory(MyFactory);
+                    injector.map('MyFactory').toFactory({
+                        target: MyFactory
+                    });
                 });
 
                 it(' should have lazy instantiation', function() {
@@ -373,7 +383,9 @@ define(
                         };
                     }
 
-                    injector.map('MyMissingFactory').toFactory(MyMissingFactory);
+                    injector.map('MyMissingFactory').toFactory({
+                        target: MyMissingFactory
+                    });
 
                     var myMissingFactory = null;
 
@@ -394,10 +406,11 @@ define(
                     expect(factory.hasOwnProperty('make')).toBe(true);
                 });
 
-                it(' should make an instance of the factory instance', function() {
+                it(' should create an instance when its factory method is called', function() {
 
-                    expect(injector.getMappingFor('MyFactory').make().constructor.name)
-                        .toBe('MyFactoryInstance');
+                    var instance = injector.getMappingFor('MyFactory').make();
+
+                    expect(instance.constructor.name).toBe('MyFactoryInstance');
                 });
 
                 it(' should supply arguments as instance constructor arguments', function() {
@@ -413,75 +426,53 @@ define(
 
                 function MyType() {}
 
+                var config = {
+                    target: MyType
+                };
+
                 beforeEach(function() {
 
                     injector = new Injector();
-                    injector.map('MyType').toType(MyType);
+                    injector.map('MyType').toType(config);
                 });
 
-                it(' should create a typed instance for a mapping', function() {
+                it(' should return a reference to the injector', function() {
 
-                    expect(injector.getMappingFor('MyType').constructor)
-                        .toBe(MyType);
-                });
-
-                it(' should resolve a new instance each time', function() {
-
-                    expect(injector.getMappingFor('MyType'))
-                        .not.toBe(injector.getMappingFor('MyType'));
+                    expect(injector.map('MyType1').toType(config)).toBe(injector);
                 });
 
                 it(' should allow multiple mappings of the same function with different keys', function() {
 
                     expect(function() {
-                        injector.map('MyType1').toType(MyType);
-                        injector.map('MyType2').toType(MyType);
+                        injector.map('MyType1').toType(config);
+                        injector.map('MyType2').toType(config);
                     }).not.toThrow();
 
                     expect(injector.getMappingFor('MyType1').constructor)
                         .toBe(injector.getMappingFor('MyType2').constructor);
                 });
 
-                it(' should throw if the type is not a function', function() {
+                it(' should throw if no config object is provided', function() {
 
                     expect(function() {
-                        injector.map('ArrayType').toType([]);
-                    }).toThrow(INVALID_TARGET);
+                        injector.map('MyType1').toType();
+                    }).toThrow(INCORRECT_METHOD_SIGNATURE);
+                });
+
+                it(' should should throw if the config does not have a target property', function() {
 
                     expect(function() {
-                        injector.map('NullType').toType(null);
-                    }).toThrow(INVALID_TARGET);
-
-                    expect(function() {
-                        injector.map('NumberType').toType(42);
-                    }).toThrow(INVALID_TARGET);
-
-                    expect(function() {
-                        injector.map('ObjectType').toType({});
-                    }).toThrow(INVALID_TARGET);
-
-                    expect(function() {
-                        injector.map('StringType').toType('FN');
-                    }).toThrow(INVALID_TARGET);
-
-                    expect(function() {
-                        injector.map('UndefinedType').toType(undefined);
+                        injector.map('MyType1').toType({});
                     }).toThrow(INVALID_TARGET);
                 });
 
-                it(' should throw if the mapping value has already been set', function() {
+                it(' should throw if config.target is not a function', function() {
 
                     expect(function() {
-                        injector.map('Type->Type').toType(MyType).toType(MyType);
-                    }).toThrow(MAPPING_EXISTS);
-
-                    expect(function() {
-                        injector.map('Factory->Type').toFactory(MyType).toType(MyType);
-                    }).toThrow(MAPPING_EXISTS);
-
-                    expect(function() {
-                        injector.map('Value->Type').toValue(MyType).toType(MyType);
-                    }).toThrow(MAPPING_EXISTS);
+                        injector.map('MyType1').toType({
+                            target: {}
+                        });
+                    }).toThrow(INVALID_TARGET);
                 });
             });
 
@@ -525,24 +516,24 @@ define(
                 beforeEach(function() {
 
                     injector = new Injector();
-                    injector.map('MyArray').toValue(myArray);
-                    injector.map('MyBoolean').toValue(myBoolean);
-                    injector.map('MyFunction').toValue(MyFunction);
-                    injector.map('MyInstance').toValue(new MyInstance());
-                    injector.map('MyNumber').toValue(myNumber);
-                    injector.map('MyObject').toValue(myObject);
-                    injector.map('MyString').toValue(myString);
+                    injector.map('MyArray').toValue({target: myArray});
+                    injector.map('MyBoolean').toValue({target: myBoolean});
+                    injector.map('MyFunction').toValue({target: MyFunction});
+                    injector.map('MyInstance').toValue({target: new MyInstance()});
+                    injector.map('MyNumber').toValue({target: myNumber});
+                    injector.map('MyObject').toValue({target: myObject});
+                    injector.map('MyString').toValue({target: myString});
 
-                    injector.map('MyPropertyArray').toValue(myPropertyArray);
-                    injector.map('MyPropertyFunction').toValue(MyPropertyFunction);
-                    injector.map('MyPropertyInstance').toValue(new MyPropertyFunction());
-                    injector.map('MyPropertyObject').toValue(myPropertyObject);
-                    injector.map('MyPropertyString').toValue(myPropertyString);
+                    injector.map('MyPropertyArray').toValue({target: myPropertyArray});
+                    injector.map('MyPropertyFunction').toValue({target: MyPropertyFunction});
+                    injector.map('MyPropertyInstance').toValue({target: new MyPropertyFunction()});
+                    injector.map('MyPropertyObject').toValue({target: myPropertyObject});
+                    injector.map('MyPropertyString').toValue({target: myPropertyString});
 
-                    injector.map('MyPrototypeInstance').toValue(new MyPropertyFunction());
+                    injector.map('MyPrototypeInstance').toValue({target: new MyPropertyFunction()});
 
-                    injector.map('MyBorrowedInstance').toValue(new MyBorrowedFunction());
-                    injector.map('MyInheritedInstance').toValue(new MyInheritedFunction());
+                    injector.map('MyBorrowedInstance').toValue({target: new MyBorrowedFunction()});
+                    injector.map('MyInheritedInstance').toValue({target: new MyInheritedFunction()});
                 });
 
                 it(' should map a value to a key', function() {
@@ -598,8 +589,8 @@ define(
                     function MyValue() {}
 
                     expect(function() {
-                        injector.map('MyValue1').toValue(MyValue);
-                        injector.map('MyValue2').toValue(MyValue);
+                        injector.map('MyValue1').toValue({target: MyValue});
+                        injector.map('MyValue2').toValue({target: MyValue});
                     }).not.toThrow();
 
                     expect(injector.getMappingFor('MyValue1'))
@@ -634,26 +625,23 @@ define(
                     expect(injector.getMappingFor('MyPropertyString')).toBe('i_MyNumber');
                 });
 
-                it(' should throw if the mapping value has already been set', function() {
-
-                    function MyValue() {}
+                it(' should throw if no config object is provided', function() {
 
                     expect(function() {
-                        injector.map('Value->Value').toValue(MyValue).toValue(MyValue);
-                    }).toThrow(MAPPING_EXISTS);
+                        injector.map('MyType1').toValue();
+                    }).toThrow(INCORRECT_METHOD_SIGNATURE);
+                });
+
+                it(' should should throw if the config does not have a target property', function() {
 
                     expect(function() {
-                        injector.map('Factory->Value').toFactory(MyValue).toValue(MyValue);
-                    }).toThrow(MAPPING_EXISTS);
-
-                    expect(function() {
-                        injector.map('Type->Value').toType(MyValue).toValue(MyValue);
-                    }).toThrow(MAPPING_EXISTS);
+                        injector.map('MyType1').toValue({});
+                    }).toThrow(INVALID_TARGET);
                 });
             });
 
-            // asSingleton()
-            describe('asSingleton', function() {
+            // @TODO: deprecate > asSingleton()
+            xdescribe('asSingleton', function() {
 
                 function MyType() {}
 
@@ -685,8 +673,8 @@ define(
                 });
             });
 
-            // using()
-            describe('using', function() {
+            // @TODO: deprecate > using()
+            xdescribe('using', function() {
 
                 function MyFactory() {
                     return function MyFactoryInstance() {};
@@ -790,7 +778,8 @@ define(
                 });
             });
 
-            describe('as - duck typing', function() {
+            // @TODO: deprecate > as
+            xdescribe('as - duck typing', function() {
 
                 /*
                 IMyType = {
@@ -977,7 +966,7 @@ define(
             // ------------------------------
 
             // Constructor
-            describe('constructor injection', function() {
+            xdescribe('constructor injection', function() {
 
                 function MyFactory() {
                     return function MyFactoryInstance() {};
@@ -1121,7 +1110,7 @@ define(
             });
 
             // Property injection
-            describe('property injection', function() {
+            xdescribe('property injection', function() {
 
                 beforeEach(function() {
 
@@ -1374,7 +1363,7 @@ define(
             });
 
             // Combined
-            describe('combined injection', function() {
+            xdescribe('combined injection', function() {
 
                 beforeEach(function() {
 
@@ -1427,7 +1416,7 @@ define(
 
             // postConstruct()
             // ------------------------------
-            describe('postConstruct', function() {
+            xdescribe('postConstruct', function() {
 
                 var MyValue = {
                     isConstructed: false,
@@ -1511,8 +1500,8 @@ define(
                 beforeEach(function() {
 
                     injector = new Injector();
-                    injector.map('MyFactoryArg').toValue('MyFactoryArg');
-                    injector.map('MyProp').toValue('MyProp');
+                    injector.map('MyFactoryArg').toValue({target: 'MyFactoryArg'});
+                    injector.map('MyProp').toValue({target: 'MyProp'});
                 });
 
                 it(' should resolve the supplied target as a Factory', function() {
@@ -1571,8 +1560,8 @@ define(
                 beforeEach(function() {
 
                     injector = new Injector();
-                    injector.map('MyArg').toValue('MyArg');
-                    injector.map('MyProp').toValue('MyProp');
+                    injector.map('MyArg').toValue({target: 'MyArg'});
+                    injector.map('MyProp').toValue({target: 'MyProp'});
                 });
 
                 it(' should resolve the supplied target as a Type', function() {
@@ -1621,7 +1610,7 @@ define(
                 beforeEach(function() {
 
                     injector = new Injector();
-                    injector.map('MyProp').toValue('MyProp');
+                    injector.map('MyProp').toValue({target: 'MyProp'});
                 });
 
                 it(' should resolve properties of the target', function() {

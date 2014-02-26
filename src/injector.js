@@ -25,6 +25,11 @@
  *    }
  *
  * ++
+ * @TODO: Add the Injector instance as a mapping
+ *  - target -> this
+ *  - resolver -> makeValue
+ *
+ * ++
  * @TODO: Custom InjectorError class
  *  - Message - to be used for testing expect(...).toThrow([message]);
  *  - Info - for better debugging
@@ -42,14 +47,12 @@
  * @TODO: Bower
  *
  * ++
- * @TODO: autoConstruct() for Angular style constructor injection
+ * @TODO: Injector.autoInject() for Angular style constructor injection
  *  - NOTE: Will need to split tests into pre / post compile
  *
  * ++
  * @TODO: Add parent injector stuff...
  */
-
-
 
 ;(function(root) {
 
@@ -59,7 +62,9 @@
 
     function factory() {
 
+        // @TODO: INVALID_TARGET does not take into account toValue validation
         var INVALID_TARGET = '[#001] The target must be an Object or Function',
+            INCORRECT_METHOD_SIGNATURE = 'Incorrect method signature supplied',
             INVALID_KEY_TYPE = '[#002] The key must be a String',
             NO_RESOLVER = '[#003] No resolver found',
             MAPPING_EXISTS = '[#004] A mapping already exists',
@@ -100,7 +105,9 @@
         // --------------------
         function Injector() {
 
+            // TODO: deprecate self use _injector
             var self = this,
+                _injector = this,
                 mappings = {};
 
             function resolve(vo) {
@@ -145,7 +152,7 @@
 
                 checkInterface(instance, vo.api);
 
-                if (vo.props === null) {
+                if (!vo.hasOwnProperty('props')) {
 
                     vo.props = [];
 
@@ -158,7 +165,7 @@
 
                 vo.props.forEach(function(prop) {
                     if (instance[prop] == null) {
-                        instance[prop] = vo.injector.getMappingFor(prop.replace('i_', ''));
+                        instance[prop] = _injector.getMappingFor(prop.replace('i_', ''));
                     }
                 });
 
@@ -175,7 +182,7 @@
 
                     vo.Factory = vo.target.apply(vo.target, vo.args.map(function(key) {
 
-                        return vo.injector.getMappingFor(key);
+                        return _injector.getMappingFor(key);
                     }));
 
                     vo.Builder = function Builder(args) {
@@ -192,33 +199,28 @@
                             return instantiate.apply(this, [vo].concat(slice.call(arguments, 0)));
                         }
                     };
+
+                    return vo.instance;
                 }
 
-                if (vo.instance == null) {
-
-                    make();
-                }
-
-                return vo.instance;
+                return vo.instance || make();
             }
 
             function makeType(vo) {
 
-                if (vo.Builder == null) {
+                if (!vo.hasOwnProperty('Builder')) {
 
                     vo.Builder = function Builder() {
 
                         return vo.target.apply(this, vo.args.map(function(key) {
-
-                            return vo.injector.getMappingFor(key);
+                            return _injector.getMappingFor(key);
                         }));
                     };
 
                     vo.Builder.prototype = vo.target.prototype;
                 }
 
-                if (vo.isSingleton && vo.instance === null) {
-
+                if (vo.isSingleton && !vo.hasOwnProperty('instance')) {
                     vo.instance = instantiate(vo);
                 }
 
@@ -227,17 +229,18 @@
 
             function makeValue(vo) {
 
-                if (vo.api.length > 0) {
-                    checkInterface(vo.target, vo.api);
-                }
+                if (!vo.processed) {
 
-                if (vo.props === null) {
+                    vo.processed = true;
+
+                    checkInterface(vo.target, vo.api);
 
                     vo.props = [];
 
                     for (var prop in vo.target) {
-                        if (prop.indexOf('i_') === 0) {
-                            vo.target[prop] = vo.injector.getMappingFor(prop.replace('i_', ''));
+                        if (prop.indexOf('i_') === 0 && vo.target[prop] == null) {
+                            vo.props[vo.props.length] = prop;
+                            vo.target[prop] = _injector.getMappingFor(prop.replace('i_', ''));
                         }
                     }
                 }
@@ -261,6 +264,7 @@
                 return vo;
             }
 
+            // @TODO: Deprecate
             function asSingleton(vo) {
 
                 vo.isSingleton = true;
@@ -268,6 +272,7 @@
                 return vo;
             }
 
+            // @TODO: Deprecate
             function using(vo) {
 
                 var args = slice.call(arguments, 1);
@@ -279,6 +284,7 @@
                 return vo;
             }
 
+            // @TODO: Deprecate
             function as(vo, api) {
 
                 vo.api = api;
@@ -286,14 +292,8 @@
                 return vo;
             }
 
-            function makeResolver(resolver, type, target) {
-
-                var deps = slice.call(arguments, makeResolver.length);
-
-                return resolve(using(setResolver(resolver, type, makeMapping(), target), deps));
-            }
-
-            function makeFacade(vo) {
+            // TODO: Deprecate
+            function makeFacade(key) {
 
                 function mutate(mutator, vo) {
 
@@ -305,6 +305,29 @@
 
                 return {
 
+                    /*
+                    toType: function(config) {
+
+                        if (arguments.length < 1) {
+                            throw new Error(INCORRECT_METHOD_SIGNATURE);
+                        }
+
+                        validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
+
+                        validateType(config.target, 'Function', INVALID_TARGET);
+
+                        mappings[key] = {
+
+                            target: config.target,
+                            resolver: makeFactory,
+
+                            api: config.api || [],
+                            args: config.using || []
+                        };
+
+                        return self;
+                    }
+
                     injector: function() {
 
                         return vo.injector;
@@ -312,7 +335,7 @@
 
                     toFactory: mutate(partial(setResolver, makeFactory, 'Function'), vo),
 
-                    toType: mutate(partial(setResolver, makeType, 'Function'), vo),
+                    //toType: mutate(partial(setResolver, makeType, 'Function'), vo),
 
                     toValue: mutate(partial(setResolver, makeValue, null), vo),
 
@@ -321,9 +344,11 @@
                     using: mutate(using, vo),
 
                     as: mutate(as, vo)
+                    */
                 };
             }
 
+            // TODO: Deprecate - mappings should be type specific
             function makeMapping() {
 
                 return {
@@ -343,9 +368,65 @@
 
                 validateKey(key);
 
-                mappings[key] = makeMapping();
+                return {
 
-                return makeFacade(mappings[key]);
+                    toFactory: function(config) {
+
+                        validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
+                        validateType(config.target, 'Function', INVALID_TARGET);
+
+                        mappings[key] = {
+
+                            resolver: makeFactory,
+
+                            target: config.target,
+
+                            api: config.api || [],
+                            args: config.using || []
+                        };
+
+                        return _injector;
+                    },
+
+                    toType: function(config) {
+
+                        validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
+                        validateType(config.target, 'Function', INVALID_TARGET);
+
+                        mappings[key] = {
+
+                            resolver: makeType,
+
+                            target: config.target,
+
+                            api: config.api || [],
+                            args: config.using || [],
+                            isSingleton: config.isSingleton || false
+                        };
+
+                        return _injector;
+                    },
+
+                    toValue: function(config) {
+
+                        validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
+
+                        if (!config.hasOwnProperty('target')) {
+                            throw new Error(INVALID_TARGET);
+                        }
+
+                        mappings[key] = {
+
+                            resolver: makeValue,
+
+                            target: config.target,
+
+                            api: config.api || []
+                        };
+
+                        return _injector;
+                    }
+                };
             };
 
             this.hasMappingFor = function(key) {
@@ -357,37 +438,34 @@
 
             this.getMappingFor = function(key) {
 
-                validateType(key, 'String', INVALID_KEY_TYPE);
-
                 if (!self.hasMappingFor(key)) {
                     throw new Error(NO_MAPPING);
                 }
 
-                return resolve(mappings[key]);
+                return mappings[key].resolver(mappings[key]);
             };
 
             this.unMap = function(key) {
 
                 var value = null;
 
-                function contains(list, key) {
-
-                    return list.indexOf(key) !== -1;
-                }
-
-                if (self.hasMappingFor(key)) {
+                if (_injector.hasMappingFor(key)) {
 
                     Object.keys(mappings).forEach(function(name) {
 
                         var mapping = mappings[name];
 
-                        if (mapping.props === null) {
-                            if (resolve(mapping).hasOwnProperty('make')) {
+                        if (mapping.hasOwnProperty('args') && mapping.args.indexOf(key) !== -1) {
+                            throw new Error(MAPPING_HAS_DEPENDANTS);
+                        }
+
+                        if (!mapping.hasOwnProperty('props')) {
+                            if (mapping.resolver(mapping).hasOwnProperty('make')) {
                                 mapping.instance.make();
                             }
                         }
 
-                        if (contains(mapping.args, key) || contains(mapping.props, 'i_' + key)) {
+                        if (mapping.props.indexOf('i_' + key) !== -1) {
                             throw new Error(MAPPING_HAS_DEPENDANTS);
                         }
                     });
@@ -400,11 +478,55 @@
                 return value;
             };
 
-            this.resolveFactory = partial(makeResolver, makeFactory, 'Function');
+            // @TODO: Deprecate
+            function makeResolver(resolver, type, target) {
 
-            this.resolveType = partial(makeResolver, makeType, 'Function');
+                var deps = slice.call(arguments, makeResolver.length);
 
-            this.resolveValue = partial(makeResolver, makeValue, 'Object');
+                return resolve(using(setResolver(resolver, type, makeMapping(), target), deps));
+            }
+
+            this.resolveFactory = function(target) {
+
+                validateType(target, 'Function', INVALID_TARGET);
+
+                return makeFactory({
+
+                    target: target,
+                    args: slice.call(arguments, 1),
+                    api: []
+                });
+            };
+
+            this.resolveType = function(target) {
+
+                validateType(target, 'Function', INVALID_TARGET);
+
+                return makeType({
+
+                    target: target,
+                    args: slice.call(arguments, 1),
+                    isSingleton: false,
+                    api: []
+                });
+            };
+
+            this.resolveValue = function(target) {
+
+                validateType(target, 'Object', INVALID_TARGET);
+
+                return makeValue({
+
+                    target: target,
+                    api: []
+                });
+            };
+
+            //this.resolveFactory = partial(makeResolver, makeFactory, 'Function');
+
+            //this.resolveType = partial(makeResolver, makeType, 'Function');
+
+            //this.resolveValue = partial(makeResolver, makeValue, 'Object');
         }
 
         return Injector;

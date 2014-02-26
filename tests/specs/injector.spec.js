@@ -905,7 +905,7 @@ define(
                             target: MyMissing,
                             api: IArityTest
                         });
-                        
+
                     }).not.toThrow();
 
                     expect(function() {
@@ -1235,8 +1235,7 @@ define(
                         this.i_MyBoolean_False = false;
                         this.i_MyBoolean_True = true;
 
-                        // @TODO: Rename this function to MyFunction
-                        this.i_MyFunction = function Props() {};
+                        this.i_MyFunction = function MyFunction() {};
 
                         this.i_MyNumber = 42;
                         this.i_MyNumber_Zero = 0;
@@ -1303,7 +1302,7 @@ define(
                     expect(props.i_MyBoolean_False).toEqual(false);
                     expect(props.i_MyBoolean_True).toEqual(true);
 
-                    expect(new props.i_MyFunction().constructor.name).toEqual('Props');
+                    expect(new props.i_MyFunction().constructor.name).toEqual('MyFunction');
 
                     expect(props.i_MyNumber).toEqual(42);
                     expect(props.i_MyNumber_Zero).toEqual(0);

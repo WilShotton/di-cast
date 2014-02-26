@@ -79,7 +79,14 @@
         function Injector() {
 
             var _injector = this,
-                mappings = {};
+
+                mappings = {
+                    injector: {
+                        target: _injector,
+                        resolver: makeValue,
+                        api: []
+                    }
+                };
 
             function validateKey(key) {
 

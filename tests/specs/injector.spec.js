@@ -115,6 +115,13 @@ define(
             // getMappingFor()
             describe('getMappingFor', function() {
 
+                it(' should have a mapping for the injector', function() {
+
+                    injector = new Injector();
+
+                    expect(injector.getMappingFor('injector')).toBe(injector);
+                });
+
                 it(' should retrieve a mapping for a key', function() {
 
                     function MyType() {}

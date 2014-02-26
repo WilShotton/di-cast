@@ -9,22 +9,6 @@
  *  - or add another property to the vo
  *
  * ++
- * @TODO: Mapping vo interface refactor
- *  - a setter can only be called once then it becomes a getter
- *  - mapping.as() should return the Interface if no args are supplied
- *  - mapping.asSingleton() should return the value if no args are supplied
- *
- *  - injector.map('key').toFactory({...}):injector;
- *  - injector.map('key').toType({...}):injector;
- *  - injector.map('key').toValue({...}):injector;
- *
- *  - config => {
- *      isSingleton: <Boolean>,
- *      as: <Interface>,
- *      using: <Array>
- *    }
- *
- * ++
  * @TODO: Add the Injector instance as a mapping
  *  - target -> this
  *  - resolver -> makeValue
@@ -64,13 +48,11 @@
 
         // @TODO: INVALID_TARGET does not take into account toValue validation
         var INVALID_TARGET = '[#001] The target must be an Object or Function',
-            INCORRECT_METHOD_SIGNATURE = 'Incorrect method signature supplied',
-            INVALID_KEY_TYPE = '[#002] The key must be a String',
-            NO_RESOLVER = '[#003] No resolver found',
+            INCORRECT_METHOD_SIGNATURE = '[#002] Incorrect method signature supplied',
+            INVALID_KEY_TYPE = '[#003] The key must be a String',
             MAPPING_EXISTS = '[#004] A mapping already exists',
             NO_MAPPING = '[#005] No mapping found',
             MAPPING_HAS_DEPENDANTS = '[#006] The mapping has dependants',
-
             INTERFACE_MEMBER_MISSING = '[#007] The mapping is missing a required member',
             INTERFACE_METHOD_ARITY_MISMATCH = '[#008] The mapping has an interface method with an incorrect arity',
 
@@ -85,15 +67,6 @@
                 .indexOf(type.toLowerCase()) !== -1;
         }
 
-        function partial(fn) {
-
-            var args = slice.call(arguments, 1);
-
-            return function() {
-                return fn.apply(this, args.concat(slice.call(arguments, 0)));
-            };
-        }
-
         function validateType(value, type, errorMsg) {
 
             if (!is(value, type)) {
@@ -105,25 +78,14 @@
         // --------------------
         function Injector() {
 
-            // TODO: deprecate self use _injector
-            var self = this,
-                _injector = this,
+            var _injector = this,
                 mappings = {};
-
-            function resolve(vo) {
-
-                if (vo.resolver == null) {
-                    throw new Error(NO_RESOLVER);
-                }
-
-                return vo.resolver(vo);
-            }
 
             function validateKey(key) {
 
                 validateType(key, 'string', INVALID_KEY_TYPE);
 
-                if (self.hasMappingFor(key)) {
+                if (_injector.hasMappingFor(key)) {
                     throw new Error(MAPPING_EXISTS);
                 }
             }
@@ -146,11 +108,7 @@
                 api = [];
             }
 
-            function instantiate(vo) {
-
-                var instance = new vo.Builder(slice.call(arguments, 1));
-
-                checkInterface(instance, vo.api);
+            function setProps(instance, vo) {
 
                 if (!vo.hasOwnProperty('props')) {
 
@@ -163,14 +121,23 @@
                     }
                 }
 
-                vo.props.forEach(function(prop) {
+                return vo.props;
+            }
+
+            function instantiate(vo) {
+
+                var instance = new vo.Builder(slice.call(arguments, 1));
+
+                checkInterface(instance, vo.api);
+
+                setProps(instance, vo).forEach(function(prop) {
                     if (instance[prop] == null) {
                         instance[prop] = _injector.getMappingFor(prop.replace('i_', ''));
                     }
                 });
 
                 if (is(instance.postConstruct, 'Function')) {
-                    instance.postConstruct();
+                    instance.postConstruct(_injector);
                 }
 
                 return instance;
@@ -248,122 +215,6 @@
                 return vo.target;
             }
 
-            function setResolver(resolver, type, vo, target) {
-
-                if (vo.resolver !== null) {
-                    throw new Error(MAPPING_EXISTS);
-                }
-
-                if (type !== null) {
-                    validateType(target, type, INVALID_TARGET);
-                }
-
-                vo.target = target;
-                vo.resolver = resolver;
-
-                return vo;
-            }
-
-            // @TODO: Deprecate
-            function asSingleton(vo) {
-
-                vo.isSingleton = true;
-
-                return vo;
-            }
-
-            // @TODO: Deprecate
-            function using(vo) {
-
-                var args = slice.call(arguments, 1);
-
-                if (args.length > 0 && args[0]) {
-                    vo.args = is(args[0], 'Array') ? args[0] : args;
-                }
-
-                return vo;
-            }
-
-            // @TODO: Deprecate
-            function as(vo, api) {
-
-                vo.api = api;
-
-                return vo;
-            }
-
-            // TODO: Deprecate
-            function makeFacade(key) {
-
-                function mutate(mutator, vo) {
-
-                    return function() {
-
-                        return makeFacade(partial(mutator, vo).apply(null, arguments));
-                    };
-                }
-
-                return {
-
-                    /*
-                    toType: function(config) {
-
-                        if (arguments.length < 1) {
-                            throw new Error(INCORRECT_METHOD_SIGNATURE);
-                        }
-
-                        validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
-
-                        validateType(config.target, 'Function', INVALID_TARGET);
-
-                        mappings[key] = {
-
-                            target: config.target,
-                            resolver: makeFactory,
-
-                            api: config.api || [],
-                            args: config.using || []
-                        };
-
-                        return self;
-                    }
-
-                    injector: function() {
-
-                        return vo.injector;
-                    },
-
-                    toFactory: mutate(partial(setResolver, makeFactory, 'Function'), vo),
-
-                    //toType: mutate(partial(setResolver, makeType, 'Function'), vo),
-
-                    toValue: mutate(partial(setResolver, makeValue, null), vo),
-
-                    asSingleton: mutate(asSingleton, vo),
-
-                    using: mutate(using, vo),
-
-                    as: mutate(as, vo)
-                    */
-                };
-            }
-
-            // TODO: Deprecate - mappings should be type specific
-            function makeMapping() {
-
-                return {
-                    injector: self,
-                    target: null,
-                    isSingleton: false,
-                    resolver: null,
-                    args: [],
-                    props: null,
-                    Builder: null,
-                    instance: null,
-                    api: []
-                };
-            }
-
             this.map = function(key) {
 
                 validateKey(key);
@@ -438,7 +289,7 @@
 
             this.getMappingFor = function(key) {
 
-                if (!self.hasMappingFor(key)) {
+                if (!_injector.hasMappingFor(key)) {
                     throw new Error(NO_MAPPING);
                 }
 
@@ -485,14 +336,6 @@
                 return value;
             };
 
-            // @TODO: Deprecate
-            function makeResolver(resolver, type, target) {
-
-                var deps = slice.call(arguments, makeResolver.length);
-
-                return resolve(using(setResolver(resolver, type, makeMapping(), target), deps));
-            }
-
             this.resolveFactory = function(target) {
 
                 validateType(target, 'Function', INVALID_TARGET);
@@ -528,12 +371,6 @@
                     api: []
                 });
             };
-
-            //this.resolveFactory = partial(makeResolver, makeFactory, 'Function');
-
-            //this.resolveType = partial(makeResolver, makeType, 'Function');
-
-            //this.resolveValue = partial(makeResolver, makeValue, 'Object');
         }
 
         return Injector;

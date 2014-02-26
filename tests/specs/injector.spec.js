@@ -16,8 +16,8 @@ define(
         "use strict";
 
         var INVALID_TARGET = '[#001] The target must be an Object or Function',
-            INCORRECT_METHOD_SIGNATURE = 'Incorrect method signature supplied',
-            INVALID_KEY_TYPE = '[#002] The key must be a String',
+            INCORRECT_METHOD_SIGNATURE = '[#002] Incorrect method signature supplied',
+            INVALID_KEY_TYPE = '[#003] The key must be a String',
             MAPPING_EXISTS = '[#004] A mapping already exists',
             NO_MAPPING = '[#005] No mapping found',
             MAPPING_HAS_DEPENDANTS = '[#006] The mapping has dependants',
@@ -172,14 +172,23 @@ define(
 
                 it(' should throw if a mapping depends on the mapping to be removed', function() {
 
-                    injector.map('MyDependantType').toType({
+                    injector.map('MyDependantArgs').toType({
+                        target: function(MyType) {},
+                        using: ['MyType']
+                    });
+
+                    injector.map('MyDependantProps').toType({
                         target: function() {
-                            this.i_MyType = null;
+                            this.i_MyValue = null;
                         }
                     });
 
                     expect(function() {
                         injector.unMap('MyType');
+                    }).toThrow(MAPPING_HAS_DEPENDANTS);
+
+                    expect(function() {
+                        injector.unMap('MyValue');
                     }).toThrow(MAPPING_HAS_DEPENDANTS);
                 });
 
@@ -1486,8 +1495,10 @@ define(
                 }
 
                 function MyType() {
+                    this.injector = null;
                     this.isConstructed = false;
-                    this.postConstruct = function() {
+                    this.postConstruct = function(injector) {
+                        this.injector = injector;
                         this.isConstructed = true;
                     };
                 }
@@ -1517,6 +1528,11 @@ define(
                 it(' should call postConstruct on toFactory mappings after injecting dependencies', function() {
 
                     expect(injector.getMappingFor('MyFactory').make().isConstructed).toBe(true);
+                });
+
+                it(' should pass the injector as an argument', function() {
+
+                    expect(injector.getMappingFor('MyType').injector).toBe(injector);
                 });
 
                 it(' should call postConstruct on toType mappings after injecting dependencies', function() {

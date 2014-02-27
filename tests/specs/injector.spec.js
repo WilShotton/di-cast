@@ -15,14 +15,16 @@ define(
 
         "use strict";
 
-        var INVALID_TARGET = '[#001] The target must be an Object or Function',
-            INCORRECT_METHOD_SIGNATURE = '[#002] Incorrect method signature supplied',
-            INVALID_KEY_TYPE = '[#003] The key must be a String',
-            MAPPING_EXISTS = '[#004] A mapping already exists',
-            NO_MAPPING = '[#005] No mapping found',
-            MAPPING_HAS_DEPENDANTS = '[#006] The mapping has dependants',
-            INTERFACE_MEMBER_MISSING = '[#007] The mapping is missing a required member',
-            INTERFACE_METHOD_ARITY_MISMATCH = '[#008] The mapping has an interface method with an incorrect arity';
+        var INVALID_TARGET = 'The target must be an Object or Function',
+            INCORRECT_METHOD_SIGNATURE = 'Incorrect method signature supplied',
+            INVALID_KEY_TYPE = 'The key must be a String',
+
+            MISSING_TARGET = 'The target must be specified',
+            MAPPING_EXISTS = 'A mapping already exists',
+            NO_MAPPING = 'No mapping found',
+            MAPPING_HAS_DEPENDANTS = 'The mapping has dependants',
+            INTERFACE_MEMBER_MISSING = 'The mapping is missing a required member',
+            INTERFACE_METHOD_ARITY_MISMATCH = 'The mapping has an interface method with an incorrect arity';
 
         function is(value, type) {
             return Object.prototype.toString
@@ -582,7 +584,7 @@ define(
 
                     expect(function() {
                         injector.map('MyType1').toValue({});
-                    }).toThrow(INVALID_TARGET);
+                    }).toThrow(MISSING_TARGET);
                 });
             });
 

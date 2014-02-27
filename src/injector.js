@@ -9,11 +9,6 @@
  *  - or add another property to the vo
  *
  * ++
- * @TODO: Add the Injector instance as a mapping
- *  - target -> this
- *  - resolver -> makeValue
- *
- * ++
  * @TODO: Custom InjectorError class
  *  - Message - to be used for testing expect(...).toThrow([message]);
  *  - Info - for better debugging
@@ -46,15 +41,39 @@
 
     function factory() {
 
-        // @TODO: INVALID_TARGET does not take into account toValue validation
-        var INVALID_TARGET = '[#001] The target must be an Object or Function',
-            INCORRECT_METHOD_SIGNATURE = '[#002] Incorrect method signature supplied',
-            INVALID_KEY_TYPE = '[#003] The key must be a String',
-            MAPPING_EXISTS = '[#004] A mapping already exists',
-            NO_MAPPING = '[#005] No mapping found',
-            MAPPING_HAS_DEPENDANTS = '[#006] The mapping has dependants',
-            INTERFACE_MEMBER_MISSING = '[#007] The mapping is missing a required member',
-            INTERFACE_METHOD_ARITY_MISMATCH = '[#008] The mapping has an interface method with an incorrect arity',
+        var INVALID_TARGET = 'The target must be an Object or Function',
+            INCORRECT_METHOD_SIGNATURE = 'Incorrect method signature supplied',
+            INVALID_KEY_TYPE = 'The key must be a String',
+
+            MISSING_TARGET = {
+                message: 'The target must be specified',
+                info: 'The mapping for {{key}} must have a target property'
+            },
+
+            MAPPING_EXISTS = {
+                message: 'A mapping already exists',
+                info: 'The mapping {{key}} is already in use'
+            },
+
+            NO_MAPPING = {
+                message: 'No mapping found',
+                info: 'No mapping for {{key}} found'
+            },
+
+            MAPPING_HAS_DEPENDANTS = {
+                message: 'The mapping has dependants',
+                info: '{{key}} could not be unMapped as other mapping depend on it'
+            },
+
+            INTERFACE_MEMBER_MISSING = {
+                message: 'The mapping is missing a required member',
+                info: 'The mapping must have a member called {{name}}'
+            },
+
+            INTERFACE_METHOD_ARITY_MISMATCH = {
+                message: 'The mapping has an interface method with an incorrect arity',
+                info: 'The method signature for {{name}} requires {{arity}} arguments'
+            },
 
             slice = Array.prototype.slice;
 
@@ -73,6 +92,17 @@
                 throw new TypeError(errorMsg);
             }
         }
+
+        function InjectionError(template, context) {
+
+            this.name = 'InjectionError';
+            this.message = template.message;
+            this.info = template.info.replace(/\{\{(\w+)\}\}/g, function(_, match) {
+                return context[match];
+            });
+        }
+        InjectionError.prototype = new Error();
+        InjectionError.prototype.constructor = InjectionError;
 
         // Injector
         // --------------------
@@ -93,7 +123,7 @@
                 validateType(key, 'string', INVALID_KEY_TYPE);
 
                 if (_injector.hasMappingFor(key)) {
-                    throw new Error(MAPPING_EXISTS);
+                    throw new InjectionError(MAPPING_EXISTS, {key: key});
                 }
             }
 
@@ -103,12 +133,12 @@
 
                     if(instance[item.name] == null) {
 
-                        throw new Error(INTERFACE_MEMBER_MISSING);
+                        throw new InjectionError(INTERFACE_MEMBER_MISSING, item);
                     }
 
                     if (item.hasOwnProperty('arity') && instance[item.name].length !== item.arity) {
 
-                        throw new Error(INTERFACE_METHOD_ARITY_MISMATCH);
+                        throw new InjectionError(INTERFACE_METHOD_ARITY_MISMATCH, item);
                     }
                 });
 
@@ -236,9 +266,7 @@
                         mappings[key] = {
 
                             resolver: makeFactory,
-
                             target: config.target,
-
                             api: config.api || [],
                             args: config.using || []
                         };
@@ -254,9 +282,7 @@
                         mappings[key] = {
 
                             resolver: makeType,
-
                             target: config.target,
-
                             api: config.api || [],
                             args: config.using || [],
                             isSingleton: config.isSingleton || false
@@ -270,15 +296,13 @@
                         validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
 
                         if (!config.hasOwnProperty('target')) {
-                            throw new Error(INVALID_TARGET);
+                            throw new InjectionError(MISSING_TARGET, {key: key});
                         }
 
                         mappings[key] = {
 
                             resolver: makeValue,
-
                             target: config.target,
-
                             api: config.api || []
                         };
 
@@ -297,7 +321,7 @@
             this.getMappingFor = function(key) {
 
                 if (!_injector.hasMappingFor(key)) {
-                    throw new Error(NO_MAPPING);
+                    throw new InjectionError(NO_MAPPING, {key: key});
                 }
 
                 return mappings[key].resolver(mappings[key]);
@@ -321,7 +345,7 @@
                         .forEach(function(mapping) {
 
                             if (mapping.hasOwnProperty('args') && mapping.args.indexOf(key) !== -1) {
-                                throw new Error(MAPPING_HAS_DEPENDANTS);
+                                throw new InjectionError(MAPPING_HAS_DEPENDANTS, {key: key});
                             }
 
                             if (!mapping.hasOwnProperty('props')) {
@@ -331,7 +355,7 @@
                             }
 
                             if (mapping.props.indexOf('i_' + key) !== -1) {
-                                throw new Error(MAPPING_HAS_DEPENDANTS);
+                                throw new InjectionError(MAPPING_HAS_DEPENDANTS, {key: key});
                             }
                         });
 

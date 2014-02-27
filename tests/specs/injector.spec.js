@@ -854,19 +854,6 @@ define(
                     expect(IMyInterface.length).toBe(4);
                 });
 
-                // @TODO: Still need a way to test the interface check has only been called once
-                it(' should only test the Interface on the first instantiation', function() {
-
-                    injector.map('MyMissing').toType({
-                        target: function(){},
-                        api: IMyInterface
-                    });
-
-                    expect(function() {
-                        injector.getMappingFor('MyMissing');
-                    }).toThrow(INTERFACE_MEMBER_MISSING);
-                });
-
                 it(' should throw if an interface member is missing', function() {
 
                     var IMemberTest = [

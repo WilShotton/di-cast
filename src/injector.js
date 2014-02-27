@@ -4,14 +4,11 @@
 
 /**
  * ++
- * @TODO: Do not reset the api array once it has been checked
- *  - Check against the instance?
- *  - or add another property to the vo
+ * @TODO: Integrate Karma into grunt for Browser tests
  *
  * ++
- * @TODO: Custom InjectorError class
- *  - Message - to be used for testing expect(...).toThrow([message]);
- *  - Info - for better debugging
+ * @TODO: Factories should not need a wrapper function
+ *  - The 'using' setting means the closure can be created in the injector
  *
  * ++
  * @TODO: README
@@ -141,8 +138,6 @@
                         throw new InjectionError(INTERFACE_METHOD_ARITY_MISMATCH, item);
                     }
                 });
-
-                api = [];
             }
 
             function setProps(instance, vo) {

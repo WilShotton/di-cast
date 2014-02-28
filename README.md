@@ -24,7 +24,7 @@ console.log(injector.getMappingFor('greeting'));
 
 #### Creating mappings with constructor injection.
 
-Mappings can define an Array of dependencies in their settings object with the `using` option. The dependencies are resolved whenever a mapping is instantiated and are supplied to the target in the same order they are listed in the `using` Array.
+Mappings can define an Array of dependencies in their settings object with the `using` option. The dependencies are resolved whenever a mapping is instantiated and are supplied to the target in the same order as they are listed.
 
 ```
 injector.map('welcome').toType({
@@ -39,7 +39,7 @@ console.log(injector.getMappingFor('welcome').greeting);
 
 ```
 
-__Note:__ only `toFactory` and `toType` can make use of constructor injection as the target must be instantiated by the injector. For dependency injection `toValue` mappings use property injection.  
+__Note:__ only `toFactory` and `toType` can make use of constructor injection as the target must be instantiated by the injector. To inject `toValue` mappings use property injection.
 
 #### Creating mappings with property injection.
 
@@ -61,7 +61,7 @@ injector.getMappingFor('salutation').greet();
 
 #### Creating singleton mappings.
 
-Type mappings can be defined as singletons to ensure that the same Object can be used as a dependency everywhere.
+Type mappings can be defined as singletons to ensure that the same Object can be used as a dependency everywhere. __Note:__ Value and factory mappings are always singletons.
 
 ```
 injector.map('singleton').toType({
@@ -73,33 +73,57 @@ injector.getMappingFor('singleton') === injector.getMappingFor('singleton');
 // true
 
 ```
-__Note:__ Value and factory mappings are always singletons.
-
 
 #### Duck typing mappings.
 
+To ensure the correct interface on a mapping.
 
+```
+var IMyInterface = [
+
+	{name: 'myMethod', arity: 1},
+    {name: 'myProperty'},
+    {name: 'myPrototypeMethod'},
+    {name: 'myPrototypeProperty'}
+];
+
+injector.map('duckTyped').toType({
+	target: function() {},
+	api: IMyInterface
+});
+
+var duckTyped = injector.getMappingFor('duckTyped');
+// Throws an InjectionError
+
+```
 
 #### toType mappings
 
-#### toValue mapping
+#### toValue mappings
 
 #### toFactory mappings
 
-Maps a Factory function which will create a wrapper Object with a make() method. When invoked will return a new instance in the dependants scope.
+Maps a Factory function to an Object with a variadic `make()` method. When invoked `make()` will return a new instance from the factroy method with any arguments passed to the constructor. 
 
+Constructor dependencies will be injected into the Factory constructor and then accessable to the instance. 
+
+Property dependencies should be defined in the instance constructor itself.  
+
+```	
+function MyFactory() {
+	return function MyFactoryInstance() {};
+}
 	
-	function MyFactory() {
-		return function MyFactoryInstance() {};
-	}
-	
-	injector.map('MyFactory').toFactory({
-		target: MyFactory
-	});
+injector.map('MyFactory').toFactory({
+	target: MyFactory
+});
 
+var myFactoryInstance = injector.getMappingFor('MyFactory').make();
 
+```
 
 #### Tests
+
 
 
 #### To do

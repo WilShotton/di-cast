@@ -181,6 +181,18 @@ module.exports = function(grunt) {
                 files: ['src/**/*'],
                 tasks: ['default']
             }
+        },
+
+        yuidoc: {
+            compile: {
+                name: '<%= package.name %>',
+                description: '<%= package.description %>',
+                version: '<%= package.version %>',
+                options: {
+                    paths: 'src/',
+                    outdir: 'bin/docs/api/'
+                }
+            }
         }
     });
 
@@ -192,6 +204,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.loadNpmTasks('grunt-contrib-uglify');
+    grunt.loadNpmTasks('grunt-contrib-yuidoc');
 
     grunt.loadNpmTasks('grunt-plato');
 

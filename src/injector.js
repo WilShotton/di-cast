@@ -7,10 +7,6 @@
  * @TODO: Integrate Karma into grunt for Browser tests
  *
  * ++
- * @TODO: Factories should not need a wrapper function
- *  - The 'using' setting means the closure can be created in the injector
- *
- * ++
  * @TODO: README
  *
  * ++
@@ -36,6 +32,10 @@
 
     var deps = [];
 
+    /**
+     * @module Injector
+     * @returns {Injector}
+     */
     function factory() {
 
         var INVALID_TARGET = 'The target must be an Object or Function',
@@ -90,6 +90,17 @@
             }
         }
 
+        /**
+         * A custom Error class for the dependency injector.
+         *
+         * @class InjectionError
+         * @extends Error
+         * @param {Object} template The template strings.
+         *  @param {String} template.message The error message.
+         *  @param {String} template.info Contextual information about the error.
+         * @param {Object} context The data Object to format the template.info String with.
+         * @constructor
+         */
         function InjectionError(template, context) {
 
             this.name = 'InjectionError';
@@ -101,8 +112,14 @@
         InjectionError.prototype = new Error();
         InjectionError.prototype.constructor = InjectionError;
 
-        // Injector
-        // --------------------
+        /**
+         * A JavaScript dependency injector.
+         *
+         * Injects dependencies via constructor arguments and public properties prefixed with `i_`.
+         *
+         * @class Injector
+         * @constructor
+         */
         function Injector() {
 
             var _injector = this,
@@ -247,12 +264,35 @@
                 return vo.target;
             }
 
+            /**
+             * Initialises a mapping identifier and returns the options for creating a mapping.
+             *
+             * @method map
+             * @for Injector
+             * @param {String} key The mapping identifier.
+             * @return {MapOptions} The various mapping options available.
+             */
             this.map = function(key) {
 
                 validateKey(key);
 
+                /**
+                 *
+                 * @class MapOptions
+                 * @constructor
+                 */
                 return {
 
+                    /**
+                     * Maps a key to a factory mapping.
+                     *
+                     * @method toFactory
+                     * @param {Object} config The config settings for the mapping.
+                     *  @param {Function} config.target The factory function.
+                     *  @param {Array} [config.api] The interface definition for duck typing.
+                     *  @param {Array} [config.using] Any constructor dependencies.
+                     * @returns {Injector} A reference back to the Injector.
+                     */
                     toFactory: function(config) {
 
                         validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
@@ -269,6 +309,17 @@
                         return _injector;
                     },
 
+                    /**
+                     * Maps a key to a type mapping.
+                     *
+                     * @method toType
+                     * @param {Object} config The config settings for the mapping.
+                     *  @param {Function} config.target The factory function.
+                     *  @param {Array} [config.api] The interface definition for duck typing.
+                     *  @param {Array} [config.using] Any constructor dependencies.
+                     *  @param {Boolean} [config.isSingleton] If the mapping should be treated as a singleton.
+                     * @returns {Injector}
+                     */
                     toType: function(config) {
 
                         validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
@@ -286,6 +337,14 @@
                         return _injector;
                     },
 
+                    /**
+                     * Maps a key to a value mapping.
+                     *
+                     * @method toValue
+                     * @param {Object} config The config settings for the mapping.
+                     *  @param {Array} [config.api] The interface definition for duck typing.
+                     * @returns {Injector}
+                     */
                     toValue: function(config) {
 
                         validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
@@ -306,6 +365,16 @@
                 };
             };
 
+            /**
+             * Returns true if a mapping exists.
+             *
+             * If no mapping exists and the Injector has a parent then resolution is deferred to the parent.
+             *
+             * @method hasMappingFor
+             * @for Injector
+             * @param {String} key The mapping key.
+             * @return {Boolean} true if a mapping exists.
+             */
             this.hasMappingFor = function(key) {
 
                 validateType(key, 'String', INVALID_KEY_TYPE);
@@ -313,6 +382,15 @@
                 return mappings.hasOwnProperty(key);
             };
 
+            /**
+             * Returns a resolved mapping for the given key.
+             *
+             * If no mapping is found an Error is thrown.
+             *
+             * @method getMappingFor
+             * @param {String} key The mapping key.
+             * @return {*} The dependency.
+             */
             this.getMappingFor = function(key) {
 
                 if (!_injector.hasMappingFor(key)) {
@@ -322,6 +400,13 @@
                 return mappings[key].resolver(mappings[key]);
             };
 
+            /**
+             * Remove a mapping.
+             *
+             * @method unMap
+             * @param {String} key The mapping key.
+             * @returns {*} Either the removed mapping target or Null.
+             */
             this.unMap = function(key) {
 
                 var value = null;
@@ -362,6 +447,13 @@
                 return value;
             };
 
+            /**
+             * Creates a factory from the supplied target with all it's dependencies resolved.
+             *
+             * @method resolveFactory
+             * @param {Function} target The target Function.
+             * @returns {Object} The factory object.
+             */
             this.resolveFactory = function(target) {
 
                 validateType(target, 'Function', INVALID_TARGET);
@@ -374,6 +466,13 @@
                 });
             };
 
+            /**
+             * Creates an instance from the supplied target with all it's dependencies resolved.
+             *
+             * @method resolveType
+             * @param {Function} target The target Function.
+             * @returns {Object} A injected instance of the target Function.
+             */
             this.resolveType = function(target) {
 
                 validateType(target, 'Function', INVALID_TARGET);
@@ -387,6 +486,12 @@
                 });
             };
 
+            /**
+             * Resolves the property dependencies defined in the target Object.
+             *
+             * @param {Object} target The target Object.
+             * @returns {Object} The injected Object.
+             */
             this.resolveValue = function(target) {
 
                 validateType(target, 'Object', INVALID_TARGET);

@@ -2,11 +2,11 @@
 
 A JavaScript dependency injector for Node.js and the Browser.
 
-#### Set up.
+## Set up.
 
 The injector can be used in AMD, Browser and CommonJS environments.
 
-__AMD__
+#### AMD
 
 ```
 require(['path/to/injecor'], function(Injector) {
@@ -23,7 +23,7 @@ define('Module', ['path/to/injecor'], function(Injector) {
 
 ```
 
-__Browser__
+#### Browser
 
 	<script src="path/to/injector.js"></script>
 
@@ -33,7 +33,7 @@ __Browser__
 		
 	</script>
 
-__CommonJS__
+#### CommonJS
 
 ```
 var Injector = require('path/to/injector.js).Injector;

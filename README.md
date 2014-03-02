@@ -57,7 +57,9 @@ console.log(injector.getMappingFor('greeting'));
 
 ## Creating mappings with constructor injection.
 
-Mappings can define an Array of dependencies in their settings object with the `using` option. The dependencies are resolved whenever a mapping is instantiated and are supplied to the target in the same order as they are listed.
+Mappings can define an Array of dependencies in their settings object with the `using` option. The dependencies are resolved lazily whenever a mapping is instantiated and are supplied to the target in the same order as they are listed.
+
+If a mapping cannot be resolved the injector will throw an error.
 
 ```
 injector.map('welcome').toType({
@@ -72,11 +74,13 @@ console.log(injector.getMappingFor('welcome').greeting);
 
 ```
 
-__Note:__ only `toFactory` and `toType` can make use of constructor injection as the target must be instantiated by the injector. To inject `toValue` mappings use property injection.
+__Note:__ only the `toFactory` and `toType` mapping methods can make use of constructor injection as the target must be instantiated by the injector. To inject `toValue` mappings use property injection.
 
 ## Creating mappings with property injection.
 
-Targets can define their own mappings by declaring public properties prefixed with `i_` and an initial value set to `null` or `undefined`.
+Target objects and constructor functions can define their own mappings by declaring public properties prefixed with `i_` and an initial value set to `null` or `undefined`.
+
+If a mapping cannot be resolved the injector will throw an error.
 
 ```
 injector.map('salutation').toValue({
@@ -94,7 +98,7 @@ injector.getMappingFor('salutation').greet();
 
 ## Type checking mappings.
 
-To ensure the correct interface on a mapping an optional `api` property can be specified in the config object.
+To ensure the correct interface is set on a mapping an optional `api` property can be specified in the config object.
 
 ```
 var IMyInterface = [

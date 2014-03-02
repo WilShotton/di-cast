@@ -4,23 +4,26 @@
 
 /**
  * ++
- * @TODO: README
- *
- * ++
- * @TODO: Add API Docs
- *
- * ++
  * @TODO: Update API
  *  - getMappingFor > get
  *  - hasMappingFor > has
  *  - unMap > remove
  *
  * ++
- * @TODO: Update property mappings
+ * @TODO: Update property mappings interface
  *  - Change this.i_Mapping = null to this.mapping = '_inject_'
  *
  *  - this.mapping = inject(...);
  *  - var mapping = inject(...);
+ *
+ * ++
+ * @TODO: The props list should be generated when the value is mapped
+ *  - use a regex to parse the string representation of the value
+ *
+ * ++
+ * @TODO: Interface checking should when the value is mapped
+ *  - use a regex to parse the string representation of the value
+ *  - toValue mappings can be inspected as they are
  *
  * ++
  * @TODO: Integrate Karma into grunt for Browser tests

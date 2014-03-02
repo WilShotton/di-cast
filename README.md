@@ -42,7 +42,7 @@ var injector = new Injector();
 
 ```
 
-#### Creating basic mappings.
+## Creating basic mappings.
 
 ```
 // Create a mapping	
@@ -55,7 +55,7 @@ console.log(injector.getMappingFor('greeting'));
 
 ```	
 
-#### Creating mappings with constructor injection.
+## Creating mappings with constructor injection.
 
 Mappings can define an Array of dependencies in their settings object with the `using` option. The dependencies are resolved whenever a mapping is instantiated and are supplied to the target in the same order as they are listed.
 
@@ -74,7 +74,7 @@ console.log(injector.getMappingFor('welcome').greeting);
 
 __Note:__ only `toFactory` and `toType` can make use of constructor injection as the target must be instantiated by the injector. To inject `toValue` mappings use property injection.
 
-#### Creating mappings with property injection.
+## Creating mappings with property injection.
 
 Targets can define their own mappings by declaring public properties prefixed with `i_` and an initial value set to `null` or `undefined`.
 
@@ -92,7 +92,7 @@ injector.getMappingFor('salutation').greet();
 // 'Hello World'
 ```
 
-#### Type checking mappings.
+## Type checking mappings.
 
 To ensure the correct interface on a mapping an optional `api` property can be specified in the config object.
 
@@ -115,7 +115,7 @@ var duckTyped = injector.getMappingFor('duckTyped');
 
 ```
 
-#### toType mappings.
+## toType mappings.
 
 This mapping method takes a constructor function as a target and returns a new instance with all it's dependencies resolved when requested. 
 
@@ -133,7 +133,7 @@ function MyType(ConstructorDependency) {
 }
 ```
 
-###### Config options.
+#### Config options.
 
 __target__ The factory function. __Required.__
 
@@ -155,7 +155,7 @@ injector.map('MyType').toType({
 
 ```
 
-###### Singleton mappings.
+#### Singleton mappings.
 
 Type mappings can be defined as singletons to ensure that the same Object can be used as a dependency everywhere.
 
@@ -170,19 +170,19 @@ injector.getMappingFor('singleton') === injector.getMappingFor('singleton');
 
 ```
 
-###### Retrieving a type instance.
+#### Retrieving a type instance.
 
 ```	
 var myType = injector.getMappingFor('MyType');
 
 ```
 
-#### toValue mappings.
+## toValue mappings.
 This mapping method maps a value of any type against a key and returns it when requested. If the value is an Object the injector will attempt to resolve any public properties that are marked as injectable.  
 
 toValue mappings are always singletons.
 
-###### Config options.
+#### Config options.
 
 __target__ The factory function. __Required.__
 
@@ -205,7 +205,7 @@ injector.map('MyValue').toValue({
 
 ```
 
-###### Retrieving a value mapping.
+#### Retrieving a value mapping.
 
 ```	
 var myValue = injector.getMappingFor('MyValue');
@@ -222,7 +222,7 @@ injector.map('MyType').toType({
 
 ```
 
-#### toFactory mappings.
+## toFactory mappings.
 
 This mapping method takes a factory function as a target and creates an Object with a variadic `make()` method. When invoked `make()` will return a new instance from the factroy method with any arguments passed to the instance constructor. 
 
@@ -246,7 +246,7 @@ Constructor dependencies will be injected into the Factory constructor which wil
 
 Property dependencies should be defined in the instance constructor itself.  
 
-###### Config options.
+#### Config options.
 
 __target__ The factory function. __Required.__
 
@@ -267,7 +267,7 @@ injector.map('MyFactory').toFactory({
 
 ```
 
-###### Retrieving a factory instance
+#### Retrieving a factory instance
 
 ```	
 var myFactoryInstance = injector.getMappingFor('MyFactory').make('Hello');
@@ -277,7 +277,7 @@ myFactoryInstance.getArg()
 
 ```
 
-#### Grunt tasks.
+## Grunt tasks.
 
 `> grunt doc` Generate API YUIDocs in `bin/docs`.
 
@@ -288,21 +288,21 @@ myFactoryInstance.getArg()
 `> grunt dist` Generate a minified file in `dist`
 
 
-#### Known bugs.
+## Known bugs.
 
 Non singleton type mappings injected into a factory will behave as a singleton for all instances created by that factory.
 
 
-#### To do.
+## To do.
 
-###### Automatic constructor injection.
+#### Automatic constructor injection.
 
 Convert the constructor function to a string and inspect its arguments to derive dependencies.
  
 __NOTE:__ This approach will only work for non minified code so tests will need to split into pre / post compile.
 
-###### Nested injection.
+#### Nested injection.
 
 Injectors should take an optional parent injector constructor argument. If an injector cannot resolve a dependency it should look to its parental scope. 
 
-###### Circular dependency management.
+#### Circular dependency management.

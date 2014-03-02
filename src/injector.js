@@ -4,13 +4,30 @@
 
 /**
  * ++
- * @TODO: Integrate Karma into grunt for Browser tests
- *
- * ++
  * @TODO: README
  *
  * ++
  * @TODO: Add API Docs
+ *
+ * ++
+ * @TODO: Update API
+ *  - getMappingFor > get
+ *  - hasMappingFor > has
+ *  - unMap > remove
+ *
+ * ++
+ * @TODO: Update property mappings
+ *  - Change this.i_Mapping = null to this.mapping = '_inject_'
+ *
+ *  - this.mapping = inject(...);
+ *  - var mapping = inject(...);
+ *
+ * ++
+ * @TODO: Integrate Karma into grunt for Browser tests
+ *
+ * ++
+ * @TODO: Non singleton type mappings injected into a factory will behave as a singleton
+ * for all instances of that factory...
  *
  * ++
  * @TODO: NPM
@@ -19,12 +36,26 @@
  * @TODO: Bower
  *
  * ++
+ * @TODO: Global inject(key):Object function
+ *  - replaces the whole i_ thing
+ *  - could look at ...args for constructor args on the function
+ *
+ * ++
  * @TODO: Injector.autoInject() for Angular style constructor injection
  *  - NOTE: Will need to split tests into pre / post compile
  *
  * ++
  * @TODO: Add parent injector stuff...
+ *
+ * ++
+ * @TODO: Circular dependency management
+ *
+ * ++
+ * @TODO: Improve how properties are derived
+ *
  */
+
+// http://docs.angularjs.org/api/auto/service/$injector
 
 ;(function(root) {
 

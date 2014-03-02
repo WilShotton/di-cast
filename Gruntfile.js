@@ -190,7 +190,7 @@ module.exports = function(grunt) {
                 version: '<%= package.version %>',
                 options: {
                     paths: 'src/',
-                    outdir: 'bin/docs/api/'
+                    outdir: 'bin/docs/'
                 }
             }
         }
@@ -208,6 +208,7 @@ module.exports = function(grunt) {
 
     grunt.loadNpmTasks('grunt-plato');
 
+    grunt.registerTask('doc', ['yuidoc']);
     grunt.registerTask('test', ['connect:coverage', 'jasmine:coverage']);
     grunt.registerTask('default', ['jshint']);
     grunt.registerTask('dist', ['jshint', 'plato', 'uglify:dist', 'jasmine:dist']);

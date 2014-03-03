@@ -4,15 +4,9 @@
 
 /**
  * ++
- * @TODO: Update property mappings interface
- *  - Change this.i_Mapping = null to this.mapping = '_inject_'
- *
- *  - this.mapping = inject(...);
- *  - var mapping = inject(...);
- *
- * ++
  * @TODO: The props list should be generated when the value is mapped
  *  - use a regex to parse the string representation of the value
+ *  - Match injection point keys in an Object ([\w\$'"]*)(?=\s*[:=]\s*'{I}')
  *
  * ++
  * @TODO: Interface checking should when the value is mapped
@@ -32,6 +26,15 @@
  * ++
  * @TODO: Bower
  *
+ * ------------------------------
+ *
+ * ++
+ * @TODO: Inject toValue function mapping properties by inspection
+ *
+ * ++
+ * @TODO: I_POINT setter
+ *  - NOTE: Will have to dynamically generate regex
+ *
  * ++
  * @TODO: Injector.autoInject() for Angular style constructor injection
  *  - NOTE: Will need to split tests into pre / post compile
@@ -41,16 +44,9 @@
  *
  * ++
  * @TODO: Circular dependency management
- *
  */
 
 // http://docs.angularjs.org/api/auto/service/$injector
-
-/**
- * Match keys in Object
- * ([\w\$]*)(?=\s*[:=]\s*'{I}')
- */
-
 
 ;(function(root) {
 
@@ -98,6 +94,8 @@
                 info: 'The method signature for {{name}} requires {{arity}} arguments'
             },
 
+            I_POINT = '{I}',
+
             slice = Array.prototype.slice;
 
         function is(value, type) {
@@ -141,7 +139,8 @@
         /**
          * A JavaScript dependency injector.
          *
-         * Injects dependencies via constructor arguments and public properties prefixed with `i_`.
+         * Injects dependencies via constructor arguments and
+         * public properties prefixed with an initial value set to '{I}'.
          *
          * @class Injector
          * @constructor
@@ -190,7 +189,8 @@
                     vo.props = [];
 
                     for (var prop in instance) {
-                        if (prop.indexOf('i_') === 0) {
+
+                        if (instance[prop] === I_POINT) {
                             vo.props[vo.props.length] = prop;
                         }
                     }
@@ -206,9 +206,8 @@
                 checkInterface(instance, vo.api);
 
                 setProps(instance, vo).forEach(function(prop) {
-                    if (instance[prop] == null) {
-                        instance[prop] = _injector.get(prop.replace('i_', ''));
-                    }
+
+                    instance[prop] = _injector.get(prop);
                 });
 
                 if (is(instance.postConstruct, 'Function')) {
@@ -280,9 +279,10 @@
                     vo.props = [];
 
                     for (var prop in vo.target) {
-                        if (prop.indexOf('i_') === 0 && vo.target[prop] == null) {
+
+                        if (vo.target[prop] === I_POINT) {
                             vo.props[vo.props.length] = prop;
-                            vo.target[prop] = _injector.get(prop.replace('i_', ''));
+                            vo.target[prop] = _injector.get(prop);
                         }
                     }
                 }
@@ -460,7 +460,7 @@
                                 }
                             }
 
-                            if (mapping.props.indexOf('i_' + key) !== -1) {
+                            if (mapping.props.indexOf(key) !== -1) {
                                 throw new InjectionError(MAPPING_HAS_DEPENDANTS, {key: key});
                             }
                         });

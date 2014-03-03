@@ -188,7 +188,7 @@ define(
 
                     injector.map('MyDependantProps').toType({
                         target: function() {
-                            this.i_MyValue = null;
+                            this.MyValue = '{I}';
                         }
                     });
 
@@ -208,7 +208,7 @@ define(
                     expect(injector.remove('MyValue')).toBe(myValue);
                 });
 
-                it(' should return null for a removed key', function() {
+                it(' should return null for a non existant key', function() {
 
                     expect(injector.remove('MyMissing')).toBe(null);
                 });
@@ -320,7 +320,7 @@ define(
 
                     function MyMissingFactory() {
                         return function MyFactoryInstance() {
-                            this.i_MyMissingProp = null;
+                            this.MyMissingProp = '{I}';
                         };
                     }
 
@@ -426,9 +426,7 @@ define(
                     myObject = {name:'MyObject'},
                     myString = 'MyString',
 
-                    myPropertyArray = ['i_MyNumber'],
-                    myPropertyObject = {i_MyNumber: null},
-                    myPropertyString = 'i_MyNumber';
+                    myPropertyObject = {MyNumber: '{I}'};
 
                 function MyFunction() {}
 
@@ -437,12 +435,12 @@ define(
                 }
 
                 function MyPropertyFunction() {
-                    this.i_MyNumber = null;
+                    this.MyNumber = '{I}';
                 }
 
                 function MyPrototypeFunction() {}
                 MyPrototypeFunction.prototype = {
-                    i_MyNumber: null
+                    MyNumber: '{I}'
                 };
                 MyPrototypeFunction.prototype.constructor = MyPrototypeFunction;
 
@@ -465,11 +463,9 @@ define(
                     injector.map('MyObject').toValue({target: myObject});
                     injector.map('MyString').toValue({target: myString});
 
-                    injector.map('MyPropertyArray').toValue({target: myPropertyArray});
                     injector.map('MyPropertyFunction').toValue({target: MyPropertyFunction});
                     injector.map('MyPropertyInstance').toValue({target: new MyPropertyFunction()});
                     injector.map('MyPropertyObject').toValue({target: myPropertyObject});
-                    injector.map('MyPropertyString').toValue({target: myPropertyString});
 
                     injector.map('MyPrototypeInstance').toValue({target: new MyPropertyFunction()});
 
@@ -547,30 +543,19 @@ define(
 
                 it(' should resolve properties of target Objects', function() {
 
-                    expect(injector.get('MyPropertyInstance').i_MyNumber).toBe(42);
-                    expect(injector.get('MyPropertyObject').i_MyNumber).toBe(42);
+                    expect(injector.get('MyPropertyInstance').MyNumber).toBe(42);
+                    expect(injector.get('MyPropertyObject').MyNumber).toBe(42);
                 });
 
                 it(' should resolve prototypical properties of target Objects', function() {
 
-                    expect(injector.get('MyPrototypeInstance').i_MyNumber).toBe(42);
+                    expect(injector.get('MyPrototypeInstance').MyNumber).toBe(42);
                 });
 
                 it(' should resolve inherited properties of target Objects', function() {
 
-                    expect(injector.get('MyBorrowedInstance').i_MyNumber).toBe(42);
-                    expect(injector.get('MyInheritedInstance').i_MyNumber).toBe(42);
-                });
-
-                it(' should NOT resolve non Object target values', function() {
-
-                    var MyPropertyFunction = injector.get('MyPropertyFunction'),
-                        myPropertyInstance = new MyPropertyFunction();
-
-                    expect(myPropertyInstance.i_MyNumber).toBeNull();
-
-                    expect(injector.get('MyPropertyArray')[0]).toBe('i_MyNumber');
-                    expect(injector.get('MyPropertyString')).toBe('i_MyNumber');
+                    expect(injector.get('MyBorrowedInstance').MyNumber).toBe(42);
+                    expect(injector.get('MyInheritedInstance').MyNumber).toBe(42);
                 });
 
                 it(' should throw if no config object is provided', function() {
@@ -1010,9 +995,10 @@ define(
                     });
                 });
 
+                // @TODO:...
                 it(' should throw for an arity / dependency length mismatch', function() {
 
-                    // @TODO.
+
                 });
 
                 it(' should map on dependencies by index, not name', function() {
@@ -1077,31 +1063,27 @@ define(
             // Property injection
             describe('property injection', function() {
 
+                var myPropValue = 'MyProp';
+
                 beforeEach(function() {
 
                     injector = new Injector();
 
-                    injector.map('MyNull').toValue({
-                        target:'Null'
-                    });
-
-                    injector.map('MyUndefined').toValue({
-                        target: 'Undefined'
+                    injector.map('MyProp').toValue({
+                        target: myPropValue
                     });
                 });
 
-                it(' should inject null and undefined properties prefixed with i_', function() {
+                it(' should inject properties set to the injector token', function() {
 
                     function MyFactory() {
                         return function MyFactoryInstance() {
-                            this.i_MyNull = null;
-                            this.i_MyUndefined = null;
+                            this.MyProp = '{I}';
                         };
                     }
 
                     function MyType() {
-                        this.i_MyNull = null;
-                        this.i_MyUndefined = undefined;
+                        this.MyProp = '{I}';
                     }
 
                     injector.map('MyFactory').toFactory({
@@ -1114,21 +1096,19 @@ define(
 
                     function test(instance) {
 
-                        expect(instance.i_MyNull).toEqual('Null');
-                        expect(instance.i_MyUndefined).toEqual('Undefined');
+                        expect(instance.MyProp).toEqual(myPropValue);
                     }
 
                     test(injector.get('MyFactory').make());
                     test(injector.get('MyType'));
                 });
 
-                it(' should inject null and undefined prototype properties prefixed with i_', function() {
+                it(' should inject prototype properties set to the injector token', function() {
 
                     function MyFactory() {
                         function MyFactoryInstance() {}
                         MyFactoryInstance.prototype = {
-                            i_MyNull: null,
-                            i_MyUndefined: null
+                            MyProp: '{I}'
                         };
                         MyFactoryInstance.prototype.constructor = MyFactoryInstance;
                         return MyFactoryInstance;
@@ -1136,8 +1116,7 @@ define(
 
                     function MyType() {}
                     MyType.prototype = {
-                        i_MyNull: null,
-                        i_MyUndefined: null
+                        MyProp: '{I}'
                     };
                     MyType.prototype.constructor = MyType;
 
@@ -1151,20 +1130,18 @@ define(
 
                     function test(instance) {
 
-                        expect(instance.i_MyNull).toEqual('Null');
-                        expect(instance.i_MyUndefined).toEqual('Undefined');
+                        expect(instance.MyProp).toEqual(myPropValue);
                     }
 
                     test(injector.get('MyFactory').make());
                     test(injector.get('MyType'));
                 });
 
-                it(' should inject inherited null and undefined properties prefixed with i_', function() {
+                it(' should inject inherited properties set to {I}', function() {
 
                     function MyRoot() {}
                     MyRoot.prototype = {
-                        i_MyNull: null,
-                        i_MyUndefined: undefined
+                        MyProp: '{I}'
                     };
                     MyRoot.prototype.constructor = MyRoot;
 
@@ -1214,13 +1191,11 @@ define(
 
                         var myRoot;
 
-                        expect(instance.i_MyNull).toEqual('Null');
-                        expect(instance.i_MyUndefined).toEqual('Undefined');
+                        expect(instance.MyProp).toEqual(myPropValue);
 
                         // Control to ensure the prototype is NOT being mutated
                         myRoot = new MyRoot();
-                        expect(myRoot.i_MyNull).toBeNull();
-                        expect(myRoot.i_MyUndefined).toBeUndefined();
+                        expect(myRoot.MyProp).toBe('{I}');
                     }
 
                     test(injector.get('MyInstantiatedPrototype_Factory').make());
@@ -1230,26 +1205,26 @@ define(
                     test(injector.get('MyBorrowedPrototype_Type'));
                 });
 
-                it(' should NOT inject non null and undefined properties prefixed with an i_', function() {
+                it(' should ONLY inject properties set to {I}', function() {
 
                     function Props() {
 
-                        this.i_MyArray = [1, 2, 3];
-                        this.i_MyArray_Empty = [];
+                        this.MyArray = [1, 2, 3];
+                        this.MyArray_Empty = [];
 
-                        this.i_MyBoolean_False = false;
-                        this.i_MyBoolean_True = true;
+                        this.MyBoolean_False = false;
+                        this.MyBoolean_True = true;
 
-                        this.i_MyFunction = function MyFunction() {};
+                        this.MyFunction = function MyFunction() {};
 
-                        this.i_MyNumber = 42;
-                        this.i_MyNumber_Zero = 0;
+                        this.MyNumber = 42;
+                        this.MyNumber_Zero = 0;
 
-                        this.i_MyObject = {foo:'bar'};
-                        this.i_MyObject_Empty = {};
+                        this.MyObject = {foo:'bar'};
+                        this.MyObject_Empty = {};
 
-                        this.i_MyString = 'Hello World';
-                        this.i_MyString_Empty = '';
+                        this.MyString = 'Hello World';
+                        this.MyString_Empty = '';
                     }
 
                     injector.map('MyArray').toValue({
@@ -1301,79 +1276,33 @@ define(
 
                     var props = injector.get('Props');
 
-                    expect(props.i_MyArray).toEqual([1, 2, 3]);
-                    expect(props.i_MyArray_Empty).toEqual([]);
+                    expect(props.MyArray).toEqual([1, 2, 3]);
+                    expect(props.MyArray_Empty).toEqual([]);
 
-                    expect(props.i_MyBoolean_False).toEqual(false);
-                    expect(props.i_MyBoolean_True).toEqual(true);
+                    expect(props.MyBoolean_False).toEqual(false);
+                    expect(props.MyBoolean_True).toEqual(true);
 
-                    expect(new props.i_MyFunction().constructor.name).toEqual('MyFunction');
+                    expect(new props.MyFunction().constructor.name).toEqual('MyFunction');
 
-                    expect(props.i_MyNumber).toEqual(42);
-                    expect(props.i_MyNumber_Zero).toEqual(0);
+                    expect(props.MyNumber).toEqual(42);
+                    expect(props.MyNumber_Zero).toEqual(0);
 
-                    expect(props.i_MyObject.foo).toEqual('bar');
-                    expect(props.i_MyObject_Empty).toEqual({});
+                    expect(props.MyObject.foo).toEqual('bar');
+                    expect(props.MyObject_Empty).toEqual({});
 
-                    expect(props.i_MyString).toEqual('Hello World');
-                    expect(props.i_MyString_Empty).toEqual('');
+                    expect(props.MyString).toEqual('Hello World');
+                    expect(props.MyString_Empty).toEqual('');
                 });
 
-                it(' should NOT inject non prefixed properties', function() {
-
-                    var myString = 'MyString',
-
-                        myInjectedString = 'MyInjectedString',
-                        myEmptyString = 'MyEmptyString',
-                        myNullString = 'MyNullString',
-                        myUndefinedString = 'MyUndefinedString';
+                it(' should throw if a mapping cannot be found', function() {
 
                     function MyType() {
-                        this.i_MyString = undefined;
-                        this.MyString = myString;
-                        this.MyEmptyString = '';
-                        this.MyNullString = null;
-                        this.MyUndefinedString = undefined;
-                    }
-
-                    injector.map('MyString').toValue({
-                        target: myInjectedString
-                    });
-
-                    injector.map('MyEmptyString').toValue({
-                        target: myEmptyString
-                    });
-
-                    injector.map('MyNullString').toValue({
-                        target: myNullString
-                    });
-
-                    injector.map('MyUndefinedString').toValue({
-                        target: myUndefinedString
-                    });
-
-                    injector.map('MyType').toType({
-                        target: MyType
-                    });
-
-                    var myType = injector.get('MyType');
-
-                    expect(myType.i_MyString).toEqual(myInjectedString);
-                    expect(myType.MyString).toEqual(myString);
-                    expect(myType.MyEmptyString).toEqual('');
-                    expect(myType.MyNullString).toEqual(null);
-                    expect(myType.MyUndefinedString).toEqual(undefined);
-                });
-
-                it(' should throw if a dependency is removed', function() {
-
-                    function MyType() {
-                        this.i_MyString = null;
+                        this.MyString = '{I}';
                     }
 
                     function MyFactory() {
                         return function MyMissingFactoryInstance() {
-                            this.i_MyString = null;
+                            this.MyString = '{I}';
                         };
                     }
 
@@ -1407,10 +1336,10 @@ define(
 
                     function MyType(myConstructor) {
                         this.myConstructor = myConstructor;
-                        this.i_MyProperty = null;
+                        this.MyProperty = '{I}';
                     }
                     MyType.prototype = {
-                        i_MyPrototypeProperty: null
+                        MyPrototypeProperty: '{I}'
                     };
                     MyType.prototype.constructor = MyType;
 
@@ -1418,10 +1347,10 @@ define(
 
                         function MyFactoryInstance() {
                             this.myConstructor = myConstructor;
-                            this.i_MyProperty = null;
+                            this.MyProperty = '{I}';
                         }
                         MyFactoryInstance.prototype = {
-                            i_MyPrototypeProperty: null
+                            MyPrototypeProperty: '{I}'
                         };
                         MyFactoryInstance.prototype.constructor = MyFactoryInstance;
 
@@ -1453,8 +1382,8 @@ define(
                     function test(instance) {
 
                         expect(instance.myConstructor).toEqual('MyConstructor');
-                        expect(instance.i_MyProperty).toEqual('MyProperty');
-                        expect(instance.i_MyPrototypeProperty).toEqual('MyPrototypeProperty');
+                        expect(instance.MyProperty).toEqual('MyProperty');
+                        expect(instance.MyPrototypeProperty).toEqual('MyPrototypeProperty');
                     }
 
                     test(injector.get('MyType'));
@@ -1559,7 +1488,7 @@ define(
 
                 function MyFactory(myFactoryArg) {
                     return function MyFactoryInstance(myInstanceArg) {
-                        this.i_MyProp = null;
+                        this.MyProp = '{I}';
                         this.myFactoryArg = myFactoryArg;
                         this.myInstanceArg = myInstanceArg;
                     };
@@ -1581,7 +1510,7 @@ define(
 
                     expect(instance.constructor.name).toBe('MyFactoryInstance');
 
-                    expect(instance.i_MyProp).toBe('MyProp');
+                    expect(instance.MyProp).toBe('MyProp');
                     expect(instance.myFactoryArg).toBe('MyFactoryArg');
                     expect(instance.myInstanceArg).toBe('MyInstanceArg');
                 });
@@ -1601,7 +1530,7 @@ define(
 
                     function MyFactory() {
                         return function MyFactoryInstance() {
-                            this.i_MyMissingProp = null;
+                            this.MyMissingProp = '{I}';
                         };
                     }
 
@@ -1621,7 +1550,7 @@ define(
             describe('resolveType()', function() {
 
                 function MyType(MyArg) {
-                    this.i_MyProp = null;
+                    this.MyProp = '{I}';
                     this.myArg = MyArg;
                 }
 
@@ -1637,7 +1566,7 @@ define(
                     var instance = injector.resolveType(MyType, 'MyArg');
 
                     expect(instance.constructor).toBe(MyType);
-                    expect(instance.i_MyProp).toBe('MyProp');
+                    expect(instance.MyProp).toBe('MyProp');
                     expect(instance.myArg).toBe('MyArg');
                 });
 
@@ -1653,7 +1582,7 @@ define(
                 it(' should throw if a property dependency cannot be resolved', function() {
 
                     function MyType() {
-                        this.i_MyMissingProp = null;
+                        this.MyMissingProp = '{I}';
                     }
 
                     expect(function() {
@@ -1672,7 +1601,7 @@ define(
             describe('resolveValue()', function() {
 
                 var myValue = {
-                    i_MyProp: null
+                    MyProp: '{I}'
                 };
 
                 beforeEach(function() {
@@ -1683,7 +1612,7 @@ define(
 
                 it(' should resolve properties of the target', function() {
 
-                    expect(injector.resolveValue(myValue).i_MyProp).toBe('MyProp');
+                    expect(injector.resolveValue(myValue).MyProp).toBe('MyProp');
                 });
 
                 it(' should throw if the target is not an object', function() {

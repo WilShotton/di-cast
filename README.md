@@ -50,7 +50,7 @@ injector.map('greeting').toValue({
 	target: 'Hello World'
 });
 	
-console.log(injector.getMappingFor('greeting'));
+console.log(injector.get('greeting'));
 // 'Hello World'
 
 ```	
@@ -69,7 +69,7 @@ injector.map('welcome').toType({
 	using: ['greeting']
 });
 
-console.log(injector.getMappingFor('welcome').greeting);
+console.log(injector.get('welcome').greeting);
 // 'Hello World'
 
 ```
@@ -92,7 +92,7 @@ injector.map('salutation').toValue({
 	}
 });
 
-injector.getMappingFor('salutation').greet();
+injector.get('salutation').greet();
 // 'Hello World'
 ```
 
@@ -114,7 +114,7 @@ injector.map('duckTyped').toType({
 	api: IMyInterface
 });
 
-var duckTyped = injector.getMappingFor('duckTyped');
+var duckTyped = injector.get('duckTyped');
 // Throws an InjectionError
 
 ```
@@ -169,7 +169,7 @@ injector.map('singleton').toType({
 	isSingleton: true
 });
 
-injector.getMappingFor('singleton') === injector.getMappingFor('singleton');
+injector.get('singleton') === injector.get('singleton');
 // true
 
 ```
@@ -177,7 +177,7 @@ injector.getMappingFor('singleton') === injector.getMappingFor('singleton');
 #### Retrieving a type instance.
 
 ```	
-var myType = injector.getMappingFor('MyType');
+var myType = injector.get('MyType');
 
 ```
 
@@ -212,7 +212,7 @@ injector.map('MyValue').toValue({
 #### Retrieving a value mapping.
 
 ```	
-var myValue = injector.getMappingFor('MyValue');
+var myValue = injector.get('MyValue');
 
 myValue.greet();
 // Hello World
@@ -274,7 +274,7 @@ injector.map('MyFactory').toFactory({
 #### Retrieving a factory instance
 
 ```	
-var myFactoryInstance = injector.getMappingFor('MyFactory').make('Hello');
+var myFactoryInstance = injector.get('MyFactory').make('Hello');
 
 myFactoryInstance.getArg()
 // 'Hello'

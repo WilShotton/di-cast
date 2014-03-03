@@ -4,12 +4,6 @@
 
 /**
  * ++
- * @TODO: Update API
- *  - getMappingFor > get
- *  - hasMappingFor > has
- *  - unMap > remove
- *
- * ++
  * @TODO: Update property mappings interface
  *  - Change this.i_Mapping = null to this.mapping = '_inject_'
  *
@@ -39,11 +33,6 @@
  * @TODO: Bower
  *
  * ++
- * @TODO: Global inject(key):Object function
- *  - replaces the whole i_ thing
- *  - could look at ...args for constructor args on the function
- *
- * ++
  * @TODO: Injector.autoInject() for Angular style constructor injection
  *  - NOTE: Will need to split tests into pre / post compile
  *
@@ -53,12 +42,15 @@
  * ++
  * @TODO: Circular dependency management
  *
- * ++
- * @TODO: Improve how properties are derived
- *
  */
 
 // http://docs.angularjs.org/api/auto/service/$injector
+
+/**
+ * Match keys in Object
+ * ([\w\$]*)(?=\s*[:=]\s*'{I}')
+ */
+
 
 ;(function(root) {
 
@@ -93,7 +85,7 @@
 
             MAPPING_HAS_DEPENDANTS = {
                 message: 'The mapping has dependants',
-                info: '{{key}} could not be unMapped as other mapping depend on it'
+                info: '{{key}} could not be removed as other mapping depend on it'
             },
 
             INTERFACE_MEMBER_MISSING = {
@@ -170,7 +162,7 @@
 
                 validateType(key, 'string', INVALID_KEY_TYPE);
 
-                if (_injector.hasMappingFor(key)) {
+                if (_injector.has(key)) {
                     throw new InjectionError(MAPPING_EXISTS, {key: key});
                 }
             }
@@ -215,7 +207,7 @@
 
                 setProps(instance, vo).forEach(function(prop) {
                     if (instance[prop] == null) {
-                        instance[prop] = _injector.getMappingFor(prop.replace('i_', ''));
+                        instance[prop] = _injector.get(prop.replace('i_', ''));
                     }
                 });
 
@@ -232,7 +224,7 @@
 
                     vo.Factory = vo.target.apply(vo.target, vo.args.map(function(key) {
 
-                        return _injector.getMappingFor(key);
+                        return _injector.get(key);
                     }));
 
                     vo.Builder = function Builder(args) {
@@ -263,7 +255,7 @@
                     vo.Builder = function Builder() {
 
                         return vo.target.apply(this, vo.args.map(function(key) {
-                            return _injector.getMappingFor(key);
+                            return _injector.get(key);
                         }));
                     };
 
@@ -290,7 +282,7 @@
                     for (var prop in vo.target) {
                         if (prop.indexOf('i_') === 0 && vo.target[prop] == null) {
                             vo.props[vo.props.length] = prop;
-                            vo.target[prop] = _injector.getMappingFor(prop.replace('i_', ''));
+                            vo.target[prop] = _injector.get(prop.replace('i_', ''));
                         }
                     }
                 }
@@ -404,12 +396,12 @@
              *
              * If no mapping exists and the Injector has a parent then resolution is deferred to the parent.
              *
-             * @method hasMappingFor
+             * @method has
              * @for Injector
              * @param {String} key The mapping key.
              * @return {Boolean} true if a mapping exists.
              */
-            this.hasMappingFor = function(key) {
+            this.has = function(key) {
 
                 validateType(key, 'String', INVALID_KEY_TYPE);
 
@@ -421,13 +413,13 @@
              *
              * If no mapping is found an Error is thrown.
              *
-             * @method getMappingFor
+             * @method get
              * @param {String} key The mapping key.
              * @return {*} The dependency.
              */
-            this.getMappingFor = function(key) {
+            this.get = function(key) {
 
-                if (!_injector.hasMappingFor(key)) {
+                if (!_injector.has(key)) {
                     throw new InjectionError(NO_MAPPING, {key: key});
                 }
 
@@ -437,15 +429,15 @@
             /**
              * Remove a mapping.
              *
-             * @method unMap
+             * @method remove
              * @param {String} key The mapping key.
              * @returns {*} Either the removed mapping target or Null.
              */
-            this.unMap = function(key) {
+            this.remove = function(key) {
 
                 var value = null;
 
-                if (_injector.hasMappingFor(key)) {
+                if (_injector.has(key)) {
 
                     Object.keys(mappings)
                         .filter(function(name) {
@@ -523,6 +515,7 @@
             /**
              * Resolves the property dependencies defined in the target Object.
              *
+             * @method resolveValue
              * @param {Object} target The target Object.
              * @returns {Object} The injected Object.
              */

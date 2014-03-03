@@ -78,16 +78,16 @@ __Note:__ only the `toFactory` and `toType` mapping methods can make use of cons
 
 ## Creating mappings with property injection.
 
-Target objects and constructor functions can define their own mappings by declaring public properties prefixed with `i_` and an initial value set to `null` or `undefined`.
+Target objects and constructor functions can define their own mappings by declaring public properties with an initial value of `'{I}'`.
 
 If a mapping cannot be resolved the injector will throw an error.
 
 ```
 injector.map('salutation').toValue({
 	target: {
-		i_greeting: null,
+		greeting: '{I}',
 		greet: function() {
-			console.log(this.i_greeting);
+			console.log(this.greeting);
 		}
 	}
 });
@@ -128,11 +128,11 @@ Target functions passed to the toType method should have the following structure
 ```
 function MyType(ConstructorDependency) {
 	
-	this.i_PropertyDependency = null;
+	this.propertyDependency = '{I}';
 	
 	this.getProperty = function() {
 	
-		return this.i_PropertyDependency;
+		return this.propertyDependency;
 	};
 }
 ```
@@ -197,9 +197,9 @@ toFactory mappings are always singletons.
 ```
 injector.map('MyValue').toValue({
 	target: {
-		i_greeting: null, 
+		greeting: '{I}', 
 		greet: function() {
-			console.log(i_greeting);
+			console.log(greeting);
 		}
 	},
 	api: [
@@ -237,7 +237,7 @@ function MyFactory(ConstructorDependency) {
 
 	return function MyFactoryInstance(Arg) {
 	
-		this.i_PropertyDependency = null;
+		this.propertyDependency = '{I}';
 		
 		this.getArg = function() {
 			return Arg;

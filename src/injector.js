@@ -6,7 +6,12 @@
  * ++
  * @TODO: The props list should be generated when the value is mapped
  *  - use a regex to parse the string representation of the value
- *  - Match injection point keys in an Object ([\w\$'"]*)(?=\s*[:=]\s*'{I}')
+ *  - Match injection point keys in an Object ([\w\$'"]*)(?=\s*[:=]\s*(?:'|"){I}(?:"|'))
+ *
+ *  - NEXT
+ *  - apply props to factory and value mapping methods
+ *  - remove getProps() from instantiate()
+ *  - refactor mapping to deps.arguments, deps.properties
  *
  * ++
  * @TODO: Interface checking should when the value is mapped
@@ -97,6 +102,11 @@
             I_POINT = '{I}',
 
             slice = Array.prototype.slice;
+
+        function identity(n) {
+
+            return n;
+        }
 
         function is(value, type) {
 
@@ -219,32 +229,28 @@
 
             function makeFactory(vo) {
 
-                function make() {
+                return {
 
-                    vo.Factory = vo.target.apply(vo.target, vo.args.map(function(key) {
+                    make: function() {
 
-                        return _injector.get(key);
-                    }));
+                        vo.Factory = vo.target.apply(vo.target, vo.args.map(function(key) {
 
-                    vo.Builder = function Builder(args) {
+                            return _injector.get(key);
+                        }));
 
-                        return vo.Factory.apply(this, args);
-                    };
+                        if (!vo.hasOwnProperty('Builder')) {
 
-                    vo.Builder.prototype = vo.Factory.prototype;
+                            vo.Builder = function Builder(args) {
 
-                    vo.instance = {
+                                return vo.Factory.apply(this, args);
+                            };
 
-                        make: function() {
-
-                            return instantiate.apply(this, [vo].concat(slice.call(arguments, 0)));
+                            vo.Builder.prototype = vo.Factory.prototype;
                         }
-                    };
 
-                    return vo.instance;
-                }
-
-                return vo.instance || make();
+                        return instantiate.apply(this, [vo].concat(slice.call(arguments, 0)));
+                    }
+                };
             }
 
             function makeType(vo) {
@@ -288,6 +294,31 @@
                 }
 
                 return vo.target;
+            }
+
+            function parseProps(obj) {
+
+                var re = /([\w\$'"]*)(?=\s*[:=]\s*(?:'|"){I}(?:"|'))/g,
+
+                    str = ''.concat(
+                        obj.toString(),
+                        JSON.stringify(obj.prototype)
+                    );
+
+                while (obj != null) {
+
+                    str += JSON.stringify(Object.getPrototypeOf(obj));
+                    obj = obj.prototype;
+                }
+
+
+                console.log(' str :: ' + str);
+
+                return (str.match(re) || [])
+                    .filter(identity)
+                    .map(function(item) {
+                        return item.replace(/["']/g, '');
+                    });
             }
 
             /**
@@ -357,7 +388,8 @@
                             target: config.target,
                             api: config.api || [],
                             args: config.using || [],
-                            isSingleton: config.isSingleton || false
+                            isSingleton: config.isSingleton || false,
+                            props: parseProps(config.target)
                         };
 
                         return _injector;
@@ -379,11 +411,14 @@
                             throw new InjectionError(MISSING_TARGET, {key: key});
                         }
 
+                        //parseProps(config.target);
+
                         mappings[key] = {
 
                             resolver: makeValue,
                             target: config.target,
                             api: config.api || []
+                            //props: parseProps(config.target)
                         };
 
                         return _injector;

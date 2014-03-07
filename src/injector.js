@@ -311,9 +311,6 @@
                     obj = obj.prototype;
                 }
 
-
-                console.log(' str :: ' + str);
-
                 return (str.match(re) || [])
                     .filter(identity)
                     .map(function(item) {
@@ -470,7 +467,8 @@
              */
             this.remove = function(key) {
 
-                var value = null;
+                var target = null,
+                    instance = null;
 
                 if (_injector.has(key)) {
 
@@ -490,8 +488,11 @@
                             }
 
                             if (!mapping.hasOwnProperty('props')) {
-                                if (mapping.resolver(mapping).hasOwnProperty('make')) {
-                                    mapping.instance.make();
+
+                                instance = mapping.resolver(mapping);
+
+                                if (instance.hasOwnProperty('make')) {
+                                    instance.make();
                                 }
                             }
 
@@ -500,12 +501,12 @@
                             }
                         });
 
-                    value = mappings[key].target;
+                    target = mappings[key].target;
 
                     delete mappings[key];
                 }
 
-                return value;
+                return target;
             };
 
             /**

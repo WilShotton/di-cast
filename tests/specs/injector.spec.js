@@ -42,7 +42,7 @@ define(
             // ------------------------------
 
             // map()
-            xdescribe('map', function() {
+            describe('map', function() {
 
                 beforeEach(function() {
 
@@ -88,7 +88,7 @@ define(
             });
 
             // has()
-            xdescribe('has', function() {
+            describe('has', function() {
 
                 beforeEach(function() {
 
@@ -115,7 +115,7 @@ define(
             });
 
             // get()
-            xdescribe('get', function() {
+            describe('get', function() {
 
                 it(' should have a mapping for the injector', function() {
 
@@ -150,7 +150,7 @@ define(
             });
 
             // remove()
-            xdescribe('remove()', function() {
+            describe('remove()', function() {
 
                 var myValue = {};
 
@@ -201,7 +201,7 @@ define(
                     }).toThrow(MAPPING_HAS_DEPENDANTS);
                 });
 
-                it(' should return the mapping target value', function() {
+                it(' should return a reference to the injector', function() {
 
                     expect(injector.remove('MyFactory')).toBe(MyFactory);
                     expect(injector.remove('MyType')).toBe(MyType);
@@ -311,12 +311,6 @@ define(
                     });
                 });
 
-                // @TODO. look at reinstating make() as a singleton for performance reasons...
-                xit(' should be a singleton', function() {
-
-                    expect(injector.get('MyFactory')).toBe(injector.get('MyFactory'));
-                });
-
                 it(' should have lazy instantiation', function() {
 
                     function MyMissingFactory() {
@@ -365,55 +359,140 @@ define(
 
             describe('toFactory instances', function() {
 
+                var f1, f1i1, f1i2,
+                    f2, f2i1;
+
                 beforeEach(function() {
 
                     injector = new Injector();
-                });
-
-                it(' should create unique scopes for factory instances', function() {
 
                     injector.map('MyType').toType({
-                       target: function() {
-                           this.name = 'original';
-                       }
+                        target: function() {
+                            this.name = 'type';
+                        }
+                    });
+
+                    injector.map('MySingleton').toType({
+                        target: function() {
+                            this.name = 'singleton';
+                        },
+                        isSingleton: true
+                    });
+
+                    injector.map('MyValue').toValue({
+                        target: function() {
+                            this.name = 'value';
+                        }
+                    });
+
+                    injector.map('TypeProp').toType({
+                        target: function() {
+                            this.name = 'TypeProp';
+                        }
+                    });
+
+                    injector.map('SingletonProp').toType({
+                        target: function() {
+                            this.name = 'SingletonProp';
+                        },
+                        isSingleton: true
+                    });
+
+                    injector.map('ValueProp').toValue({
+                        target: function() {
+                            this.name = 'ValueProp';
+                        }
                     });
 
                     injector.map('MyFactory').toFactory({
-                       target: function(MyType) {
-                           return function MyInstance() {
-                               this.get = function() {
-                                   return MyType;
-                               };
-                           }
-                       },
-                       using: ['MyType']
+                        target: function(MyType, MySingleton, MyValue) {
+                            return function MyInstance(MyArg) {
+                                this.getArg = function() {
+                                    return MyArg;
+                                };
+                                this.getType = function() {
+                                    return MyType;
+                                };
+                                this.getSingleton = function() {
+                                    return MySingleton;
+                                };
+                                this.getValue = function() {
+                                    return MyValue;
+                                };
+                                this.TypeProp = '{I}';
+                                this.SingletonProp = '{I}';
+                                this.ValueProp = '{I}';
+                            }
+                        },
+                        using: ['MyType', 'MySingleton', 'MyValue']
                     });
 
-                    var f1 = injector.get('MyFactory'),
-                        f2 = injector.get('MyFactory');
+                    f1 = injector.get('MyFactory');
+                    f2 = injector.get('MyFactory');
 
-                    var f1i1 = f1.make(),
-                        f1i2 = f1.make(),
+                    f1i1 = f1.make('MyArg: f1i1');
+                    f1i2 = f1.make('MyArg: f1i2');
 
-                        f2i1 = f2.make();
+                    f2i1 = f2.make('MyArg: f2i1');
+                });
+
+                it(' should create unique scope for the factory', function() {
 
                     expect(f1).not.toBe(f2);
-
                     expect(f1.make().constructor).toBe(f1.make().constructor);
 
-                    expect(f1.make().constructor.name).toBe(f1.make().constructor.name);
+                    expect(f1.make().constructor).toBe(f2.make().constructor);
+                    //expect(f1.make().constructor).not.toBe(f2.make().constructor);
+                    //expect(f1.make().constructor).not.toEqual(f2.make().constructor);
+                });
 
-                    expect(f1i1.get()).not.toBe(f1i2.get());
-                    expect(f1i1.get()).not.toBe(f2i1.get());
+                it(' should create instances with the supplied arguments', function() {
 
-                    //i1.get().name = 'changed';
-                    //expect(i1.get().name).toBe('changed');
-                    //expect(i2.get().name).toBe('original');
+                    expect(f1i1.getArg()).toBe('MyArg: f1i1');
+                    expect(f1i2.getArg()).toBe('MyArg: f1i2');
+
+                    expect(f2i1.getArg()).toBe('MyArg: f2i1');
+                });
+
+                it(' should create instances with different type constructor dependencies', function() {
+
+                    expect(f1i1.getType()).not.toBe(f1i2.getType());
+                    expect(f1i1.getType()).not.toBe(f2i1.getType());
+                });
+
+                it(' should create instances with different type property dependencies', function() {
+
+                    expect(f1i1.TypeProp).not.toBe(f1i2.TypeProp);
+                    expect(f1i1.TypeProp).not.toBe(f2i1.TypeProp);
+                });
+
+                it(' should create instances with the same singleton constructor dependencies', function() {
+
+                    expect(f1i1.getSingleton()).toBe(f1i2.getSingleton());
+                    expect(f1i1.getSingleton()).toBe(f2i1.getSingleton());
+                });
+
+                it(' should create instances with different type property dependencies', function() {
+
+                    expect(f1i1.SingletonProp).toBe(f1i2.SingletonProp);
+                    expect(f1i1.SingletonProp).toBe(f2i1.SingletonProp);
+                });
+
+                it(' should create instances with the same value constructor dependencies', function() {
+
+                    expect(f1i1.getValue()).toBe(f1i2.getValue());
+                    expect(f1i1.getValue()).toBe(f2i1.getValue());
+                });
+
+                it(' should create instances with different type property dependencies', function() {
+
+                    expect(f1i1.ValueProp).toBe(f1i2.ValueProp);
+                    expect(f1i1.ValueProp).toBe(f2i1.ValueProp);
                 });
             });
 
             // toType
-            xdescribe('toType', function() {
+            describe('toType', function() {
 
                 function MyType() {}
 
@@ -468,7 +547,7 @@ define(
             });
 
             // toValue
-            xdescribe('toValue', function() {
+            describe('toValue', function() {
 
                 var myArray = [1, 2, 3],
                     myBoolean = true,
@@ -623,7 +702,7 @@ define(
                 });
             });
 
-            xdescribe('isSingleton', function() {
+            describe('isSingleton', function() {
 
                 function MyType() {}
 
@@ -662,7 +741,7 @@ define(
                 });
             });
 
-            xdescribe('using', function() {
+            describe('using', function() {
 
                 function MyFactory() {
                     return function MyFactoryInstance() {};
@@ -756,7 +835,7 @@ define(
                 });
             });
 
-            xdescribe('as - duck typing', function() {
+            describe('as - duck typing', function() {
 
                 /*
                 IMyType = {
@@ -963,7 +1042,7 @@ define(
             // ------------------------------
 
             // Constructor
-            xdescribe('constructor injection', function() {
+            describe('constructor injection', function() {
 
                 function MyFactory() {
                     return function MyFactoryInstance() {};
@@ -1110,7 +1189,7 @@ define(
             });
 
             // Property injection
-            xdescribe('property injection', function() {
+            describe('property injection', function() {
 
                 var myPropValue = 'MyProp';
 
@@ -1371,7 +1450,7 @@ define(
             });
 
             // Combined
-            xdescribe('combined injection', function() {
+            describe('combined injection', function() {
 
                 beforeEach(function() {
 
@@ -1440,7 +1519,7 @@ define(
 
             // postConstruct()
             // ------------------------------
-            xdescribe('postConstruct', function() {
+            describe('postConstruct', function() {
 
                 var MyValue = {
                     isConstructed: false,
@@ -1622,7 +1701,7 @@ define(
                 });
             });
 
-            xdescribe('resolveType()', function() {
+            describe('resolveType()', function() {
 
                 function MyType(MyArg) {
                     this.MyProp = '{I}';
@@ -1673,7 +1752,7 @@ define(
                 });
             });
 
-            xdescribe('resolveValue()', function() {
+            describe('resolveValue()', function() {
 
                 var myValue = {
                     MyProp: '{I}'
@@ -1701,7 +1780,7 @@ define(
 
             // Creating a factory with toValue
             // ------------------------------
-            describe('Creating a factory', function() {
+            xdescribe('Creating a factory', function() {
 
                 beforeEach(function() {
 

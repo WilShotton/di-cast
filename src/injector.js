@@ -103,11 +103,6 @@
 
             slice = Array.prototype.slice;
 
-        function identity(n) {
-
-            return n;
-        }
-
         function is(value, type) {
 
             return Object.prototype.toString
@@ -162,6 +157,7 @@
                 mappings = {
                     injector: {
                         target: _injector,
+                        //instance: _injector,
                         resolver: makeValue,
                         api: []
                     }
@@ -176,9 +172,9 @@
                 }
             }
 
-            function checkInterface(instance, api) {
+            function checkInterface(instance, vo) {
 
-                api.forEach(function(item) {
+                vo.api.forEach(function(item) {
 
                     if(instance[item.name] == null) {
 
@@ -191,6 +187,24 @@
                     }
                 });
             }
+
+            /*
+            function checkInterface(vo) {
+
+                vo.api.forEach(function(item) {
+
+                    if(vo.instance[item.name] == null) {
+
+                        throw new InjectionError(INTERFACE_MEMBER_MISSING, item);
+                    }
+
+                    if (item.hasOwnProperty('arity') && vo.instance[item.name].length !== item.arity) {
+
+                        throw new InjectionError(INTERFACE_METHOD_ARITY_MISMATCH, item);
+                    }
+                });
+            }
+            */
 
             function setProps(instance, vo) {
 
@@ -206,19 +220,44 @@
                     }
                 }
 
-                return vo.props;
+                vo.props.forEach(function(prop) {
+
+                    instance[prop] = _injector.get(prop);
+                });
             }
+
+            /*
+            function setProps(vo) {
+
+                if (!vo.hasOwnProperty('props')) {
+
+                    vo.props = [];
+
+                    for (var prop in instance) {
+
+                        if (vo.instance[prop] === I_POINT) {
+                            vo.props[vo.props.length] = prop;
+                        }
+                    }
+                }
+
+                vo.props.forEach(function(prop) {
+
+                    vo.instance[prop] = _injector.get(prop);
+                });
+            }
+            */
 
             function instantiate(vo) {
 
                 var instance = new vo.Builder(slice.call(arguments, 1));
 
-                checkInterface(instance, vo.api);
+                checkInterface(instance, vo);
+                //checkInterface(vo);
 
-                setProps(instance, vo).forEach(function(prop) {
-
-                    instance[prop] = _injector.get(prop);
-                });
+                //parseProps(instance).forEach(function(prop) {
+                setProps(instance, vo);
+                //setProps(vo);
 
                 if (is(instance.postConstruct, 'Function')) {
                     instance.postConstruct(_injector);
@@ -267,6 +306,15 @@
                     vo.Builder.prototype = vo.target.prototype;
                 }
 
+                /*
+                if (vo.isSingleton && vo.hasOwnProperty('instance')) {
+
+                    return vo.instance;
+                }
+
+                return instantiate(vo);
+                */
+
                 if (vo.isSingleton && !vo.hasOwnProperty('instance')) {
                     vo.instance = instantiate(vo);
                 }
@@ -276,47 +324,51 @@
 
             function makeValue(vo) {
 
-                if (!vo.processed) {
+                console.log('\n makeValue :: ' + (vo.hasOwnProperty('instance') == vo.hasOwnProperty('props')));
+                console.log('instance: ' + vo.hasOwnProperty('instance'));
+                console.log('props: ' + vo.hasOwnProperty('props'));
 
-                    vo.processed = true;
+                //if (!vo.hasOwnProperty('props')) {
+                if (!vo.hasOwnProperty('instance')) {
 
-                    checkInterface(vo.target, vo.api);
+                    vo.instance = vo.target;
 
-                    vo.props = [];
+                    //vo.props = [];
 
-                    for (var prop in vo.target) {
+                    checkInterface(vo.instance, vo);
+                    setProps(vo.instance, vo);
 
-                        if (vo.target[prop] === I_POINT) {
-                            vo.props[vo.props.length] = prop;
-                            vo.target[prop] = _injector.get(prop);
-                        }
-                    }
+                    //checkInterface(vo);
+                    //setProps(vo);
                 }
 
-                return vo.target;
+                //return vo.instance;
+                return vo.instance;
             }
 
-            function parseProps(obj) {
-
-                var re = /([\w\$'"]*)(?=\s*[:=]\s*(?:'|"){I}(?:"|'))/g,
-
-                    str = ''.concat(
-                        obj.toString(),
-                        JSON.stringify(obj.prototype)
-                    );
-
-                while (obj != null) {
-
-                    str += JSON.stringify(Object.getPrototypeOf(obj));
-                    obj = obj.prototype;
-                }
-
-                return (str.match(re) || [])
-                    .filter(identity)
-                    .map(function(item) {
-                        return item.replace(/["']/g, '');
-                    });
-            }
+//            function parseProps(obj) {
+//
+//                var re = /([\w\$'"]*)(?=\s*[:=]\s*(?:'|"){I}(?:"|'))/g,
+//
+//                    str = ''.concat(
+//                        obj.toString(),
+//                        JSON.stringify(obj.prototype)
+//                    );
+//
+//                while (obj != null) {
+//
+//                    str += JSON.stringify(Object.getPrototypeOf(obj));
+//                    obj = obj.prototype;
+//                }
+//
+//                return (str.match(re) || [])
+//                    .filter(function(n) {
+//                          return n;
+//                    })
+//                    .map(function(item) {
+//                        return item.replace(/["']/g, '');
+//                    });
+//            }
 
             /**
              * Initialises a mapping identifier and returns the options for creating a mapping.
@@ -385,8 +437,8 @@
                             target: config.target,
                             api: config.api || [],
                             args: config.using || [],
-                            isSingleton: config.isSingleton || false,
-                            props: parseProps(config.target)
+                            isSingleton: config.isSingleton || false
+                            //props: parseProps(config.target)
                         };
 
                         return _injector;
@@ -487,14 +539,15 @@
                                 throw new InjectionError(MAPPING_HAS_DEPENDANTS, {key: key});
                             }
 
-                            if (!mapping.hasOwnProperty('props')) {
+                            // Temporary removal
+                            //if (!mapping.hasOwnProperty('props')) {
 
                                 instance = mapping.resolver(mapping);
 
                                 if (instance.hasOwnProperty('make')) {
                                     instance.make();
                                 }
-                            }
+                            //}
 
                             if (mapping.props.indexOf(key) !== -1) {
                                 throw new InjectionError(MAPPING_HAS_DEPENDANTS, {key: key});

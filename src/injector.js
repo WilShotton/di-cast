@@ -208,6 +208,7 @@
                 });
             }
 
+            /*
             function setProps(instance, vo) {
 
                 if (!vo.hasOwnProperty('props')) {
@@ -227,15 +228,15 @@
                     instance[prop] = _injector.get(prop);
                 });
             }
+            */
 
-            /*
             function setProps(vo) {
 
                 if (!vo.hasOwnProperty('props')) {
 
                     vo.props = [];
 
-                    for (var prop in instance) {
+                    for (var prop in vo.instance) {
 
                         if (vo.instance[prop] === I_POINT) {
                             vo.props[vo.props.length] = prop;
@@ -248,7 +249,6 @@
                     vo.instance[prop] = _injector.get(prop);
                 });
             }
-            */
 
             function instantiate(vo) {
 
@@ -258,8 +258,8 @@
                 checkInterface(vo);
 
                 //parseProps(instance).forEach(function(prop) {
-                setProps(vo.instance, vo);
-                //setProps(vo);
+                //setProps(vo.instance, vo);
+                setProps(vo);
 
                 if (is(vo.instance.postConstruct, 'Function')) {
                     vo.instance.postConstruct(_injector);
@@ -338,10 +338,10 @@
                     //vo.props = [];
 
                     //checkInterface(vo.instance, vo);
-                    setProps(vo.instance, vo);
+                    //setProps(vo.instance, vo);
 
                     checkInterface(vo);
-                    //setProps(vo);
+                    setProps(vo);
                 }
 
                 //return vo.instance;

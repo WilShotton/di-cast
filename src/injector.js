@@ -171,28 +171,7 @@
                 }
             }
 
-            /*
-            function checkInterface(instance, vo) {
-
-                vo.api.forEach(function(item) {
-
-                    if(instance[item.name] == null) {
-
-                        throw new InjectionError(INTERFACE_MEMBER_MISSING, item);
-                    }
-
-                    if (item.hasOwnProperty('arity') && instance[item.name].length !== item.arity) {
-
-                        throw new InjectionError(INTERFACE_METHOD_ARITY_MISMATCH, item);
-                    }
-                });
-            }
-            */
-
             function checkInterface(vo) {
-
-                //console.log('\n checkInterface');
-                //console.log('vo.hasOwnProperty(instance) : ' + vo.hasOwnProperty('instance'));
 
                 vo.api.forEach(function(item) {
 
@@ -207,28 +186,6 @@
                     }
                 });
             }
-
-            /*
-            function setProps(instance, vo) {
-
-                if (!vo.hasOwnProperty('props')) {
-
-                    vo.props = [];
-
-                    for (var prop in instance) {
-
-                        if (instance[prop] === I_POINT) {
-                            vo.props[vo.props.length] = prop;
-                        }
-                    }
-                }
-
-                vo.props.forEach(function(prop) {
-
-                    instance[prop] = _injector.get(prop);
-                });
-            }
-            */
 
             function setProps(vo) {
 
@@ -254,11 +211,8 @@
 
                 vo.instance = new vo.Builder(slice.call(arguments, 1));
 
-                //checkInterface(instance, vo);
                 checkInterface(vo);
 
-                //parseProps(instance).forEach(function(prop) {
-                //setProps(vo.instance, vo);
                 setProps(vo);
 
                 if (is(vo.instance.postConstruct, 'Function')) {
@@ -314,37 +268,18 @@
                 }
 
                 return instantiate(vo);
-
-                /*
-                if (vo.isSingleton && !vo.hasOwnProperty('instance')) {
-                    vo.instance = instantiate(vo);
-                }
-
-                return vo.instance || instantiate(vo);
-                */
             }
 
             function makeValue(vo) {
 
-                //console.log('\n makeValue :: ' + (vo.hasOwnProperty('instance') == vo.hasOwnProperty('props')));
-                //console.log('instance: ' + vo.hasOwnProperty('instance'));
-                //console.log('props: ' + vo.hasOwnProperty('props'));
-
-                //if (!vo.hasOwnProperty('props')) {
                 if (!vo.hasOwnProperty('instance')) {
 
                     vo.instance = vo.target;
-
-                    //vo.props = [];
-
-                    //checkInterface(vo.instance, vo);
-                    //setProps(vo.instance, vo);
 
                     checkInterface(vo);
                     setProps(vo);
                 }
 
-                //return vo.instance;
                 return vo.instance;
             }
 
@@ -461,8 +396,6 @@
                         if (!config.hasOwnProperty('target')) {
                             throw new InjectionError(MISSING_TARGET, {key: key});
                         }
-
-                        //parseProps(config.target);
 
                         mappings[key] = {
 

@@ -157,7 +157,6 @@
                 mappings = {
                     injector: {
                         target: _injector,
-                        //instance: _injector,
                         resolver: makeValue,
                         api: []
                     }
@@ -172,6 +171,7 @@
                 }
             }
 
+            /*
             function checkInterface(instance, vo) {
 
                 vo.api.forEach(function(item) {
@@ -187,9 +187,12 @@
                     }
                 });
             }
+            */
 
-            /*
             function checkInterface(vo) {
+
+                //console.log('\n checkInterface');
+                //console.log('vo.hasOwnProperty(instance) : ' + vo.hasOwnProperty('instance'));
 
                 vo.api.forEach(function(item) {
 
@@ -204,7 +207,6 @@
                     }
                 });
             }
-            */
 
             function setProps(instance, vo) {
 
@@ -250,20 +252,20 @@
 
             function instantiate(vo) {
 
-                var instance = new vo.Builder(slice.call(arguments, 1));
+                vo.instance = new vo.Builder(slice.call(arguments, 1));
 
-                checkInterface(instance, vo);
-                //checkInterface(vo);
+                //checkInterface(instance, vo);
+                checkInterface(vo);
 
                 //parseProps(instance).forEach(function(prop) {
-                setProps(instance, vo);
+                setProps(vo.instance, vo);
                 //setProps(vo);
 
-                if (is(instance.postConstruct, 'Function')) {
-                    instance.postConstruct(_injector);
+                if (is(vo.instance.postConstruct, 'Function')) {
+                    vo.instance.postConstruct(_injector);
                 }
 
-                return instance;
+                return vo.instance;
             }
 
             function makeFactory(vo) {
@@ -306,27 +308,27 @@
                     vo.Builder.prototype = vo.target.prototype;
                 }
 
-                /*
                 if (vo.isSingleton && vo.hasOwnProperty('instance')) {
 
                     return vo.instance;
                 }
 
                 return instantiate(vo);
-                */
 
+                /*
                 if (vo.isSingleton && !vo.hasOwnProperty('instance')) {
                     vo.instance = instantiate(vo);
                 }
 
                 return vo.instance || instantiate(vo);
+                */
             }
 
             function makeValue(vo) {
 
-                console.log('\n makeValue :: ' + (vo.hasOwnProperty('instance') == vo.hasOwnProperty('props')));
-                console.log('instance: ' + vo.hasOwnProperty('instance'));
-                console.log('props: ' + vo.hasOwnProperty('props'));
+                //console.log('\n makeValue :: ' + (vo.hasOwnProperty('instance') == vo.hasOwnProperty('props')));
+                //console.log('instance: ' + vo.hasOwnProperty('instance'));
+                //console.log('props: ' + vo.hasOwnProperty('props'));
 
                 //if (!vo.hasOwnProperty('props')) {
                 if (!vo.hasOwnProperty('instance')) {
@@ -335,10 +337,10 @@
 
                     //vo.props = [];
 
-                    checkInterface(vo.instance, vo);
+                    //checkInterface(vo.instance, vo);
                     setProps(vo.instance, vo);
 
-                    //checkInterface(vo);
+                    checkInterface(vo);
                     //setProps(vo);
                 }
 
@@ -539,15 +541,15 @@
                                 throw new InjectionError(MAPPING_HAS_DEPENDANTS, {key: key});
                             }
 
-                            // Temporary removal
-                            //if (!mapping.hasOwnProperty('props')) {
+                            // @TODO: Changed to a 'processed' flag
+                            if (!mapping.hasOwnProperty('instance')) {
 
                                 instance = mapping.resolver(mapping);
 
                                 if (instance.hasOwnProperty('make')) {
                                     instance.make();
                                 }
-                            //}
+                            }
 
                             if (mapping.props.indexOf(key) !== -1) {
                                 throw new InjectionError(MAPPING_HAS_DEPENDANTS, {key: key});

@@ -101,6 +101,7 @@
 
             I_POINT = '{I}',
 
+            reduce = Array.prototype.reduce,
             slice = Array.prototype.slice;
 
         function is(value, type) {
@@ -118,6 +119,16 @@
                 throw new TypeError(errorMsg);
             }
         }
+
+//        function sequence() {
+//
+//            return reduce.call(slice.call(arguments).reverse(), function(composite, fn) {
+//
+//                return function() {
+//                    return composite(fn.apply(null, arguments));
+//                };
+//            });
+//        }
 
         /**
          * A custom Error class for the dependency injector.
@@ -171,6 +182,7 @@
                 }
             }
 
+            /*
             function checkInterface(vo) {
 
                 vo.api.forEach(function(item) {
@@ -185,6 +197,8 @@
                         throw new InjectionError(INTERFACE_METHOD_ARITY_MISMATCH, item);
                     }
                 });
+
+                return vo;
             }
 
             function setProps(vo) {
@@ -205,21 +219,99 @@
 
                     vo.instance[prop] = _injector.get(prop);
                 });
+
+                return vo;
+            }
+
+            function post(vo) {
+
+                if (is(vo.instance.postConstruct, 'Function')) {
+                    vo.instance.postConstruct(_injector);
+                }
+
+                return vo;
+            }
+
+            function makeInstance(vo) {
+
+                vo.instance = new vo.Builder(slice.call(arguments, 1));
+
+                return vo;
             }
 
             function instantiate(vo) {
 
                 vo.instance = new vo.Builder(slice.call(arguments, 1));
 
-                checkInterface(vo);
+                return sequence(checkInterface, setProps, post)(vo).instance;
+            }
+            */
 
-                setProps(vo);
+            function pipe(vo) {
 
-                if (is(vo.instance.postConstruct, 'Function')) {
-                    vo.instance.postConstruct(_injector);
+                return {
+
+                    instantiate: function(args) {
+
+                        vo.instance = new vo.Builder(args);
+
+                        return this;
+                    },
+
+                    checkInterface: function() {
+
+                        vo.api.forEach(function(item) {
+
+                            if(vo.instance[item.name] == null) {
+
+                                throw new InjectionError(INTERFACE_MEMBER_MISSING, item);
+                            }
+
+                            if (item.hasOwnProperty('arity') && vo.instance[item.name].length !== item.arity) {
+
+                                throw new InjectionError(INTERFACE_METHOD_ARITY_MISMATCH, item);
+                            }
+                        });
+
+                        return this;
+                    },
+
+                    setProps: function() {
+
+                        if (!vo.hasOwnProperty('props')) {
+
+                            vo.props = [];
+
+                            for (var prop in vo.instance) {
+
+                                if (vo.instance[prop] === I_POINT) {
+                                    vo.props[vo.props.length] = prop;
+                                }
+                            }
+                        }
+
+                        vo.props.forEach(function(prop) {
+
+                            vo.instance[prop] = _injector.get(prop);
+                        });
+
+                        return this;
+                    },
+
+                    post: function() {
+
+                        if (is(vo.instance.postConstruct, 'Function')) {
+                            vo.instance.postConstruct(_injector);
+                        }
+
+                        return this;
+                    },
+
+                    value: function(key) {
+
+                        return vo[key];
+                    }
                 }
-
-                return vo.instance;
             }
 
             function makeFactory(vo) {
@@ -243,7 +335,27 @@
                             vo.Builder.prototype = vo.Factory.prototype;
                         }
 
-                        return instantiate.apply(this, [vo].concat(slice.call(arguments, 0)));
+                        return pipe(vo)
+                            .instantiate(arguments)
+                            .checkInterface()
+                            .setProps()
+                            .post()
+                            .value('instance');
+
+                        //return instantiate.apply(this, [vo].concat(slice.call(arguments, 0)));
+
+                        //return sequence(makeInstance, checkInterface, setProps, post)(vo, slice.call(arguments, 0)).instance;
+
+                        /**
+                         * Ideally
+                         * ----------
+                         *
+                         * return instantiate(vo)
+                         *  .make(slice.call(arguments, 0))
+                         *  .checkInterface()
+                         *  .setProps()
+                         *  .post();
+                         */
                     }
                 };
             }
@@ -265,9 +377,16 @@
                 if (vo.isSingleton && vo.hasOwnProperty('instance')) {
 
                     return vo.instance;
-                }
 
-                return instantiate(vo);
+                } else {
+
+                    return pipe(vo)
+                        .instantiate()
+                        .checkInterface()
+                        .setProps()
+                        .post()
+                        .value('instance');
+                }
             }
 
             function makeValue(vo) {
@@ -276,8 +395,7 @@
 
                     vo.instance = vo.target;
 
-                    checkInterface(vo);
-                    setProps(vo);
+                    pipe(vo).checkInterface().setProps();
                 }
 
                 return vo.instance;

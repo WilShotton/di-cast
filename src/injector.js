@@ -4,6 +4,25 @@
 
 /**
  * ++
+ * @TODO: Update toFactory implementation to use a partial
+ *
+ *    vo = {
+ *      target: function(depA, depB, arg1, arg2) {...},
+ *      using: [depA, depB]
+ *    }
+ *
+ *    map('MyFactory').toFactory(vo) {
+ *      var Factory = partial(vo.target, vo.using);
+ *    }
+ *
+ *    consumer = function(MyFactory, arg1) {
+ *      var arg2 = 'Hello';
+ *      var myFactory = new MyFactory(arg1, arg2);
+ *    }
+ *
+ *  - NOTE: the same variadic approach could be used with toType mappings
+ *
+ * ++
  * @TODO: The props list should be generated when the value is mapped
  *  - use a regex to parse the string representation of the value
  *  - Match injection point keys in an Object ([\w\$'"]*)(?=\s*[:=]\s*(?:'|"){I}(?:"|'))
@@ -19,11 +38,10 @@
  *  - toValue mappings can be inspected as they are
  *
  * ++
- * @TODO: Integrate Karma into grunt for Browser tests
+ * @TODO: Refactor remove so it does not need to instantiate mappings
  *
  * ++
- * @TODO: Non singleton type mappings injected into a factory will behave as a singleton
- * for all instances of that factory...
+ * @TODO: Integrate Karma into grunt for Browser tests
  *
  * ++
  * @TODO: NPM
@@ -32,6 +50,12 @@
  * @TODO: Bower
  *
  * ------------------------------
+ *
+ * ++
+ * @TODO: Change name to di-cast
+ *
+ * ++
+ * @TODO: change toType to toClass / toConstructor
  *
  * ++
  * @TODO: Inject toValue function mapping properties by inspection
@@ -101,7 +125,6 @@
 
             I_POINT = '{I}',
 
-            reduce = Array.prototype.reduce,
             slice = Array.prototype.slice;
 
         function is(value, type) {
@@ -113,6 +136,15 @@
                 .indexOf(type.toLowerCase()) !== -1;
         }
 
+        function partial(fn) {
+
+            var args = slice.call(arguments, 1);
+
+            return function() {
+                return fn.apply(this, args.concat(slice.call(arguments, 0)));
+            };
+        }
+
         function validateType(value, type, errorMsg) {
 
             if (!is(value, type)) {
@@ -122,8 +154,7 @@
 
 //        function sequence() {
 //
-//            return reduce.call(slice.call(arguments).reverse(), function(composite, fn) {
-//
+//            return Array.prototype.reduce.call(Array.prototype.slice.call(arguments).reverse(), function(composite, fn) {
 //                return function() {
 //                    return composite(fn.apply(null, arguments));
 //                };
@@ -181,71 +212,6 @@
                     throw new InjectionError(MAPPING_EXISTS, {key: key});
                 }
             }
-
-            /*
-            function checkInterface(vo) {
-
-                vo.api.forEach(function(item) {
-
-                    if(vo.instance[item.name] == null) {
-
-                        throw new InjectionError(INTERFACE_MEMBER_MISSING, item);
-                    }
-
-                    if (item.hasOwnProperty('arity') && vo.instance[item.name].length !== item.arity) {
-
-                        throw new InjectionError(INTERFACE_METHOD_ARITY_MISMATCH, item);
-                    }
-                });
-
-                return vo;
-            }
-
-            function setProps(vo) {
-
-                if (!vo.hasOwnProperty('props')) {
-
-                    vo.props = [];
-
-                    for (var prop in vo.instance) {
-
-                        if (vo.instance[prop] === I_POINT) {
-                            vo.props[vo.props.length] = prop;
-                        }
-                    }
-                }
-
-                vo.props.forEach(function(prop) {
-
-                    vo.instance[prop] = _injector.get(prop);
-                });
-
-                return vo;
-            }
-
-            function post(vo) {
-
-                if (is(vo.instance.postConstruct, 'Function')) {
-                    vo.instance.postConstruct(_injector);
-                }
-
-                return vo;
-            }
-
-            function makeInstance(vo) {
-
-                vo.instance = new vo.Builder(slice.call(arguments, 1));
-
-                return vo;
-            }
-
-            function instantiate(vo) {
-
-                vo.instance = new vo.Builder(slice.call(arguments, 1));
-
-                return sequence(checkInterface, setProps, post)(vo).instance;
-            }
-            */
 
             function pipe(vo) {
 
@@ -320,42 +286,58 @@
 
                     make: function() {
 
+                        /*
                         vo.Factory = vo.target.apply(vo.target, vo.args.map(function(key) {
 
                             return _injector.get(key);
                         }));
+                        */
+
+                        /*
+                        vo.Factory = partial.apply(null, [vo].concat(vo.args.map(function(key) {
+
+                            return _injector.get(key);
+                        })));
+                        */
 
                         if (!vo.hasOwnProperty('Builder')) {
 
+                            /*
                             vo.Builder = function Builder(args) {
 
                                 return vo.Factory.apply(this, args);
                             };
 
                             vo.Builder.prototype = vo.Factory.prototype;
+                            */
+
+
+                            vo.Builder = function Builder(args) {
+
+                                return vo.target.apply(this, args);
+
+                                /*
+                                return vo.target.apply(this, vo.args.map(function(key) {
+                                    return _injector.get(key);
+                                }).concat(slice.call(arguments)));
+                                */
+                            };
+
+                            vo.Builder.prototype = vo.target.prototype;
                         }
 
+                        var args = vo.args.map(function(key) {
+                            return _injector.get(key);
+                        }).concat(slice.call(arguments));
+
+                        console.log('\n args :: ' + args);
+
                         return pipe(vo)
-                            .instantiate(arguments)
+                            .instantiate(args)
                             .checkInterface()
                             .setProps()
                             .post()
                             .value('instance');
-
-                        //return instantiate.apply(this, [vo].concat(slice.call(arguments, 0)));
-
-                        //return sequence(makeInstance, checkInterface, setProps, post)(vo, slice.call(arguments, 0)).instance;
-
-                        /**
-                         * Ideally
-                         * ----------
-                         *
-                         * return instantiate(vo)
-                         *  .make(slice.call(arguments, 0))
-                         *  .checkInterface()
-                         *  .setProps()
-                         *  .post();
-                         */
                     }
                 };
             }

@@ -23,6 +23,9 @@
  *  - NOTE: the same variadic approach could be used with toType mappings
  *
  * ++
+ * @TODO: Use same Builder for toType as toFactory uses
+ *
+ * ++
  * @TODO: The props list should be generated when the value is mapped
  *  - use a regex to parse the string representation of the value
  *  - Match injection point keys in an Object ([\w\$'"]*)(?=\s*[:=]\s*(?:'|"){I}(?:"|'))
@@ -134,15 +137,6 @@
                 .split(' ')[1]
                 .toLowerCase()
                 .indexOf(type.toLowerCase()) !== -1;
-        }
-
-        function partial(fn) {
-
-            var args = slice.call(arguments, 1);
-
-            return function() {
-                return fn.apply(this, args.concat(slice.call(arguments, 0)));
-            };
         }
 
         function validateType(value, type, errorMsg) {
@@ -286,54 +280,20 @@
 
                     make: function() {
 
-                        /*
-                        vo.Factory = vo.target.apply(vo.target, vo.args.map(function(key) {
-
-                            return _injector.get(key);
-                        }));
-                        */
-
-                        /*
-                        vo.Factory = partial.apply(null, [vo].concat(vo.args.map(function(key) {
-
-                            return _injector.get(key);
-                        })));
-                        */
-
                         if (!vo.hasOwnProperty('Builder')) {
-
-                            /*
-                            vo.Builder = function Builder(args) {
-
-                                return vo.Factory.apply(this, args);
-                            };
-
-                            vo.Builder.prototype = vo.Factory.prototype;
-                            */
-
 
                             vo.Builder = function Builder(args) {
 
                                 return vo.target.apply(this, args);
-
-                                /*
-                                return vo.target.apply(this, vo.args.map(function(key) {
-                                    return _injector.get(key);
-                                }).concat(slice.call(arguments)));
-                                */
                             };
 
                             vo.Builder.prototype = vo.target.prototype;
                         }
 
-                        var args = vo.args.map(function(key) {
-                            return _injector.get(key);
-                        }).concat(slice.call(arguments));
-
-                        console.log('\n args :: ' + args);
-
                         return pipe(vo)
-                            .instantiate(args)
+                            .instantiate(vo.args.map(function(key) {
+                                return _injector.get(key);
+                            }).concat(slice.call(arguments)))
                             .checkInterface()
                             .setProps()
                             .post()
@@ -344,17 +304,17 @@
 
             function makeType(vo) {
 
+                /*
                 if (!vo.hasOwnProperty('Builder')) {
 
-                    vo.Builder = function Builder() {
+                    vo.Builder = function Builder(args) {
 
-                        return vo.target.apply(this, vo.args.map(function(key) {
-                            return _injector.get(key);
-                        }));
+                        return vo.target.apply(this, args);
                     };
 
                     vo.Builder.prototype = vo.target.prototype;
                 }
+                */
 
                 if (vo.isSingleton && vo.hasOwnProperty('instance')) {
 
@@ -363,13 +323,27 @@
                 } else {
 
                     return pipe(vo)
-                        .instantiate()
+                        .instantiate(vo.args.map(function(key) {
+                            return _injector.get(key);
+                        }))
                         .checkInterface()
                         .setProps()
                         .post()
                         .value('instance');
                 }
             }
+
+            /*
+            function makeBuilder(vo) {
+
+                vo.Builder = function Builder(args) {
+
+                    return vo.target.apply(this, args);
+                };
+
+                vo.Builder.prototype = vo.target.prototype;
+            }
+            */
 
             function makeValue(vo) {
 
@@ -417,6 +391,18 @@
              */
             this.map = function(key) {
 
+                function makeBuilder(target) {
+
+                    function Builder(args) {
+
+                        return target.apply(this, args);
+                    }
+
+                    Builder.prototype = target.prototype;
+
+                    return Builder;
+                }
+
                 validateKey(key);
 
                 /**
@@ -443,11 +429,23 @@
 
                         mappings[key] = {
 
+                            Builder: makeBuilder(config.target),
                             resolver: makeFactory,
                             target: config.target,
                             api: config.api || [],
                             args: config.using || []
                         };
+
+                        /*
+                        mappings[key].Builder = function Builder(args) {
+
+                            return mappings[key].target.apply(this, args);
+                        };
+
+                        mappings[key].Builder.prototype = config.target.prototype;
+
+                        //makeBuilder(mappings[key]);
+                        */
 
                         return _injector;
                     },
@@ -470,6 +468,7 @@
 
                         mappings[key] = {
 
+                            Builder: makeBuilder(config.target),
                             resolver: makeType,
                             target: config.target,
                             api: config.api || [],
@@ -477,6 +476,8 @@
                             isSingleton: config.isSingleton || false
                             //props: parseProps(config.target)
                         };
+
+                        //makeBuilder(mappings[key]);
 
                         return _injector;
                     },

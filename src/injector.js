@@ -44,6 +44,9 @@
  * @TODO: Refactor remove so it does not need to instantiate mappings
  *
  * ++
+ * @TODO: Change name to di-cast
+ *
+ * ++
  * @TODO: Integrate Karma into grunt for Browser tests
  *
  * ++
@@ -55,7 +58,7 @@
  * ------------------------------
  *
  * ++
- * @TODO: Change name to di-cast
+ * @TODO: The API checking should be a separate mapping (like injector)
  *
  * ++
  * @TODO: change toType to toClass / toConstructor
@@ -168,6 +171,8 @@
          */
         function InjectionError(template, context) {
 
+            // @TODO: Add stack trace functionality - see Pocket
+
             this.name = 'InjectionError';
             this.message = template.message;
             this.info = template.info.replace(/\{\{(\w+)\}\}/g, function(_, match) {
@@ -207,6 +212,8 @@
                 }
             }
 
+            // @TODO: This is a bit unnecessary and adds closure overhead
+            // @TODO: Just always return vo and wrap the function calls.
             function pipe(vo) {
 
                 return {
@@ -280,6 +287,7 @@
 
                     make: function() {
 
+                        /*
                         if (!vo.hasOwnProperty('Builder')) {
 
                             vo.Builder = function Builder(args) {
@@ -289,6 +297,7 @@
 
                             vo.Builder.prototype = vo.target.prototype;
                         }
+                        */
 
                         return pipe(vo)
                             .instantiate(vo.args.map(function(key) {
@@ -357,6 +366,17 @@
                 return vo.instance;
             }
 
+            function makeBuilder(target) {
+
+                function Builder(args) {
+                    return target.apply(this, args);
+                }
+
+                Builder.prototype = target.prototype;
+
+                return Builder;
+            }
+
 //            function parseProps(obj) {
 //
 //                var re = /([\w\$'"]*)(?=\s*[:=]\s*(?:'|"){I}(?:"|'))/g,
@@ -390,18 +410,6 @@
              * @return {MapOptions} The various mapping options available.
              */
             this.map = function(key) {
-
-                function makeBuilder(target) {
-
-                    function Builder(args) {
-
-                        return target.apply(this, args);
-                    }
-
-                    Builder.prototype = target.prototype;
-
-                    return Builder;
-                }
 
                 validateKey(key);
 
@@ -611,6 +619,7 @@
 
                 return makeFactory({
 
+                    Builder: makeBuilder(target),
                     target: target,
                     args: slice.call(arguments, 1),
                     api: []
@@ -630,6 +639,7 @@
 
                 return makeType({
 
+                    Builder: makeBuilder(target),
                     target: target,
                     args: slice.call(arguments, 1),
                     isSingleton: false,

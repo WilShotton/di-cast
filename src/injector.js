@@ -4,28 +4,6 @@
 
 /**
  * ++
- * @TODO: Update toFactory implementation to use a partial
- *
- *    vo = {
- *      target: function(depA, depB, arg1, arg2) {...},
- *      using: [depA, depB]
- *    }
- *
- *    map('MyFactory').toFactory(vo) {
- *      var Factory = partial(vo.target, vo.using);
- *    }
- *
- *    consumer = function(MyFactory, arg1) {
- *      var arg2 = 'Hello';
- *      var myFactory = new MyFactory(arg1, arg2);
- *    }
- *
- *  - NOTE: the same variadic approach could be used with toType mappings
- *
- * ++
- * @TODO: Use same Builder for toType as toFactory uses
- *
- * ++
  * @TODO: The props list should be generated when the value is mapped
  *  - use a regex to parse the string representation of the value
  *  - Match injection point keys in an Object ([\w\$'"]*)(?=\s*[:=]\s*(?:'|"){I}(?:"|'))
@@ -74,14 +52,14 @@
  * @TODO: Injector.autoInject() for Angular style constructor injection
  *  - NOTE: Will need to split tests into pre / post compile
  *
+ *  - http://docs.angularjs.org/api/auto/service/$injector
+ *
  * ++
  * @TODO: Add parent injector stuff...
  *
  * ++
  * @TODO: Circular dependency management
  */
-
-// http://docs.angularjs.org/api/auto/service/$injector
 
 ;(function(root) {
 
@@ -287,18 +265,6 @@
 
                     make: function() {
 
-                        /*
-                        if (!vo.hasOwnProperty('Builder')) {
-
-                            vo.Builder = function Builder(args) {
-
-                                return vo.target.apply(this, args);
-                            };
-
-                            vo.Builder.prototype = vo.target.prototype;
-                        }
-                        */
-
                         return pipe(vo)
                             .instantiate(vo.args.map(function(key) {
                                 return _injector.get(key);
@@ -312,18 +278,6 @@
             }
 
             function makeType(vo) {
-
-                /*
-                if (!vo.hasOwnProperty('Builder')) {
-
-                    vo.Builder = function Builder(args) {
-
-                        return vo.target.apply(this, args);
-                    };
-
-                    vo.Builder.prototype = vo.target.prototype;
-                }
-                */
 
                 if (vo.isSingleton && vo.hasOwnProperty('instance')) {
 
@@ -341,18 +295,6 @@
                         .value('instance');
                 }
             }
-
-            /*
-            function makeBuilder(vo) {
-
-                vo.Builder = function Builder(args) {
-
-                    return vo.target.apply(this, args);
-                };
-
-                vo.Builder.prototype = vo.target.prototype;
-            }
-            */
 
             function makeValue(vo) {
 
@@ -444,17 +386,6 @@
                             args: config.using || []
                         };
 
-                        /*
-                        mappings[key].Builder = function Builder(args) {
-
-                            return mappings[key].target.apply(this, args);
-                        };
-
-                        mappings[key].Builder.prototype = config.target.prototype;
-
-                        //makeBuilder(mappings[key]);
-                        */
-
                         return _injector;
                     },
 
@@ -484,8 +415,6 @@
                             isSingleton: config.isSingleton || false
                             //props: parseProps(config.target)
                         };
-
-                        //makeBuilder(mappings[key]);
 
                         return _injector;
                     },

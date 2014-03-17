@@ -149,15 +149,25 @@
          */
         function InjectionError(template, context) {
 
-            // @TODO: Add stack trace functionality - see Pocket
+            var stack = (new Error()).stack;
 
-            this.name = 'InjectionError';
+            if (stack != null) {
+
+                stack = stack.split('\n').slice(1);
+                this.stack = (new Error()).stack;
+
+            } else {
+
+                this.stack = 'Stack trace not available';
+            }
+
             this.message = template.message;
             this.info = template.info.replace(/\{\{(\w+)\}\}/g, function(_, match) {
                 return context[match];
             });
         }
         InjectionError.prototype = new Error();
+        InjectionError.prototype.name = 'InjectionError';
         InjectionError.prototype.constructor = InjectionError;
 
         /**

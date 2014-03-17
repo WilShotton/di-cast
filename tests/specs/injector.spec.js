@@ -42,7 +42,7 @@ define(
             // ------------------------------
 
             // map()
-            describe('map', function() {
+            xdescribe('map', function() {
 
                 beforeEach(function() {
 
@@ -88,7 +88,7 @@ define(
             });
 
             // has()
-            describe('has', function() {
+            xdescribe('has', function() {
 
                 beforeEach(function() {
 
@@ -115,7 +115,7 @@ define(
             });
 
             // get()
-            describe('get', function() {
+            xdescribe('get', function() {
 
                 it(' should have a mapping for the injector', function() {
 
@@ -150,7 +150,7 @@ define(
             });
 
             // remove()
-            describe('remove()', function() {
+            xdescribe('remove()', function() {
 
                 var myValue = {};
 
@@ -218,7 +218,7 @@ define(
             // ------------------------------
 
             // toFactory()
-            describe('toFactory', function() {
+            xdescribe('toFactory', function() {
 
                 function MyFactory(name) {
                     this.getName = function() {
@@ -289,7 +289,7 @@ define(
                 });
             });
 
-            describe('toFactory Facade', function() {
+            xdescribe('toFactory Facade', function() {
 
                 function MyFactory(myArg) {
                     this.myArg = myArg;
@@ -353,7 +353,7 @@ define(
                 });
             });
 
-            describe('toFactory instances', function() {
+            xdescribe('toFactory instances', function() {
 
                 var f1, f1i1, f1i2,
                     f2, f2i1;
@@ -484,7 +484,7 @@ define(
             });
 
             // toType
-            describe('toType', function() {
+            xdescribe('toType', function() {
 
                 function MyType() {}
 
@@ -539,7 +539,7 @@ define(
             });
 
             // toValue
-            describe('toValue', function() {
+            xdescribe('toValue', function() {
 
                 var myArray = [1, 2, 3],
                     myBoolean = true,
@@ -694,7 +694,7 @@ define(
                 });
             });
 
-            describe('isSingleton', function() {
+            xdescribe('isSingleton', function() {
 
                 function MyType() {}
 
@@ -733,7 +733,7 @@ define(
                 });
             });
 
-            describe('using', function() {
+            xdescribe('using', function() {
 
                 function MyType() {}
 
@@ -817,7 +817,7 @@ define(
                 });
             });
 
-            describe('as - duck typing', function() {
+            xdescribe('as - duck typing', function() {
 
                 /*
                 IMyType = {

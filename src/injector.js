@@ -4,6 +4,9 @@
 
 /**
  * ++
+ * @TODO: InjectionError tests
+ *
+ * ++
  * @TODO: The props list should be generated when the value is mapped
  *  - use a regex to parse the string representation of the value
  *  - Match injection point keys in an Object ([\w\$'"]*)(?=\s*[:=]\s*(?:'|"){I}(?:"|'))
@@ -37,6 +40,7 @@
  *
  * ++
  * @TODO: The API checking should be a separate mapping (like injector)
+ *  - This could also help with memory footprint with nested injectors
  *
  * ++
  * @TODO: change toType to toClass / toConstructor
@@ -149,17 +153,7 @@
          */
         function InjectionError(template, context) {
 
-            var stack = (new Error()).stack;
-
-            if (stack != null) {
-
-                stack = stack.split('\n').slice(1);
-                this.stack = (new Error()).stack;
-
-            } else {
-
-                this.stack = 'Stack trace not available';
-            }
+            this.stack = (new Error()).stack || 'Stack trace not available';
 
             this.message = template.message;
             this.info = template.info.replace(/\{\{(\w+)\}\}/g, function(_, match) {
@@ -233,6 +227,7 @@
 
                     setProps: function() {
 
+                        /*
                         if (!vo.hasOwnProperty('props')) {
 
                             vo.props = [];
@@ -244,6 +239,9 @@
                                 }
                             }
                         }
+                        */
+
+                        console.log('\n setProps :: ' + vo.props);
 
                         vo.props.forEach(function(prop) {
 
@@ -266,7 +264,7 @@
 
                         return vo[key];
                     }
-                }
+                };
             }
 
             function makeFactory(vo) {
@@ -308,6 +306,8 @@
 
             function makeValue(vo) {
 
+                console.log('\n makeValue :: ' + vo.props);
+
                 if (!vo.hasOwnProperty('instance')) {
 
                     vo.instance = vo.target;
@@ -324,34 +324,44 @@
                     return target.apply(this, args);
                 }
 
-                Builder.prototype = target.prototype;
+                Builder.prototype = Object.create(target.prototype);
 
                 return Builder;
             }
 
-//            function parseProps(obj) {
-//
-//                var re = /([\w\$'"]*)(?=\s*[:=]\s*(?:'|"){I}(?:"|'))/g,
-//
-//                    str = ''.concat(
-//                        obj.toString(),
-//                        JSON.stringify(obj.prototype)
-//                    );
-//
-//                while (obj != null) {
-//
-//                    str += JSON.stringify(Object.getPrototypeOf(obj));
-//                    obj = obj.prototype;
-//                }
-//
-//                return (str.match(re) || [])
-//                    .filter(function(n) {
-//                          return n;
-//                    })
-//                    .map(function(item) {
-//                        return item.replace(/["']/g, '');
-//                    });
-//            }
+            function parseProps(obj) {
+
+                console.log('\n parseProps');
+
+                var re = /([\w\$'"]*)(?=\s*[:=]\s*(?:'|"){I}(?:"|'))/g,
+
+                    str = ''.concat(
+                        JSON.stringify(obj) || obj.toString(),
+                        JSON.stringify(obj.prototype)
+                    );
+
+                console.log('str : ' + str);
+
+                while (obj != null) {
+
+                    str += JSON.stringify(Object.getPrototypeOf(obj));
+                    obj = obj.prototype;
+                }
+
+                console.log('2');
+
+                var list = (str.match(re) || [])
+                    .filter(function(n) {
+                          return n;
+                    })
+                    .map(function(item) {
+                        return item.replace(/["']/g, '');
+                    });
+
+                console.log('list :: ' + list);
+
+                return list;
+            }
 
             /**
              * Initialises a mapping identifier and returns the options for creating a mapping.
@@ -393,8 +403,11 @@
                             resolver: makeFactory,
                             target: config.target,
                             api: config.api || [],
-                            args: config.using || []
+                            args: config.using || [],
+                            props: parseProps(config.target)
                         };
+
+                        console.log('mappings[key].props :: ' + mappings[key].props);
 
                         return _injector;
                     },
@@ -422,8 +435,9 @@
                             target: config.target,
                             api: config.api || [],
                             args: config.using || [],
+                            props: parseProps(config.target),
+
                             isSingleton: config.isSingleton || false
-                            //props: parseProps(config.target)
                         };
 
                         return _injector;
@@ -449,8 +463,11 @@
 
                             resolver: makeValue,
                             target: config.target,
-                            api: config.api || []
-                            //props: parseProps(config.target)
+                            api: config.api || [],
+
+                            props: is(config.target, 'Object') || is(config.target, 'Function') ?
+                                parseProps(config.target) :
+                                []
                         };
 
                         return _injector;
@@ -560,8 +577,9 @@
 
                     Builder: makeBuilder(target),
                     target: target,
+                    api: [],
                     args: slice.call(arguments, 1),
-                    api: []
+                    props: parseProps(target)
                 });
             };
 
@@ -580,9 +598,10 @@
 
                     Builder: makeBuilder(target),
                     target: target,
+                    api: [],
                     args: slice.call(arguments, 1),
-                    isSingleton: false,
-                    api: []
+                    props: parseProps(target),
+                    isSingleton: false
                 });
             };
 
@@ -595,12 +614,15 @@
              */
             this.resolveValue = function(target) {
 
+                console.log('\n resolveValue');
+
                 validateType(target, 'Object', INVALID_TARGET);
 
                 return makeValue({
 
                     target: target,
-                    api: []
+                    api: [],
+                    props: parseProps(target)
                 });
             };
         }

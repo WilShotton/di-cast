@@ -181,7 +181,8 @@
                     injector: {
                         target: _injector,
                         resolver: makeValue,
-                        api: []
+                        api: [],
+                        props: []
                     }
                 };
 
@@ -240,8 +241,6 @@
                             }
                         }
                         */
-
-                        console.log('\n setProps :: ' + vo.props);
 
                         vo.props.forEach(function(prop) {
 
@@ -306,8 +305,6 @@
 
             function makeValue(vo) {
 
-                console.log('\n makeValue :: ' + vo.props);
-
                 if (!vo.hasOwnProperty('instance')) {
 
                     vo.instance = vo.target;
@@ -329,36 +326,73 @@
                 return Builder;
             }
 
-            function parseProps(obj) {
+            function MyPrototypeFunction() {}
+            MyPrototypeFunction.prototype = {
+                MyNumber: '{I}'
+            };
+            MyPrototypeFunction.prototype.constructor = MyPrototypeFunction;
 
-                console.log('\n parseProps');
+            function MyInheritedFunction() {}
+            MyInheritedFunction.prototype = new MyPrototypeFunction();
+            MyInheritedFunction.prototype.constructor = MyInheritedFunction;
+
+            function serialise(obj, str) {
+
+                str = str || '';
+
+                console.log(' ');
+                console.log(' > iteration');
+                console.log(' String > ' + obj.toString());
+                console.log(' JSON   > ' + JSON.stringify(obj));
+
+                str += JSON.stringify(obj) || obj.toString();
+
+                if (obj.constructor) {
+
+                    str += JSON.stringify(Object.getPrototypeOf(obj.constructor.prototype));
+                }
+
+                if (obj.prototype) {
+
+                    str += serialise(obj.prototype);
+                    str += serialise(Object.getPrototypeOf(obj.prototype));
+                }
+
+                return str;
+            }
+
+            console.log('AAA :: ' + serialise(new MyInheritedFunction()));
+            console.log('BBB :: ' + serialise(MyInheritedFunction));
+
+            function parseProps(target) {
+
+                console.log('\n parseProps > ' + (target.name || target.constructor.name || 'anon'));
 
                 var re = /([\w\$'"]*)(?=\s*[:=]\s*(?:'|"){I}(?:"|'))/g,
 
-                    str = ''.concat(
-                        JSON.stringify(obj) || obj.toString(),
-                        JSON.stringify(obj.prototype)
-                    );
+                    list = [];
 
-                console.log('str : ' + str);
+                if (is(target, 'Function')) {
 
-                while (obj != null) {
+                    list = (serialise(target).match(re) || [])
+                        .filter(function(n) {
+                            return n;
+                        })
+                        .map(function(item) {
+                            return item.replace(/["']/g, '');
+                        });
 
-                    str += JSON.stringify(Object.getPrototypeOf(obj));
-                    obj = obj.prototype;
+                } else {
+
+                    for (var n in target) {
+
+                        if (target[n] === I_POINT) {
+                            list[list.length] = n;
+                        }
+                    }
                 }
 
-                console.log('2');
-
-                var list = (str.match(re) || [])
-                    .filter(function(n) {
-                          return n;
-                    })
-                    .map(function(item) {
-                        return item.replace(/["']/g, '');
-                    });
-
-                console.log('list :: ' + list);
+                console.log(' list :: ' + list);
 
                 return list;
             }
@@ -407,8 +441,6 @@
                             props: parseProps(config.target)
                         };
 
-                        console.log('mappings[key].props :: ' + mappings[key].props);
-
                         return _injector;
                     },
 
@@ -453,6 +485,32 @@
                      */
                     toValue: function(config) {
 
+                        /*
+                        function getProps() {
+
+                            var props = [];
+
+                            if (is(config.target, 'Object')) {
+
+                                for (var n in config.target) {
+
+                                    console.log(n + ' > ' + config.target[n]);
+
+                                    if (config.target[n] === I_POINT) {
+
+                                        props[props.length] = n;
+                                    }
+                                }
+
+                            } else if (is(config.target, 'Function')) {
+
+                                props = parseProps(config.target);
+                            }
+
+                            return props;
+                        }
+                        */
+
                         validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
 
                         if (!config.hasOwnProperty('target')) {
@@ -464,11 +522,10 @@
                             resolver: makeValue,
                             target: config.target,
                             api: config.api || [],
-
-                            props: is(config.target, 'Object') || is(config.target, 'Function') ?
-                                parseProps(config.target) :
-                                []
+                            props: parseProps(config.target)
                         };
+
+                        console.log(key + ' > props :: ' + mappings[key].props);
 
                         return _injector;
                     }
@@ -613,8 +670,6 @@
              * @returns {Object} The injected Object.
              */
             this.resolveValue = function(target) {
-
-                console.log('\n resolveValue');
 
                 validateType(target, 'Object', INVALID_TARGET);
 

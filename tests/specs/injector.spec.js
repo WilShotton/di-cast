@@ -539,7 +539,10 @@ define(
             });
 
             // toValue
-            xdescribe('toValue', function() {
+            describe('toValue', function() {
+
+                // @TODO: Add tests for primitives with custom properties
+                // @TODO: Add tests for Object.create() etc.
 
                 var myArray = [1, 2, 3],
                     myBoolean = true,
@@ -585,6 +588,7 @@ define(
                     injector.map('MyString').toValue({target: myString});
 
                     injector.map('MyPropertyFunction').toValue({target: MyPropertyFunction});
+
                     injector.map('MyPropertyInstance').toValue({target: new MyPropertyFunction()});
                     injector.map('MyPropertyObject').toValue({target: myPropertyObject});
 
@@ -592,16 +596,18 @@ define(
 
                     injector.map('MyBorrowedInstance').toValue({target: new MyBorrowedFunction()});
                     injector.map('MyInheritedInstance').toValue({target: new MyInheritedFunction()});
+
+                    //debugger
                 });
 
-                it(' should return a reference to the injector', function() {
+                xit(' should return a reference to the injector', function() {
 
                     expect(injector.map('MyValue1').toValue({
                         target: {}
                     })).toBe(injector);
                 });
 
-                it(' should map a value to a key', function() {
+                xit(' should map a value to a key', function() {
 
                     expect(injector.get('MyArray'))
                         .toBe(myArray);
@@ -625,7 +631,7 @@ define(
                         .toBe(myString);
                 });
 
-                it(' should map values as singletons', function() {
+                xit(' should map values as singletons', function() {
 
                     expect(injector.get('MyArray'))
                         .toBe(injector.get('MyArray'));
@@ -649,7 +655,7 @@ define(
                         .toBe(injector.get('MyString'));
                 });
 
-                it(' should allow multiple mappings of the same value with different keys', function() {
+                xit(' should allow multiple mappings of the same value with different keys', function() {
 
                     function MyValue() {}
 
@@ -662,13 +668,13 @@ define(
                         .toBe(injector.get('MyValue2'));
                 });
 
-                it(' should resolve properties of target Objects', function() {
+                xit(' should resolve properties of target Objects', function() {
 
                     expect(injector.get('MyPropertyInstance').MyNumber).toBe(42);
                     expect(injector.get('MyPropertyObject').MyNumber).toBe(42);
                 });
 
-                it(' should resolve prototypical properties of target Objects', function() {
+                xit(' should resolve prototypical properties of target Objects', function() {
 
                     expect(injector.get('MyPrototypeInstance').MyNumber).toBe(42);
                 });
@@ -676,17 +682,18 @@ define(
                 it(' should resolve inherited properties of target Objects', function() {
 
                     expect(injector.get('MyBorrowedInstance').MyNumber).toBe(42);
+
                     expect(injector.get('MyInheritedInstance').MyNumber).toBe(42);
                 });
 
-                it(' should throw if no config object is provided', function() {
+                xit(' should throw if no config object is provided', function() {
 
                     expect(function() {
                         injector.map('MyType1').toValue();
                     }).toThrow(INCORRECT_METHOD_SIGNATURE);
                 });
 
-                it(' should should throw if the config does not have a target property', function() {
+                xit(' should should throw if the config does not have a target property', function() {
 
                     expect(function() {
                         injector.map('MyType1').toValue({});
@@ -1021,7 +1028,7 @@ define(
             // ------------------------------
 
             // Constructor
-            describe('constructor injection', function() {
+            xdescribe('constructor injection', function() {
 
                 function MyFactory() {}
 
@@ -1162,7 +1169,7 @@ define(
             });
 
             // Property
-            describe('property injection', function() {
+            xdescribe('property injection', function() {
 
                 var myPropValue = 'MyProp';
 
@@ -1410,7 +1417,7 @@ define(
             });
 
             // Combined
-            describe('combined injection', function() {
+            xdescribe('combined injection', function() {
 
                 beforeEach(function() {
 
@@ -1474,7 +1481,7 @@ define(
 
             // postConstruct()
             // ------------------------------
-            describe('postConstruct', function() {
+            xdescribe('postConstruct', function() {
 
                 var MyValue = {
                     isConstructed: false,
@@ -1562,7 +1569,7 @@ define(
 
             // Injector.resolve methods
             // ------------------------------
-            describe('resolveFactory()', function() {
+            xdescribe('resolveFactory()', function() {
 
                 function MyFactory(myFactoryArg, myInstanceArg) {
                     this.MyProp = '{I}';
@@ -1644,7 +1651,7 @@ define(
                 });
             });
 
-            describe('resolveType()', function() {
+            xdescribe('resolveType()', function() {
 
                 function MyType(MyArg) {
                     this.MyProp = '{I}';
@@ -1695,7 +1702,7 @@ define(
                 });
             });
 
-            describe('resolveValue()', function() {
+            xdescribe('resolveValue()', function() {
 
                 var myValue = {
                     MyProp: '{I}'

@@ -11,8 +11,19 @@
  *  - use a regex to parse the string representation of the value
  *  - toValue mappings can be inspected as they are
  *
+ * ++
  * @TODO: Remove pipe() in favour of mutator functions
  *   - that just return the vo so they can be composed
+ *
+ * ++
+ * @TODO: Add toValue tests for primitives with custom properties
+ *  - ''.prop = '{I}';
+ *
+ * ++
+ * @TODO: Other function property creation methods...
+ *  - Object.create()
+ *  - Object.defineProperties()
+ *  - etc.
  *
  * ++
  * @TODO: Change name to di-cast
@@ -186,8 +197,6 @@
                 }
             }
 
-            // @TODO: This is a bit unnecessary and adds closure overhead
-            // @TODO: Just always return vo and wrap the function calls.
             function pipe(vo) {
 
                 return {
@@ -199,6 +208,7 @@
                         return this;
                     },
 
+                    // @TODO: checkInterface() should happen when mapping
                     checkInterface: function() {
 
                         vo.api.forEach(function(item) {
@@ -249,6 +259,7 @@
 
                     make: function() {
 
+                        // @TODO: checkInterface() should happen when mapping
                         return pipe(vo)
                             .instantiate(vo.args.map(function(key) {
                                 return _injector.get(key);
@@ -269,6 +280,7 @@
 
                 } else {
 
+                    // @TODO: checkInterface() should happen when mapping
                     return pipe(vo)
                         .instantiate(vo.args.map(function(key) {
                             return _injector.get(key);
@@ -320,11 +332,7 @@
 
             function parseProps(target) {
 
-                // @TODO: Change identity filter to use Boolean or Object
-                // @TODO: Check / remove multiple entries in list
-
                 var re = /([\w\$'"]*)(?=\s*[:=]\s*(?:'|"){I}(?:"|'))/g,
-
                     list = [];
 
                 if (is(target, 'Function')) {
@@ -456,8 +464,6 @@
                             args: [],
                             props: parseProps(config.target)
                         };
-
-                        //console.log(key + ' > props :: ' + mappings[key].props);
 
                         return _injector;
                     }

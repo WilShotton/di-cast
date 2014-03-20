@@ -375,8 +375,41 @@
                  *
                  * @class MapOptions
                  * @constructor
+                 *
+                 * @TODO: An Object can't really be a assigned to @constructor
                  */
                 return {
+
+                    /**
+                     * Maps a key to a constructor function mapping.
+                     *
+                     * @method toConstructor
+                     * @param {Object} config The config settings for the mapping.
+                     *  @param {Function} config.target The factory function.
+                     *  @param {Array} [config.api] The interface definition for duck typing.
+                     *  @param {Array} [config.using] Any constructor dependencies.
+                     *  @param {Boolean} [config.isSingleton] If the mapping should be treated as a singleton.
+                     * @returns {Injector}
+                     */
+                    toConstructor: function(config) {
+
+                        validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
+                        validateType(config.target, 'Function', INVALID_TARGET);
+
+                        mappings[key] = {
+
+                            Builder: makeBuilder(config.target),
+                            resolver: makeType,
+                            target: config.target,
+                            api: config.api || [],
+                            args: config.using || [],
+                            props: parseProps(config.target),
+
+                            isSingleton: config.isSingleton || false
+                        };
+
+                        return _injector;
+                    },
 
                     /**
                      * Maps a key to a factory mapping.
@@ -401,37 +434,6 @@
                             api: config.api || [],
                             args: config.using || [],
                             props: parseProps(config.target)
-                        };
-
-                        return _injector;
-                    },
-
-                    /**
-                     * Maps a key to a type mapping.
-                     *
-                     * @method toType
-                     * @param {Object} config The config settings for the mapping.
-                     *  @param {Function} config.target The factory function.
-                     *  @param {Array} [config.api] The interface definition for duck typing.
-                     *  @param {Array} [config.using] Any constructor dependencies.
-                     *  @param {Boolean} [config.isSingleton] If the mapping should be treated as a singleton.
-                     * @returns {Injector}
-                     */
-                    toType: function(config) {
-
-                        validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
-                        validateType(config.target, 'Function', INVALID_TARGET);
-
-                        mappings[key] = {
-
-                            Builder: makeBuilder(config.target),
-                            resolver: makeType,
-                            target: config.target,
-                            api: config.api || [],
-                            args: config.using || [],
-                            props: parseProps(config.target),
-
-                            isSingleton: config.isSingleton || false
                         };
 
                         return _injector;
@@ -520,7 +522,6 @@
                     for (var n in mappings) {
 
                         if (mappings.hasOwnProperty(n) && n !== key) {
-
                             if (mappings[n].args.indexOf(key) !== -1 || mappings[n].props.indexOf(key) !== -1) {
                                 throw new InjectionError(MAPPING_HAS_DEPENDANTS, {key: key});
                             }

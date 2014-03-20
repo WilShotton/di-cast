@@ -47,7 +47,7 @@ define(
                 beforeEach(function() {
 
                     injector = new Injector();
-                    injector.map('MyMapping').toType({target: function() {}});
+                    injector.map('MyMapping').toConstructor({target: function() {}});
                 });
 
                 it(' should index a successful mapping to a key', function() {
@@ -65,7 +65,7 @@ define(
                 it(' should return mapping options', function() {
 
                     var mapping = injector.map('Map'),
-                        keys = ['toType', 'toValue']; //'toFactory',
+                        keys = ['toConstructor', 'toFactory', 'toValue'];
 
                     keys.forEach(function(key) {
                         expect(is(mapping[key], 'Function')).toBe(true);
@@ -93,7 +93,7 @@ define(
                 beforeEach(function() {
 
                     injector = new Injector();
-                    injector.map('MyMapping').toType({target: function() {}});
+                    injector.map('MyMapping').toConstructor({target: function() {}});
                 });
 
                 it(' should return true for a mapping', function() {
@@ -129,7 +129,7 @@ define(
                     function MyType() {}
 
                     injector = new Injector();
-                    injector.map('MyType').toType({target: MyType});
+                    injector.map('MyType').toConstructor({target: MyType});
 
                     expect(injector.get('MyType').constructor).toBe(MyType);
                 });
@@ -164,7 +164,7 @@ define(
 
                     injector = new Injector();
                     injector.map('MyFactory').toFactory({target: MyFactory});
-                    injector.map('MyType').toType({target: MyType});
+                    injector.map('MyType').toConstructor({target: MyType});
                     injector.map('MyValue').toValue({target: myValue});
                 });
 
@@ -181,12 +181,12 @@ define(
 
                 it(' should throw if a mapping depends on the mapping to be removed', function() {
 
-                    injector.map('MyDependantArgs').toType({
+                    injector.map('MyDependantArgs').toConstructor({
                         target: function(MyType) {},
                         using: ['MyType']
                     });
 
-                    injector.map('MyDependantProps').toType({
+                    injector.map('MyDependantProps').toConstructor({
                         target: function() {
                             this.MyValue = '{I}';
                         }
@@ -362,13 +362,13 @@ define(
 
                     injector = new Injector();
 
-                    injector.map('MyType').toType({
+                    injector.map('MyType').toConstructor({
                         target: function() {
                             this.name = 'type';
                         }
                     });
 
-                    injector.map('MySingleton').toType({
+                    injector.map('MySingleton').toConstructor({
                         target: function() {
                             this.name = 'singleton';
                         },
@@ -381,13 +381,13 @@ define(
                         }
                     });
 
-                    injector.map('TypeProp').toType({
+                    injector.map('TypeProp').toConstructor({
                         target: function() {
                             this.name = 'TypeProp';
                         }
                     });
 
-                    injector.map('SingletonProp').toType({
+                    injector.map('SingletonProp').toConstructor({
                         target: function() {
                             this.name = 'SingletonProp';
                         },
@@ -483,8 +483,8 @@ define(
                 });
             });
 
-            // toType
-            describe('toType', function() {
+            // toConstructor
+            describe('toConstructor', function() {
 
                 function MyType() {}
 
@@ -495,19 +495,19 @@ define(
                 beforeEach(function() {
 
                     injector = new Injector();
-                    injector.map('MyType').toType(config);
+                    injector.map('MyType').toConstructor(config);
                 });
 
                 it(' should return a reference to the injector', function() {
 
-                    expect(injector.map('MyType1').toType(config)).toBe(injector);
+                    expect(injector.map('MyType1').toConstructor(config)).toBe(injector);
                 });
 
                 it(' should allow multiple mappings of the same function with different keys', function() {
 
                     expect(function() {
-                        injector.map('MyType1').toType(config);
-                        injector.map('MyType2').toType(config);
+                        injector.map('MyType1').toConstructor(config);
+                        injector.map('MyType2').toConstructor(config);
                     }).not.toThrow();
 
                     expect(injector.get('MyType1').constructor)
@@ -517,21 +517,21 @@ define(
                 it(' should throw if no config object is provided', function() {
 
                     expect(function() {
-                        injector.map('MyType1').toType();
+                        injector.map('MyType1').toConstructor();
                     }).toThrow(INCORRECT_METHOD_SIGNATURE);
                 });
 
                 it(' should should throw if the config does not have a target property', function() {
 
                     expect(function() {
-                        injector.map('MyType1').toType({});
+                        injector.map('MyType1').toConstructor({});
                     }).toThrow(INVALID_TARGET);
                 });
 
                 it(' should throw if config.target is not a function', function() {
 
                     expect(function() {
-                        injector.map('MyType1').toType({
+                        injector.map('MyType1').toConstructor({
                             target: {}
                         });
                     }).toThrow(INVALID_TARGET);
@@ -711,11 +711,11 @@ define(
 
                     injector = new Injector();
 
-                    injector.map('MyType').toType({
+                    injector.map('MyType').toConstructor({
                         target: MyType
                     });
 
-                    injector.map('MySingleton').toType({
+                    injector.map('MySingleton').toConstructor({
                         target: MySingleton,
                         isSingleton: true
                     });
@@ -755,11 +755,11 @@ define(
 
                     injector = new Injector();
 
-                    injector.map('MyType').toType({
+                    injector.map('MyType').toConstructor({
                         target: MyType
                     });
 
-                    injector.map('MySingletonType').toType({
+                    injector.map('MySingletonType').toConstructor({
                         target: MySingletonType,
                         isSingleton: true
                     });
@@ -768,7 +768,7 @@ define(
                 it(' should do nothing if the arguments length is 0', function() {
 
                     expect(function() {
-                        injector.map('MyA').toType({
+                        injector.map('MyA').toConstructor({
                             target: function MyA(DepA) {
                                 this.depA = DepA;
                             },
@@ -782,7 +782,7 @@ define(
                 it(' should do nothing if the first argument is null', function() {
 
                     expect(function() {
-                        injector.map('MyA').toType({
+                        injector.map('MyA').toConstructor({
                             target: function MyA(DepA){
                                 this.depA = DepA;
                             },
@@ -797,7 +797,7 @@ define(
                 it(' should do nothing if the first argument is undefined', function() {
 
                     expect(function() {
-                        injector.map('MyA').toType({
+                        injector.map('MyA').toConstructor({
                             target: function MyA(DepA){
                                 this.depA = DepA;
                             },
@@ -811,7 +811,7 @@ define(
 
                 it(' should accept an array as dependencies', function() {
 
-                    injector.map('MyUsingType').toType({
+                    injector.map('MyUsingType').toConstructor({
                         target: MyUsingType,
                         using: ['MyType', 'MySingletonType']
                     });
@@ -877,7 +877,7 @@ define(
                         api: IMyInterface
                     });
 
-                    injector.map('MyType').toType({
+                    injector.map('MyType').toConstructor({
                         target: MyType,
                         api: IMyInterface
                     });
@@ -906,7 +906,7 @@ define(
                     expect(instance.myPrototypeProperty).toBeDefined();
                 });
 
-                it(' should ensure a defined public API for a toType mapping', function() {
+                it(' should ensure a defined public API for a toConstructor mapping', function() {
 
                     var instance = null;
 
@@ -968,12 +968,12 @@ define(
 
                     expect(function() {
 
-                        injector.map('MyCorrect').toType({
+                        injector.map('MyCorrect').toConstructor({
                             target: MyCorrect,
                             api: IMemberTest
                         });
 
-                        injector.map('MyMissing').toType({
+                        injector.map('MyMissing').toConstructor({
                             target: MyMissing,
                             api: IMemberTest
                         });
@@ -1001,12 +1001,12 @@ define(
 
                     expect(function() {
 
-                        injector.map('MyCorrect').toType({
+                        injector.map('MyCorrect').toConstructor({
                             target: MyCorrect,
                             api: IArityTest
                         });
 
-                        injector.map('MyMissing').toType({
+                        injector.map('MyMissing').toConstructor({
                             target: MyMissing,
                             api: IArityTest
                         });
@@ -1080,21 +1080,21 @@ define(
                         using: ['MyDependantFactory', 'MyDependantType']
                     });
 
-                    injector.map('MyType').toType({
+                    injector.map('MyType').toConstructor({
                         target: MyType
                     });
 
-                    injector.map('MySingletonType').toType({
+                    injector.map('MySingletonType').toConstructor({
                         target: MySingletonType,
                         isSingleton: true
                     });
 
-                    injector.map('MyDependantType').toType({
+                    injector.map('MyDependantType').toConstructor({
                         target: MyDependantType,
                         using: ['MyFactory', 'MyType', 'MySingletonType', 'MyValue']
                     });
 
-                    injector.map('MyNestedDependantType').toType({
+                    injector.map('MyNestedDependantType').toConstructor({
                         target: MyNestedDependantType,
                         using: ['MyDependantFactory', 'MyDependantType']
                     });
@@ -1119,12 +1119,12 @@ define(
                         this.bar = Bar;
                     }
 
-                    injector.map('DepA').toType({
+                    injector.map('DepA').toConstructor({
                         target: DepA,
                         using: ['MyType']
                     });
 
-                    injector.map('DepB').toType({
+                    injector.map('DepB').toConstructor({
                         target: DepB,
                         using: ['MyType']
                     });
@@ -1196,7 +1196,7 @@ define(
                         target: MyFactory
                     });
 
-                    injector.map('MyType').toType({
+                    injector.map('MyType').toConstructor({
                         target: MyType
                     });
 
@@ -1227,7 +1227,7 @@ define(
                         target: MyFactory
                     });
 
-                    injector.map('MyType').toType({
+                    injector.map('MyType').toConstructor({
                         target: MyType
                     });
 
@@ -1264,7 +1264,7 @@ define(
                     MyBorrowedPrototype_Type.prototype = MyRoot.prototype;
                     MyBorrowedPrototype_Type.prototype.constructor = MyBorrowedPrototype_Type;
 
-                    injector.map('MyRoot').toType({
+                    injector.map('MyRoot').toConstructor({
                         target: MyRoot
                     });
 
@@ -1276,11 +1276,11 @@ define(
                         target: MyBorrowedPrototype_Factory
                     });
 
-                    injector.map('MyInstantiatedPrototype_Type').toType({
+                    injector.map('MyInstantiatedPrototype_Type').toConstructor({
                         target: MyInstantiatedPrototype_Type
                     });
 
-                    injector.map('MyBorrowedPrototype_Type').toType({
+                    injector.map('MyBorrowedPrototype_Type').toConstructor({
                         target: MyBorrowedPrototype_Type
                     });
 
@@ -1364,7 +1364,7 @@ define(
                         target: 'Not empty'
                     });
 
-                    injector.map('Props').toType({
+                    injector.map('Props').toConstructor({
                         target: Props
                     });
 
@@ -1398,7 +1398,7 @@ define(
                         this.MyString = '{I}';
                     }
 
-                    injector.map('MyMissingType').toType({
+                    injector.map('MyMissingType').toConstructor({
                         target: MyMissingType
                     });
 
@@ -1456,7 +1456,7 @@ define(
                         target: 'MyPrototypeProperty'
                     });
 
-                    injector.map('MyType').toType({
+                    injector.map('MyType').toConstructor({
                         target: MyType,
                         using: ['MyConstructor']
                     });
@@ -1521,12 +1521,12 @@ define(
                         target: MyFactory
                     });
 
-                    injector.map('MySingleton').toType({
+                    injector.map('MySingleton').toConstructor({
                         target: MySingleton,
                         isSingleton: true
                     });
 
-                    injector.map('MyType').toType({
+                    injector.map('MyType').toConstructor({
                         target: MyType
                     });
 
@@ -1545,7 +1545,7 @@ define(
                     expect(injector.get('MyType').injector).toBe(injector);
                 });
 
-                it(' should call postConstruct on toType mappings after injecting dependencies', function() {
+                it(' should call postConstruct on toConstructor mappings after injecting dependencies', function() {
 
                     expect(injector.get('MyType').isConstructed).toBe(true);
                 });

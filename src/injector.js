@@ -7,9 +7,12 @@
  * @TODO: InjectionError tests
  *
  * ++
- * @TODO: Interface checking should when the value is mapped
+ * @TODO: Interface checking should occur when the value is mapped
  *  - use a regex to parse the string representation of the value
  *  - toValue mappings can be inspected as they are
+ *
+ * @TODO: Remove pipe() in favour of mutator functions
+ *   - that just return the vo so they can be composed
  *
  * ++
  * @TODO: Change name to di-cast
@@ -31,9 +34,6 @@
  * ++
  * @TODO: The API checking should be a separate mapping (like injector)
  *  - This could also help with memory footprint with nested injectors
- *
- * ++
- * @TODO: change toType to toClass / toConstructor
  *
  * ++
  * @TODO: Inject toValue function mapping properties by inspection
@@ -305,16 +305,9 @@
 
             function serialise(obj, str) {
 
-                // @TODO: Try removing serialise(Object.getPrototypeOf(obj.prototype))
-
                 str = str || '';
 
                 str += JSON.stringify(obj) || obj.toString();
-
-                if (obj.constructor) {
-
-                    str += JSON.stringify(Object.getPrototypeOf(obj.constructor.prototype));
-                }
 
                 if (obj.prototype) {
 

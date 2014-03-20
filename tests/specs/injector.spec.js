@@ -42,7 +42,7 @@ define(
             // ------------------------------
 
             // map()
-            xdescribe('map', function() {
+            describe('map', function() {
 
                 beforeEach(function() {
 
@@ -88,7 +88,7 @@ define(
             });
 
             // has()
-            xdescribe('has', function() {
+            describe('has', function() {
 
                 beforeEach(function() {
 
@@ -115,7 +115,7 @@ define(
             });
 
             // get()
-            xdescribe('get', function() {
+            describe('get', function() {
 
                 it(' should have a mapping for the injector', function() {
 
@@ -150,7 +150,7 @@ define(
             });
 
             // remove()
-            xdescribe('remove()', function() {
+            describe('remove()', function() {
 
                 var myValue = {};
 
@@ -218,7 +218,7 @@ define(
             // ------------------------------
 
             // toFactory()
-            xdescribe('toFactory', function() {
+            describe('toFactory', function() {
 
                 function MyFactory(name) {
                     this.getName = function() {
@@ -289,7 +289,7 @@ define(
                 });
             });
 
-            xdescribe('toFactory Facade', function() {
+            describe('toFactory Facade', function() {
 
                 function MyFactory(myArg) {
                     this.myArg = myArg;
@@ -353,7 +353,7 @@ define(
                 });
             });
 
-            xdescribe('toFactory instances', function() {
+            describe('toFactory instances', function() {
 
                 var f1, f1i1, f1i2,
                     f2, f2i1;
@@ -484,7 +484,7 @@ define(
             });
 
             // toType
-            xdescribe('toType', function() {
+            describe('toType', function() {
 
                 function MyType() {}
 
@@ -600,14 +600,14 @@ define(
                     //debugger
                 });
 
-                xit(' should return a reference to the injector', function() {
+                it(' should return a reference to the injector', function() {
 
                     expect(injector.map('MyValue1').toValue({
                         target: {}
                     })).toBe(injector);
                 });
 
-                xit(' should map a value to a key', function() {
+                it(' should map a value to a key', function() {
 
                     expect(injector.get('MyArray'))
                         .toBe(myArray);
@@ -631,7 +631,7 @@ define(
                         .toBe(myString);
                 });
 
-                xit(' should map values as singletons', function() {
+                it(' should map values as singletons', function() {
 
                     expect(injector.get('MyArray'))
                         .toBe(injector.get('MyArray'));
@@ -655,7 +655,7 @@ define(
                         .toBe(injector.get('MyString'));
                 });
 
-                xit(' should allow multiple mappings of the same value with different keys', function() {
+                it(' should allow multiple mappings of the same value with different keys', function() {
 
                     function MyValue() {}
 
@@ -668,13 +668,13 @@ define(
                         .toBe(injector.get('MyValue2'));
                 });
 
-                xit(' should resolve properties of target Objects', function() {
+                it(' should resolve properties of target Objects', function() {
 
                     expect(injector.get('MyPropertyInstance').MyNumber).toBe(42);
                     expect(injector.get('MyPropertyObject').MyNumber).toBe(42);
                 });
 
-                xit(' should resolve prototypical properties of target Objects', function() {
+                it(' should resolve prototypical properties of target Objects', function() {
 
                     expect(injector.get('MyPrototypeInstance').MyNumber).toBe(42);
                 });
@@ -686,14 +686,14 @@ define(
                     expect(injector.get('MyInheritedInstance').MyNumber).toBe(42);
                 });
 
-                xit(' should throw if no config object is provided', function() {
+                it(' should throw if no config object is provided', function() {
 
                     expect(function() {
                         injector.map('MyType1').toValue();
                     }).toThrow(INCORRECT_METHOD_SIGNATURE);
                 });
 
-                xit(' should should throw if the config does not have a target property', function() {
+                it(' should should throw if the config does not have a target property', function() {
 
                     expect(function() {
                         injector.map('MyType1').toValue({});
@@ -701,7 +701,7 @@ define(
                 });
             });
 
-            xdescribe('isSingleton', function() {
+            describe('isSingleton', function() {
 
                 function MyType() {}
 
@@ -740,7 +740,7 @@ define(
                 });
             });
 
-            xdescribe('using', function() {
+            describe('using', function() {
 
                 function MyType() {}
 
@@ -824,7 +824,7 @@ define(
                 });
             });
 
-            xdescribe('as - duck typing', function() {
+            describe('as - duck typing', function() {
 
                 /*
                 IMyType = {
@@ -1028,7 +1028,7 @@ define(
             // ------------------------------
 
             // Constructor
-            xdescribe('constructor injection', function() {
+            describe('constructor injection', function() {
 
                 function MyFactory() {}
 
@@ -1169,7 +1169,7 @@ define(
             });
 
             // Property
-            xdescribe('property injection', function() {
+            describe('property injection', function() {
 
                 var myPropValue = 'MyProp';
 
@@ -1417,7 +1417,7 @@ define(
             });
 
             // Combined
-            xdescribe('combined injection', function() {
+            describe('combined injection', function() {
 
                 beforeEach(function() {
 
@@ -1481,7 +1481,7 @@ define(
 
             // postConstruct()
             // ------------------------------
-            xdescribe('postConstruct', function() {
+            describe('postConstruct', function() {
 
                 var MyValue = {
                     isConstructed: false,
@@ -1569,7 +1569,7 @@ define(
 
             // Injector.resolve methods
             // ------------------------------
-            xdescribe('resolveFactory()', function() {
+            describe('resolveFactory()', function() {
 
                 function MyFactory(myFactoryArg, myInstanceArg) {
                     this.MyProp = '{I}';
@@ -1651,7 +1651,7 @@ define(
                 });
             });
 
-            xdescribe('resolveType()', function() {
+            describe('resolveType()', function() {
 
                 function MyType(MyArg) {
                     this.MyProp = '{I}';
@@ -1702,7 +1702,7 @@ define(
                 });
             });
 
-            xdescribe('resolveValue()', function() {
+            describe('resolveValue()', function() {
 
                 var myValue = {
                     MyProp: '{I}'

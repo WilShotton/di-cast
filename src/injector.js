@@ -228,20 +228,6 @@
 
                     setProps: function() {
 
-                        /*
-                        if (!vo.hasOwnProperty('props')) {
-
-                            vo.props = [];
-
-                            for (var prop in vo.instance) {
-
-                                if (vo.instance[prop] === I_POINT) {
-                                    vo.props[vo.props.length] = prop;
-                                }
-                            }
-                        }
-                        */
-
                         vo.props.forEach(function(prop) {
 
                             vo.instance[prop] = _injector.get(prop);
@@ -326,24 +312,11 @@
                 return Builder;
             }
 
-            function MyPrototypeFunction() {}
-            MyPrototypeFunction.prototype = {
-                MyNumber: '{I}'
-            };
-            MyPrototypeFunction.prototype.constructor = MyPrototypeFunction;
-
-            function MyInheritedFunction() {}
-            MyInheritedFunction.prototype = new MyPrototypeFunction();
-            MyInheritedFunction.prototype.constructor = MyInheritedFunction;
-
             function serialise(obj, str) {
 
-                str = str || '';
+                // @TODO: Try removing serialise(Object.getPrototypeOf(obj.prototype))
 
-                console.log(' ');
-                console.log(' > iteration');
-                console.log(' String > ' + obj.toString());
-                console.log(' JSON   > ' + JSON.stringify(obj));
+                str = str || '';
 
                 str += JSON.stringify(obj) || obj.toString();
 
@@ -361,12 +334,10 @@
                 return str;
             }
 
-            console.log('AAA :: ' + serialise(new MyInheritedFunction()));
-            console.log('BBB :: ' + serialise(MyInheritedFunction));
-
             function parseProps(target) {
 
-                console.log('\n parseProps > ' + (target.name || target.constructor.name || 'anon'));
+                // @TODO: Change identity filter to use Boolean or Object
+                // @TODO: Check / remove multiple entries in list
 
                 var re = /([\w\$'"]*)(?=\s*[:=]\s*(?:'|"){I}(?:"|'))/g,
 
@@ -375,24 +346,24 @@
                 if (is(target, 'Function')) {
 
                     list = (serialise(target).match(re) || [])
-                        .filter(function(n) {
+                        .filter(function identity(n) {
                             return n;
                         })
-                        .map(function(item) {
+                        .map(function removeQuotes(item) {
                             return item.replace(/["']/g, '');
+                        })
+                        .filter(function removeDuplicates(item, index, self) {
+                            return self.indexOf(item) === index;
                         });
 
                 } else {
 
-                    for (var n in target) {
-
-                        if (target[n] === I_POINT) {
-                            list[list.length] = n;
+                    for (var key in target) {
+                        if (target[key] === I_POINT) {
+                            list[list.length] = key;
                         }
                     }
                 }
-
-                console.log(' list :: ' + list);
 
                 return list;
             }
@@ -485,32 +456,6 @@
                      */
                     toValue: function(config) {
 
-                        /*
-                        function getProps() {
-
-                            var props = [];
-
-                            if (is(config.target, 'Object')) {
-
-                                for (var n in config.target) {
-
-                                    console.log(n + ' > ' + config.target[n]);
-
-                                    if (config.target[n] === I_POINT) {
-
-                                        props[props.length] = n;
-                                    }
-                                }
-
-                            } else if (is(config.target, 'Function')) {
-
-                                props = parseProps(config.target);
-                            }
-
-                            return props;
-                        }
-                        */
-
                         validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
 
                         if (!config.hasOwnProperty('target')) {
@@ -525,7 +470,7 @@
                             props: parseProps(config.target)
                         };
 
-                        console.log(key + ' > props :: ' + mappings[key].props);
+                        //console.log(key + ' > props :: ' + mappings[key].props);
 
                         return _injector;
                     }

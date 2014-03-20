@@ -7,22 +7,9 @@
  * @TODO: InjectionError tests
  *
  * ++
- * @TODO: The props list should be generated when the value is mapped
- *  - use a regex to parse the string representation of the value
- *  - Match injection point keys in an Object ([\w\$'"]*)(?=\s*[:=]\s*(?:'|"){I}(?:"|'))
- *
- *  - NEXT
- *  - apply props to factory and value mapping methods
- *  - remove getProps() from instantiate()
- *  - refactor mapping to deps.arguments, deps.properties
- *
- * ++
  * @TODO: Interface checking should when the value is mapped
  *  - use a regex to parse the string representation of the value
  *  - toValue mappings can be inspected as they are
- *
- * ++
- * @TODO: Refactor remove so it does not need to instantiate mappings
  *
  * ++
  * @TODO: Change name to di-cast
@@ -37,6 +24,9 @@
  * @TODO: Bower
  *
  * ------------------------------
+ *
+ * ++
+ * @TODO: refactor mapping to deps.arguments, deps.properties
  *
  * ++
  * @TODO: The API checking should be a separate mapping (like injector)
@@ -182,6 +172,7 @@
                         target: _injector,
                         resolver: makeValue,
                         api: [],
+                        args: [],
                         props: []
                     }
                 };
@@ -467,6 +458,7 @@
                             resolver: makeValue,
                             target: config.target,
                             api: config.api || [],
+                            args: [],
                             props: parseProps(config.target)
                         };
 
@@ -521,40 +513,19 @@
              */
             this.remove = function(key) {
 
-                var target = null,
-                    instance = null;
+                var target = null;
 
                 if (_injector.has(key)) {
 
-                    Object.keys(mappings)
-                        .filter(function(name) {
+                    for (var n in mappings) {
 
-                            return name !== key;
-                        })
-                        .map(function(name) {
+                        if (mappings.hasOwnProperty(n) && n !== key) {
 
-                            return mappings[name];
-                        })
-                        .forEach(function(mapping) {
-
-                            if (mapping.hasOwnProperty('args') && mapping.args.indexOf(key) !== -1) {
+                            if (mappings[n].args.indexOf(key) !== -1 || mappings[n].props.indexOf(key) !== -1) {
                                 throw new InjectionError(MAPPING_HAS_DEPENDANTS, {key: key});
                             }
-
-                            // @TODO: Changed to a 'processed' flag
-                            if (!mapping.hasOwnProperty('instance')) {
-
-                                instance = mapping.resolver(mapping);
-
-                                if (instance.hasOwnProperty('make')) {
-                                    instance.make();
-                                }
-                            }
-
-                            if (mapping.props.indexOf(key) !== -1) {
-                                throw new InjectionError(MAPPING_HAS_DEPENDANTS, {key: key});
-                            }
-                        });
+                        }
+                    }
 
                     target = mappings[key].target;
 

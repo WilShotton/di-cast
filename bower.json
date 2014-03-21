@@ -1,0 +1,20 @@
+{
+    "name": "Di-cast",
+    "description": "A simple JavaScript dependency injector.",
+    "version": "0.0.4",
+    "main": "src/di-cast.js",
+    "scripts": [
+        "src/di-cast.js"
+    ],
+    "ignore": [
+        "bin/",
+        "node_modules/",
+        "tests/",
+        "Gruntfile.js",
+        "karma.conf.js",
+        "package.json",
+        "README.md"
+    ],
+    "license": "MIT",
+    "_source": "https://wilshotton@bitbucket.org/wilshotton/di-cast.git"
+}

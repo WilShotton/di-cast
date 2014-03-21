@@ -28,6 +28,7 @@
  *
  * ++
  * @TODO: Bower
+ *  - Move src contents to root
  *
  * ------------------------------
  *

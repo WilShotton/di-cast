@@ -7,20 +7,15 @@
  * @TODO: InjectionError tests
  *
  * ++
- * @TODO: Interface checking should occur when the value is mapped
- *  - use a regex to parse the string representation of the value
- *  - toValue mappings can be inspected as they are
- *
- * ++
- * @TODO: Remove pipe() in favour of mutator functions
- *   - that just return the vo so they can be composed
+ * @TODO: testing the api on toValue function mappings
+ *  - will return unexpected results
  *
  * ++
  * @TODO: Add toValue tests for primitives with custom properties
  *  - ''.prop = '{I}';
  *
  * ++
- * @TODO: Other function property creation methods...
+ * @TODO: Other function property creation  methods...
  *  - Object.create()
  *  - Object.defineProperties()
  *  - etc.
@@ -208,7 +203,6 @@
                         return this;
                     },
 
-                    // @TODO: checkInterface() should happen when mapping
                     checkInterface: function() {
 
                         vo.api.forEach(function(item) {
@@ -253,13 +247,31 @@
                 };
             }
 
+            function makeConstructor(vo) {
+
+                if (vo.isSingleton && vo.hasOwnProperty('instance')) {
+
+                    return vo.instance;
+
+                } else {
+
+                    return pipe(vo)
+                        .instantiate(vo.args.map(function(key) {
+                            return _injector.get(key);
+                        }))
+                        .checkInterface()
+                        .setProps()
+                        .post()
+                        .value('instance');
+                }
+            }
+
             function makeFactory(vo) {
 
                 return {
 
                     make: function() {
 
-                        // @TODO: checkInterface() should happen when mapping
                         return pipe(vo)
                             .instantiate(vo.args.map(function(key) {
                                 return _injector.get(key);
@@ -270,26 +282,6 @@
                             .value('instance');
                     }
                 };
-            }
-
-            function makeType(vo) {
-
-                if (vo.isSingleton && vo.hasOwnProperty('instance')) {
-
-                    return vo.instance;
-
-                } else {
-
-                    // @TODO: checkInterface() should happen when mapping
-                    return pipe(vo)
-                        .instantiate(vo.args.map(function(key) {
-                            return _injector.get(key);
-                        }))
-                        .checkInterface()
-                        .setProps()
-                        .post()
-                        .value('instance');
-                }
             }
 
             function makeValue(vo) {
@@ -400,7 +392,7 @@
                         mappings[key] = {
 
                             Builder: makeBuilder(config.target),
-                            resolver: makeType,
+                            resolver: makeConstructor,
                             target: config.target,
                             api: config.api || [],
                             args: config.using || [],
@@ -567,7 +559,7 @@
 
                 validateType(target, 'Function', INVALID_TARGET);
 
-                return makeType({
+                return makeConstructor({
 
                     Builder: makeBuilder(target),
                     target: target,

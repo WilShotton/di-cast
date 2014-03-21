@@ -21,9 +21,6 @@
  *  - etc.
  *
  * ++
- * @TODO: Change name to di-cast
- *
- * ++
  * @TODO: Integrate Karma into grunt for Browser tests
  *
  * ++

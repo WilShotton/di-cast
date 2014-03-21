@@ -2,13 +2,11 @@
  * Created by wil on 15/01/2014.
  */
 
-
-
 /*global describe, xdescribe, it, xit, beforeEach, afterEach, spyOn */
 define(
 
     [
-        'injector'
+        'di-cast'
     ],
 
     function(Injector) {

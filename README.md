@@ -1,44 +1,44 @@
-# Injector
+# Di-cast
 
 A JavaScript dependency injector for Node.js and the Browser.
 
 ## Set up.
 
-The injector can be used in AMD, Browser and CommonJS environments.
+Di-cast can be used in AMD, Browser and CommonJS environments.
 
 #### AMD
 
 ```
-require(['path/to/injecor'], function(Injector) {
+require(['path/to/di-cast'], function(DiCast) {
 
-	var injector = new Injector();	
+	var injector = new DiCast();
 });
 
 // or
 
-define('Module', ['path/to/injecor'], function(Injector) {
+define('Module', ['path/to/di-cast'], function(DiCast) {
 
-	var injector = new Injector();	
+	var injector = new DiCast();
 });
 
 ```
 
 #### Browser
 
-	<script src="path/to/injector.js"></script>
+	<script src="path/to/di-cast"></script>
 
 	<script>
 	
-		var injector = new Injector();	
+		var injector = new DiCast();
 		
 	</script>
 
 #### CommonJS
 
 ```
-var Injector = require('path/to/injector.js).Injector;
+var Injector = require('path/to/injector.js).DiCast;
 
-var injector = new Injector();
+var injector = new DiCast();
 
 ```
 

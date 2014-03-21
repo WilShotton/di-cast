@@ -49,7 +49,7 @@
  *  - NOTE: Will have to dynamically generate regex
  *
  * ++
- * @TODO: Injector.autoInject() for Angular style constructor injection
+ * @TODO: DiCast.autoInject() for Angular style constructor injection
  *  - NOTE: Will need to split tests into pre / post compile
  *
  *  - http://docs.angularjs.org/api/auto/service/$injector
@@ -68,8 +68,8 @@
     var deps = [];
 
     /**
-     * @module Injector
-     * @returns {Injector}
+     * @module DiCast
+     * @returns {DiCast}
      */
     function factory() {
 
@@ -166,10 +166,10 @@
          * Injects dependencies via constructor arguments and
          * public properties prefixed with an initial value set to '{I}'.
          *
-         * @class Injector
+         * @class DiCast
          * @constructor
          */
-        function Injector() {
+        function DiCast() {
 
             var _injector = this,
 
@@ -356,7 +356,7 @@
              * Initialises a mapping identifier and returns the options for creating a mapping.
              *
              * @method map
-             * @for Injector
+             * @for DiCast
              * @param {String} key The mapping identifier.
              * @return {MapOptions} The various mapping options available.
              */
@@ -382,7 +382,7 @@
                      *  @param {Array} [config.api] The interface definition for duck typing.
                      *  @param {Array} [config.using] Any constructor dependencies.
                      *  @param {Boolean} [config.isSingleton] If the mapping should be treated as a singleton.
-                     * @returns {Injector}
+                     * @returns {DiCast} A reference back to the DiCast instance.
                      */
                     toConstructor: function(config) {
 
@@ -412,7 +412,7 @@
                      *  @param {Function} config.target The factory function.
                      *  @param {Array} [config.api] The interface definition for duck typing.
                      *  @param {Array} [config.using] Any constructor dependencies.
-                     * @returns {Injector} A reference back to the Injector.
+                     * @returns {DiCast} A reference back to the DiCast instance.
                      */
                     toFactory: function(config) {
 
@@ -438,7 +438,7 @@
                      * @method toValue
                      * @param {Object} config The config settings for the mapping.
                      *  @param {Array} [config.api] The interface definition for duck typing.
-                     * @returns {Injector}
+                     * @returns {DiCast} A reference back to the DiCast instance.
                      */
                     toValue: function(config) {
 
@@ -465,10 +465,10 @@
             /**
              * Returns true if a mapping exists.
              *
-             * If no mapping exists and the Injector has a parent then resolution is deferred to the parent.
+             * If no mapping exists and DiCast has a parent then resolution is deferred to the parent.
              *
              * @method has
-             * @for Injector
+             * @for DiCast
              * @param {String} key The mapping key.
              * @return {Boolean} true if a mapping exists.
              */
@@ -590,7 +590,7 @@
             };
         }
 
-        return Injector;
+        return DiCast;
     }
 
     // UMD style export.
@@ -608,7 +608,7 @@
 
     } else {
 
-        root['Injector'] = factory.apply(factory, deps.map(function(dep) {
+        root['DiCast'] = factory.apply(factory, deps.map(function(dep) {
             return root[dep];
         }));
     }

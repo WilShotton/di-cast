@@ -1,8 +1,8 @@
 {
-  "name": "Injector",
+  "name": "Di-cast",
   "version": "0.0.3",
   "description": "A simple JavaScript dependency injector.",
-  "main": "injector.js",
+  "main": "src/di-cast.js",
   "repository": {
     "type": "git",
     "url": "https://wilshotton@bitbucket.org/wilshotton/injector.git"

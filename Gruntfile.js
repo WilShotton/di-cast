@@ -169,7 +169,7 @@ module.exports = function(grunt) {
                   report: 'gzip'
                 },
                 files: {
-                    'dist/injector.js': ['src/injector.js']
+                    'dist/di-cast.js': ['src/di-cast.js']
                 }
             }
         },

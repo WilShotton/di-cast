@@ -32,6 +32,54 @@ define(
                 .indexOf(type.toLowerCase()) !== -1;
         }
 
+        describe('InjectionError', function() {
+
+            var injector;
+
+            beforeEach(function() {
+
+                injector = new Injector();
+            });
+
+            it(' should have a message', function() {
+
+                try {
+
+                    injector.get('missing');
+
+                } catch(error) {
+
+                    expect(error.message).toBe(NO_MAPPING);
+                }
+            });
+
+            it(' should have more info about the error', function() {
+
+                try {
+
+                    injector.get('missing');
+
+                } catch(error) {
+
+                    expect(error.info).toBe('No mapping for [missing] found');
+                }
+            });
+
+            it(' should have a stack trace', function() {
+
+                try {
+
+                    injector.get('missing');
+
+                } catch(error) {
+
+                    // Pretty vague but PhantomJS based tests return a
+                    // different index to Karma based tests.
+                    expect(error.stack.indexOf(NO_MAPPING)).toBeGreaterThan(-1);
+                }
+            });
+        });
+
         describe('Injector', function() {
 
             var injector;

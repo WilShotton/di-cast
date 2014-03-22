@@ -4,15 +4,8 @@
 
 /**
  * ++
- * @TODO: InjectionError tests
- *
- * ++
  * @TODO: testing the api on toValue function mappings
  *  - will return unexpected results
- *
- * ++
- * @TODO: Add toValue tests for primitives with custom properties
- *  - ''.prop = '{I}';
  *
  * ++
  * @TODO: Other function property creation  methods...
@@ -87,7 +80,7 @@
 
             NO_MAPPING = {
                 message: 'No mapping found',
-                info: 'No mapping for {{key}} found'
+                info: 'No mapping for [{{key}}] found'
             },
 
             MAPPING_HAS_DEPENDANTS = {
@@ -147,7 +140,13 @@
          */
         function InjectionError(template, context) {
 
-            this.stack = (new Error()).stack || 'Stack trace not available';
+            var stack = (new Error()).stack;
+
+            /* istanbul ignore next */
+            this.stack = template.message.concat(
+                '\n',
+                stack != null ? stack.split('\n').slice(1).join('\n') : ''
+            );
 
             this.message = template.message;
             this.info = template.info.replace(/\{\{(\w+)\}\}/g, function(_, match) {

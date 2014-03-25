@@ -1223,6 +1223,15 @@ define(
 
                     injector = new Injector();
 
+                    injector.map('prop1').toValue({target: 1});
+                    injector.map('prop2').toValue({target: 2});
+                    injector.map('prop3').toValue({target: 3});
+                    injector.map('prop4').toValue({target: 4});
+                    injector.map('prop5').toValue({target: 5});
+                    injector.map('prop6').toValue({target: 6});
+                    injector.map('prop7').toValue({target: 7});
+                    injector.map('prop8').toValue({target: 8});
+
                     injector.map('MyProp').toValue({
                         target: myPropValue
                     });
@@ -1285,6 +1294,79 @@ define(
                     test(injector.get('MyFactory').make());
                     test(injector.get('MyType'));
                 });
+
+                it(' should parse properties defined with Object.defineProperties', function() {
+
+                    function MyFunction() {
+
+                        Object.defineProperties(this, {
+
+                            'prop1' : {
+                                value: '{I}',
+                                writable: true
+                            },
+
+                            "prop2" : {
+                                value: '{I}',
+                                writable: true
+                            },
+
+                            prop3 : {
+                                value: '{I}',
+                                writable: true
+                            },
+
+                            prop4:{
+                                value: '{I}',
+                                writable: true
+                            },
+
+                            prop5 : {value: '{I}', writable: true},
+
+                            prop6:{value: '{I}', writable: true},prop7:{value: '{I}', writable: true},
+
+                            prop8 : {writable: true, value: '{I}'}
+                        });
+                    }
+
+                    injector.map('MyFunction').toConstructor({
+                        target: MyFunction
+                    });
+
+                    var instance = injector.get('MyFunction');
+
+                    for (var i=1, l=8; i<=l; i++) {
+                        expect(instance['prop' + i]).toBe(i);
+                    }
+                });
+
+                it(' should parse properties defined with Object.create', function() {
+
+                    function MyFunction() {
+
+                        return Object.create({}, {
+
+                            prop1: { writable:true, configurable:true, value:'{I}' },
+
+                            'prop2':{ writable:true, configurable:true, value:'{I}' },
+
+                            "prop3" : { writable:true, configurable:true, value:'{I}' },
+
+                            prop4 :{ writable:true, configurable:true, value:'{I}' },prop5 :{ writable:true, configurable:true, value:'{I}' }
+                        });
+                    }
+
+                    injector.map('MyFunction').toConstructor({
+                        target: MyFunction
+                    });
+
+                    var instance = injector.get('MyFunction');
+
+                    for (var i=1, l=5; i<=l; i++) {
+                        expect(instance['prop' + i]).toBe(i);
+                    }
+                });
+
 
                 it(' should inject inherited properties set to {I}', function() {
 

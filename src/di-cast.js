@@ -8,10 +8,7 @@
  *  - will return unexpected results
  *
  * ++
- * @TODO: Other function property creation  methods...
- *  - Object.create()
- *  - Object.defineProperties()
- *  - etc.
+ * @TODO: Tests for other property creation methods...
  *
  * ++
  * @TODO: Integrate Karma into grunt for Browser tests
@@ -26,7 +23,8 @@
  * ------------------------------
  *
  * ++
- * @TODO: refactor mapping to deps.arguments, deps.properties
+ * @TODO: Rationalise mapping VO
+ *  - Refactor mapping to deps.arguments, deps.properties ?
  *
  * ++
  * @TODO: The API checking should be a separate mapping (like injector)
@@ -321,21 +319,31 @@
 
             function parseProps(target) {
 
-                var re = /([\w\$'"]*)(?=\s*[:=]\s*(?:'|"){I}(?:"|'))/g,
-                    list = [];
+                var list = [];
 
                 if (is(target, 'Function')) {
 
-                    list = (serialise(target).match(re) || [])
-                        .filter(function identity(n) {
-                            return n;
-                        })
-                        .map(function removeQuotes(item) {
-                            return item.replace(/["']/g, '');
+                    var serialised = serialise(target);
+
+                    list = [].concat(
+
+                            // this..., {...}
+                            serialised.match(/([\w\$]*?)(?=['"\]]*?\s*?[:=]\s*?(?:'|"){I})/g) || [],
+
+                            // Object.defineProperties(...), Object.create(...)
+                            serialised.match(/([\w\$]*?)(?=['"\s]*?:\s*?{[\s\S]*?{I})/g) || [],
+
+                            // Object.defineProperty(...)
+                            serialised.match(/([\w\$]*?)(?=(?:'|")\s*?,\s*?{[\s\S]*?{I})/g) || []
+                        )
+                        .filter(function clean(item) {
+                            return item !== '' && item.toLowerCase() !== 'value';
                         })
                         .filter(function removeDuplicates(item, index, self) {
                             return self.indexOf(item) === index;
                         });
+
+                    console.log('list :: ' + list);
 
                 } else {
 

@@ -3,12 +3,67 @@
  */
 
 /**
+ *
+ * NEXT
+ * ------------------------------
+ * ++
+ * @TODO: Property parsing ONLY for toValue Objects
+ *  - Replace props and args with one list
+ *  - Remove ALL function reflection via RegEx etc.
+ *
+ * ++
+ * @TODO: Circular dependency management
+ *  - https://github.com/vojtajina/node-di/blob/master/lib/injector.js
+ *  - Line 42
+ *
+ * ++
+ * @TODO: Config object - IOC container
+ *
+ *  {
+ *      constructors: [
+ *          {
+ *              name: '',
+ *              target: function() {},
+ *              using: ['', ...],
+ *              api: ['', ...],
+ *              singleton: false
+ *          }
+ *      ],
+ *      factories: [
+ *          {
+ *              name: '',
+ *              target: function() {},
+ *              using: ['', ...],
+ *              api: ['', ...]
+ *          }
+ *      ],
+ *      values: [
+ *          {
+ *              name: '',
+ *              target: *
+ *          }
+ *      ]
+ *  }
+ *
+ * ++
+ * @TODO: Factory updates
+ *  - a factory is function with dependencies that returns 'something'
+ *  - a new instance of the factory is invoked each time
+ *
+ *  factory(a, b, ...) {
+ *
+ *      return function Name() {
+ *          // Use a
+ *          // Use b
+ *      };
+ *  }
+ *
+ * ++
+ * @TODO: Add parent injector stuff...
+ *
  * ++
  * @TODO: testing the api on toValue function mappings
  *  - will return unexpected results
- *
- * ++
- * @TODO: Tests for other property creation methods...
  *
  * ++
  * @TODO: Integrate Karma into grunt for Browser tests
@@ -42,12 +97,6 @@
  *  - NOTE: Will need to split tests into pre / post compile
  *
  *  - http://docs.angularjs.org/api/auto/service/$injector
- *
- * ++
- * @TODO: Add parent injector stuff...
- *
- * ++
- * @TODO: Circular dependency management
  */
 
 ;(function(root) {
@@ -342,8 +391,6 @@
                         .filter(function removeDuplicates(item, index, self) {
                             return self.indexOf(item) === index;
                         });
-
-                    console.log('list :: ' + list);
 
                 } else {
 

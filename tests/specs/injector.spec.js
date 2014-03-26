@@ -1429,91 +1429,43 @@ define(
 
                 it(' should ONLY inject properties set to {I}', function() {
 
-                    function Props() {
+                    injector.map('ObjectProps').toConstructor({
 
-                        this.MyArray = [1, 2, 3];
-                        this.MyArray_Empty = [];
+                        target: function ObjectProps() {
 
-                        this.MyBoolean_False = false;
-                        this.MyBoolean_True = true;
-
-                        this.MyFunction = function MyFunction() {};
-
-                        this.MyNumber = 42;
-                        this.MyNumber_Zero = 0;
-
-                        this.MyObject = {foo:'bar'};
-                        this.MyObject_Empty = {};
-
-                        this.MyString = 'Hello World';
-                        this.MyString_Empty = '';
-                    }
-
-                    injector.map('MyArray').toValue({
-                        target: [10, 11, 12]
+                            return {
+                                MyNumber: 42,
+                                MyInjectedNumber: '{I}'
+                            };
+                        }
                     });
 
-                    injector.map('MyArray_Empty').toValue({
-                        target: ['empty']
-                    });
+                    injector.map('ThisProps').toConstructor({
 
-                    injector.map('MyBoolean_False').toValue({
-                        target: true
-                    });
+                        target: function ThisProps() {
 
-                    injector.map('MyBoolean_True').toValue({
-                        target: false
-                    });
-
-                    injector.map('MyFunction').toValue({
-                        target: function() {}
+                            this.MyNumber = 42;
+                            this.MyInjectedNumber = '{I}';
+                        }
                     });
 
                     injector.map('MyNumber').toValue({
+
                         target: 180
                     });
-                    injector.map('MyNumber_Zero').toValue({
-                        target: 100
+
+                    injector.map('MyInjectedNumber').toValue({
+
+                        target: 180
                     });
 
-                    injector.map('MyObject').toValue({
-                        target: {foo:'OOPS'}
-                    });
-
-                    injector.map('MyObject_Empty').toValue({
-                        target: {foo:'Not empty'}
-                    });
-
-                    injector.map('MyString').toValue({
-                        target: 'Goodbye'
-                    });
-
-                    injector.map('MyString_Empty').toValue({
-                        target: 'Not empty'
-                    });
-
-                    injector.map('Props').toConstructor({
-                        target: Props
-                    });
-
-                    var props = injector.get('Props');
-
-                    expect(props.MyArray).toEqual([1, 2, 3]);
-                    expect(props.MyArray_Empty).toEqual([]);
-
-                    expect(props.MyBoolean_False).toEqual(false);
-                    expect(props.MyBoolean_True).toEqual(true);
-
-                    expect(new props.MyFunction().constructor.name).toEqual('MyFunction');
-
+                    var props = injector.get('ObjectProps');
                     expect(props.MyNumber).toEqual(42);
-                    expect(props.MyNumber_Zero).toEqual(0);
+                    expect(props.MyInjectedNumber).toEqual(180);
 
-                    expect(props.MyObject.foo).toEqual('bar');
-                    expect(props.MyObject_Empty).toEqual({});
-
-                    expect(props.MyString).toEqual('Hello World');
-                    expect(props.MyString_Empty).toEqual('');
+                    props = injector.get('ThisProps');
+                    expect(props.MyNumber).toEqual(42);
+                    expect(props.MyInjectedNumber).toEqual(180);
                 });
 
                 it(' should throw if a mapping cannot be found', function() {

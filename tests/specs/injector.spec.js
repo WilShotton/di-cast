@@ -22,7 +22,9 @@ define(
             NO_MAPPING = 'No mapping found',
             MAPPING_HAS_DEPENDANTS = 'The mapping has dependants',
             INTERFACE_MEMBER_MISSING = 'The mapping is missing a required member',
-            INTERFACE_METHOD_ARITY_MISMATCH = 'The mapping has an interface method with an incorrect arity';
+            INTERFACE_METHOD_ARITY_MISMATCH = 'The mapping has an interface method with an incorrect arity',
+
+            CIRCULAR_DEPENDENCY = 'Can not resolve a circular dependency';
 
         function is(value, type) {
             return Object.prototype.toString
@@ -1284,6 +1286,80 @@ define(
                     }).toThrow(NO_MAPPING);
                 });
             });
+
+
+            // Circular dependencies
+            // ------------------------------
+            describe('Circular dependencies', function() {
+
+                it(' should throw if a circular dependency is encountered', function() {
+
+                    injector = new Injector();
+
+                    injector.map('MyControl').toConstructor({
+
+                        target: function MyControl() {}
+                    });
+
+                    injector.map('MyTypeA').toConstructor({
+
+                        target: function MyTypeA(MyControl, MyTypeB) {},
+                        using: ['MyControl', 'MyTypeB']
+                    });
+
+                    injector.map('MyTypeB').toConstructor({
+
+                        target: function MyTypeB(MyTypeA, MyControl) {},
+                        using: ['MyTypeA', 'MyControl']
+                    });
+
+                    injector.map('MyTypeZ').toConstructor({
+
+                        target: function MyTypeZ(MyControl) {},
+                        using: ['MyControl']
+                    });
+
+                    expect(function() {
+                        injector.get('MyTypeA');
+                    }).toThrow(CIRCULAR_DEPENDENCY);
+
+                    expect(function() {
+                        injector.get('MyControl');
+                    }).not.toThrow();
+
+                    expect(function() {
+                        injector.get('MyTypeZ');
+                    }).not.toThrow();
+                });
+
+                it(' should throw if a nested circular dependency is encountered', function() {
+
+                    injector = new Injector();
+
+                    injector.map('MyTypeA').toConstructor({
+
+                        target: function MyTypeA(MyTypeB) {},
+                        using: ['MyTypeB']
+                    });
+
+                    injector.map('MyTypeB').toConstructor({
+
+                        target: function MyTypeB(MyTypeC) {},
+                        using: ['MyTypeC']
+                    });
+
+                    injector.map('MyTypeC').toConstructor({
+
+                        target: function MyTypeC(MyTypeA) {},
+                        using: ['MyTypeA']
+                    });
+
+                    expect(function() {
+                        injector.get('MyTypeA');
+                    }).toThrow(CIRCULAR_DEPENDENCY);
+                });
+            });
+
 
             // postConstruct()
             // ------------------------------

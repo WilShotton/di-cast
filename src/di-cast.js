@@ -7,14 +7,20 @@
  * NEXT
  * ------------------------------
  * ++
- * @TODO: Property parsing ONLY for Objects
- *  - Replace props and args with one list
- *  - Remove ALL function reflection via RegEx etc.
+ * @TODO: Factory updates
+ *  - a factory is function with dependencies that returns 'something'
+ *  - a new instance of the factory is invoked each time
+ *
+ *  factory(a, b, ...) {
+ *
+ *      return function Name() {
+ *          // Use a
+ *          // Use b
+ *      };
+ *  }
  *
  * ++
- * @TODO: Circular dependency management
- *  - https://github.com/vojtajina/node-di/blob/master/lib/injector.js
- *  - Line 42
+ * @TODO: Add parent injector stuff...
  *
  * ++
  * @TODO: Config object - IOC container
@@ -44,22 +50,6 @@
  *          }
  *      ]
  *  }
- *
- * ++
- * @TODO: Factory updates
- *  - a factory is function with dependencies that returns 'something'
- *  - a new instance of the factory is invoked each time
- *
- *  factory(a, b, ...) {
- *
- *      return function Name() {
- *          // Use a
- *          // Use b
- *      };
- *  }
- *
- * ++
- * @TODO: Add parent injector stuff...
  *
  * ++
  * @TODO: testing the api on toValue function mappings
@@ -145,6 +135,11 @@
                 info: 'The method signature for {{name}} requires {{arity}} arguments'
             },
 
+            CIRCULAR_DEPENDENCY = {
+                message: 'Can not resolve a circular dependency',
+                info: '{{target}} has a dependency that depends on {{target}}'
+            },
+
             I_POINT = '{I}',
 
             slice = Array.prototype.slice;
@@ -216,6 +211,8 @@
         function DiCast() {
 
             var _injector = this,
+
+                resolving = [],
 
                 mappings = {
                     injector: {
@@ -499,11 +496,22 @@
              */
             this.get = function(key) {
 
+                var instance = null;
+
                 if (!_injector.has(key)) {
                     throw new InjectionError(NO_MAPPING, {key: key});
                 }
 
-                return mappings[key].resolver(mappings[key]);
+                if (resolving.indexOf(key) !== -1) {
+                    resolving.push(key);
+                    throw new InjectionError(CIRCULAR_DEPENDENCY, {target: key});
+                }
+
+                resolving.push(key);
+                instance = mappings[key].resolver(mappings[key]);
+                resolving.pop();
+
+                return instance;
             };
 
             /**

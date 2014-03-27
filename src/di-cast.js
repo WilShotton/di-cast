@@ -7,7 +7,7 @@
  * NEXT
  * ------------------------------
  * ++
- * @TODO: Property parsing ONLY for toValue Objects
+ * @TODO: Property parsing ONLY for Objects
  *  - Replace props and args with one list
  *  - Remove ALL function reflection via RegEx etc.
  *
@@ -222,8 +222,7 @@
                         target: _injector,
                         resolver: makeValue,
                         api: [],
-                        args: [],
-                        props: []
+                        deps: []
                     }
                 };
 
@@ -267,9 +266,9 @@
 
                     setProps: function() {
 
-                        vo.props.forEach(function(prop) {
+                        vo.deps.forEach(function(dep) {
 
-                            vo.instance[prop] = _injector.get(prop);
+                            vo.instance[dep] = _injector.get(dep);
                         });
 
                         return this;
@@ -300,11 +299,10 @@
                 } else {
 
                     return pipe(vo)
-                        .instantiate(vo.args.map(function(key) {
+                        .instantiate(vo.deps.map(function(key) {
                             return _injector.get(key);
                         }))
                         .checkInterface()
-                        .setProps()
                         .post()
                         .value('instance');
                 }
@@ -317,11 +315,10 @@
                     make: function() {
 
                         return pipe(vo)
-                            .instantiate(vo.args.map(function(key) {
+                            .instantiate(vo.deps.map(function(key) {
                                 return _injector.get(key);
                             }).concat(slice.call(arguments)))
                             .checkInterface()
-                            .setProps()
                             .post()
                             .value('instance');
                     }
@@ -351,48 +348,11 @@
                 return Builder;
             }
 
-            function serialise(obj, str) {
-
-                str = str || '';
-
-                str += JSON.stringify(obj) || obj.toString();
-
-                if (obj.prototype) {
-
-                    str += serialise(obj.prototype);
-                    str += serialise(Object.getPrototypeOf(obj.prototype));
-                }
-
-                return str;
-            }
-
             function parseProps(target) {
 
                 var list = [];
 
-                if (is(target, 'Function')) {
-
-                    var serialised = serialise(target);
-
-                    list = [].concat(
-
-                            // this..., {...}
-                            serialised.match(/([\w\$]*?)(?=['"\]]*?\s*?[:=]\s*?(?:'|"){I})/g) || [],
-
-                            // Object.defineProperties(...), Object.create(...)
-                            serialised.match(/([\w\$]*?)(?=['"\s]*?:\s*?{[\s\S]*?{I})/g) || [],
-
-                            // Object.defineProperty(...)
-                            serialised.match(/([\w\$]*?)(?=(?:'|")\s*?,\s*?{[\s\S]*?{I})/g) || []
-                        )
-                        .filter(function clean(item) {
-                            return item !== '' && item.toLowerCase() !== 'value';
-                        })
-                        .filter(function removeDuplicates(item, index, self) {
-                            return self.indexOf(item) === index;
-                        });
-
-                } else {
+                if (is(target, 'Object')) {
 
                     for (var key in target) {
                         if (target[key] === I_POINT) {
@@ -447,8 +407,7 @@
                             resolver: makeConstructor,
                             target: config.target,
                             api: config.api || [],
-                            args: config.using || [],
-                            props: parseProps(config.target),
+                            deps: config.using || [],
 
                             isSingleton: config.isSingleton || false
                         };
@@ -477,8 +436,7 @@
                             resolver: makeFactory,
                             target: config.target,
                             api: config.api || [],
-                            args: config.using || [],
-                            props: parseProps(config.target)
+                            deps: config.using || []
                         };
 
                         return _injector;
@@ -505,8 +463,7 @@
                             resolver: makeValue,
                             target: config.target,
                             api: config.api || [],
-                            args: [],
-                            props: parseProps(config.target)
+                            deps: parseProps(config.target)
                         };
 
                         return _injector;
@@ -565,7 +522,7 @@
                     for (var n in mappings) {
 
                         if (mappings.hasOwnProperty(n) && n !== key) {
-                            if (mappings[n].args.indexOf(key) !== -1 || mappings[n].props.indexOf(key) !== -1) {
+                            if (mappings[n].deps.indexOf(key) !== -1) {
                                 throw new InjectionError(MAPPING_HAS_DEPENDANTS, {key: key});
                             }
                         }
@@ -595,8 +552,7 @@
                     Builder: makeBuilder(target),
                     target: target,
                     api: [],
-                    args: slice.call(arguments, 1),
-                    props: parseProps(target)
+                    deps: slice.call(arguments, 1)
                 });
             };
 
@@ -607,6 +563,7 @@
              * @param {Function} target The target Function.
              * @returns {Object} A injected instance of the target Function.
              */
+            // @TODO: Rename resolveConstructor
             this.resolveType = function(target) {
 
                 validateType(target, 'Function', INVALID_TARGET);
@@ -616,8 +573,7 @@
                     Builder: makeBuilder(target),
                     target: target,
                     api: [],
-                    args: slice.call(arguments, 1),
-                    props: parseProps(target),
+                    deps: slice.call(arguments, 1),
                     isSingleton: false
                 });
             };
@@ -637,7 +593,7 @@
 
                     target: target,
                     api: [],
-                    props: parseProps(target)
+                    deps: parseProps(target)
                 });
             };
         }

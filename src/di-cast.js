@@ -20,6 +20,9 @@
  *  }
  *
  * ++
+ * @TODO: Set name(key) as a property on the VO
+ *
+ * ++
  * @TODO: Add parent injector stuff...
  *
  * ++
@@ -133,6 +136,11 @@
             INTERFACE_METHOD_ARITY_MISMATCH = {
                 message: 'The mapping has an interface method with an incorrect arity',
                 info: 'The method signature for {{name}} requires {{arity}} arguments'
+            },
+
+            INVALID_FACTORY = {
+                message: 'The factory function must return a value',
+                info: '{{name}} must return a value'
             },
 
             CIRCULAR_DEPENDENCY = {
@@ -307,6 +315,20 @@
 
             function makeFactory(vo) {
 
+                if (!vo.hasOwnProperty('instance') || !vo.isSingleton) {
+
+                    vo.instance = vo.target.apply(this, vo.deps.map(function(key) {
+                        return _injector.get(key);
+                    }));
+
+                    if (vo.instance == null) {
+                        throw new InjectionError(INVALID_FACTORY, {name: 'TODO'});
+                    }
+                }
+
+                return vo.instance;
+
+                /*
                 return {
 
                     make: function() {
@@ -315,11 +337,14 @@
                             .instantiate(vo.deps.map(function(key) {
                                 return _injector.get(key);
                             }).concat(slice.call(arguments)))
+                            // @TODO: remove interface check from factory
                             .checkInterface()
+                            // @TODO: remove post from factory
                             .post()
                             .value('instance');
                     }
                 };
+                */
             }
 
             function makeValue(vo) {
@@ -422,6 +447,10 @@
                      *  @param {Array} [config.using] Any constructor dependencies.
                      * @returns {DiCast} A reference back to the DiCast instance.
                      */
+                     /**
+                      * @TODO: turn on isSingleton
+                      *  - Then any factory return will access the same deps
+                      */
                     toFactory: function(config) {
 
                         validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
@@ -429,10 +458,10 @@
 
                         mappings[key] = {
 
-                            Builder: makeBuilder(config.target),
+                            //Builder: makeBuilder(config.target),
                             resolver: makeFactory,
                             target: config.target,
-                            api: config.api || [],
+                            //api: config.api || [],
                             deps: config.using || []
                         };
 

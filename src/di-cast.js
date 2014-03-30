@@ -7,20 +7,17 @@
  * NEXT
  * ------------------------------
  * ++
+ * @TODO: Remove postConstruct()
+ *  - it is no longer necessary as only toValue Objects use property injection
+ *
+ * ++
  * @TODO: Factory updates
- *  - a factory is function with dependencies that returns 'something'
- *  - a new instance of the factory is invoked each time
- *
- *  factory(a, b, ...) {
- *
- *      return function Name() {
- *          // Use a
- *          // Use b
- *      };
- *  }
+ *  - Tidy up factory tests
+ *  - Add tests for factories that return Objects and primitives
  *
  * ++
  * @TODO: Set name(key) as a property on the VO
+ *  - useful for error handling
  *
  * ++
  * @TODO: Add parent injector stuff...
@@ -71,15 +68,8 @@
  * ------------------------------
  *
  * ++
- * @TODO: Rationalise mapping VO
- *  - Refactor mapping to deps.arguments, deps.properties ?
- *
- * ++
  * @TODO: The API checking should be a separate mapping (like injector)
  *  - This could also help with memory footprint with nested injectors
- *
- * ++
- * @TODO: Inject toValue function mapping properties by inspection
  *
  * ++
  * @TODO: I_POINT setter
@@ -327,24 +317,6 @@
                 }
 
                 return vo.instance;
-
-                /*
-                return {
-
-                    make: function() {
-
-                        return pipe(vo)
-                            .instantiate(vo.deps.map(function(key) {
-                                return _injector.get(key);
-                            }).concat(slice.call(arguments)))
-                            // @TODO: remove interface check from factory
-                            .checkInterface()
-                            // @TODO: remove post from factory
-                            .post()
-                            .value('instance');
-                    }
-                };
-                */
             }
 
             function makeValue(vo) {
@@ -458,11 +430,11 @@
 
                         mappings[key] = {
 
-                            //Builder: makeBuilder(config.target),
                             resolver: makeFactory,
                             target: config.target,
-                            //api: config.api || [],
-                            deps: config.using || []
+                            deps: config.using || [],
+
+                            isSingleton: config.isSingleton || false
                         };
 
                         return _injector;

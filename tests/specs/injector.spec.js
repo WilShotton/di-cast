@@ -35,7 +35,7 @@ define(
                 .indexOf(type.toLowerCase()) !== -1;
         }
 
-        xdescribe('InjectionError', function() {
+        describe('InjectionError', function() {
 
             var injector;
 
@@ -91,7 +91,7 @@ define(
             // ------------------------------
 
             // map()
-            xdescribe('map', function() {
+            describe('map', function() {
 
                 beforeEach(function() {
 
@@ -137,7 +137,7 @@ define(
             });
 
             // has()
-            xdescribe('has', function() {
+            describe('has', function() {
 
                 beforeEach(function() {
 
@@ -164,7 +164,7 @@ define(
             });
 
             // get()
-            xdescribe('get', function() {
+            describe('get', function() {
 
                 it(' should have a mapping for the injector', function() {
 
@@ -199,7 +199,7 @@ define(
             });
 
             // remove()
-            xdescribe('remove()', function() {
+            describe('remove()', function() {
 
                 var myValue = {};
 
@@ -375,8 +375,7 @@ define(
 
             describe('toFactory instances', function() {
 
-                var f1, f1i1, f1i2,
-                    f2, f2i1;
+                var F1, F2;
 
                 beforeEach(function() {
 
@@ -422,69 +421,69 @@ define(
 
                     injector.map('MyFactory').toFactory({
 
-                        target: function(MyType, MySingleton, MyValue, MyArg) {
-                            this.getArg = function() {
-                                return MyArg;
-                            };
-                            this.getType = function() {
-                                return MyType;
-                            };
-                            this.getSingleton = function() {
-                                return MySingleton;
-                            };
-                            this.getValue = function() {
-                                return MyValue;
-                            };
+                        target: function(MyType, MySingleton, MyValue) {
+
+                            return function MyFunction() {
+
+                                this.getType = function() {
+                                    return MyType;
+                                };
+                                this.getSingleton = function() {
+                                    return MySingleton;
+                                };
+                                this.getValue = function() {
+                                    return MyValue;
+                                };
+                            }
                         },
                         using: ['MyType', 'MySingleton', 'MyValue']
                     });
 
-                    f1 = injector.get('MyFactory');
-                    f2 = injector.get('MyFactory');
-
-                    f1i1 = f1.make('MyArg: f1i1');
-                    f1i2 = f1.make('MyArg: f1i2');
-
-                    f2i1 = f2.make('MyArg: f2i1');
+                    F1 = injector.get('MyFactory');
+                    F2 = injector.get('MyFactory');
                 });
 
-                it(' should create unique scope for the factory', function() {
+                it(' should create unique Object', function() {
 
-                    expect(f1).not.toBe(f2);
-                    expect(f1.make().constructor).toBe(f1.make().constructor);
-
-                    expect(f1.make().constructor).toBe(f2.make().constructor);
+                    expect(F1).not.toBe(F2);
                 });
 
-                it(' should create instances with the supplied arguments', function() {
+                it(' should create instances with different toConstructor() dependencies', function() {
 
-                    expect(f1i1.getArg()).toBe('MyArg: f1i1');
-                    expect(f1i2.getArg()).toBe('MyArg: f1i2');
-
-                    expect(f2i1.getArg()).toBe('MyArg: f2i1');
+                    expect(new F1().getType()).not.toBe(new F2().getType());
                 });
 
-                it(' should create instances with different type constructor dependencies', function() {
+                it(' should create instances with the same singleton toConstructor() dependencies', function() {
 
-                    expect(f1i1.getType()).not.toBe(f1i2.getType());
-                    expect(f1i1.getType()).not.toBe(f2i1.getType());
+                    expect(new F1().getSingleton()).toBe(new F2().getSingleton());
                 });
 
-                it(' should create instances with the same singleton constructor dependencies', function() {
+                it(' should create instances with the same toValue() dependencies', function() {
 
-                    expect(f1i1.getSingleton()).toBe(f1i2.getSingleton());
-                    expect(f1i1.getSingleton()).toBe(f2i1.getSingleton());
+                    expect(new F1().getValue()).toBe(new F2().getValue());
                 });
 
-                it(' should create instances with the same value constructor dependencies', function() {
+                it(' should return values with the same dependencies if the factory is a singleton', function() {
 
-                    expect(f1i1.getValue()).toBe(f1i2.getValue());
-                    expect(f1i1.getValue()).toBe(f2i1.getValue());
+                    injector.map('MySingletonFactory').toFactory({
+                        target: function MySingletonFactory(MyType) {
+                            return function MySingletonInstance() {
+                                this.MyType = MyType;
+                            };
+                        },
+                        using: ['MyType'],
+                        isSingleton: true
+                    });
+
+                    var C1 = injector.get('MySingletonFactory'),
+                        C2 = injector.get('MySingletonFactory');
+
+                    expect(new C1().MyType).toBe(new C2().MyType);
                 });
             });
 
             // toConstructor
-            xdescribe('toConstructor', function() {
+            describe('toConstructor', function() {
 
                 function MyType() {}
 
@@ -539,7 +538,7 @@ define(
             });
 
             // toValue
-            xdescribe('toValue', function() {
+            describe('toValue', function() {
 
                 // @TODO: Add tests for primitives with custom properties
                 // @TODO: Add tests for Object.create() etc.
@@ -701,7 +700,7 @@ define(
                 });
             });
 
-            xdescribe('isSingleton', function() {
+            describe('isSingleton', function() {
 
                 function MyType() {}
 
@@ -740,7 +739,7 @@ define(
                 });
             });
 
-            xdescribe('using', function() {
+            describe('using', function() {
 
                 function MyType() {}
 
@@ -824,7 +823,7 @@ define(
                 });
             });
 
-            xdescribe('as - duck typing', function() {
+            describe('as - duck typing', function() {
 
                 /*
                 IMyType = {
@@ -852,12 +851,18 @@ define(
 
                 function MyFactory() {
 
-                    this.myMethod = function(myArg) {};
-                    this.myProperty = 'My property';
+                    function MyFactoryInstance() {
+
+                        this.myMethod = function(myArg) {};
+                        this.myProperty = 'My property';
+                    }
+
+                    MyFactoryInstance.prototype.myPrototypeMethod = function(myArg) {};
+                    MyFactoryInstance.prototype.myPrototypeProperty = 'MyPrototypeProperty';
+                    MyFactoryInstance.prototype.constructor = MyFactoryInstance;
+
+                    return MyFactoryInstance;
                 }
-                MyFactory.prototype.myPrototypeMethod = function(myArg) {};
-                MyFactory.prototype.myPrototypeProperty = 'MyPrototypeProperty';
-                MyFactory.prototype.constructor = MyFactory;
 
                 function MyType() {
 
@@ -890,10 +895,11 @@ define(
 
                 it(' should ensure a defined public API for a toFactory mapping instance', function() {
 
-                    var instance = null;
+                    var Constructor = injector.get('MyFactory'),
+                        instance = null;
 
                     expect(function() {
-                        instance = injector.get('MyFactory').make();
+                        instance = new Constructor();
                     }).not.toThrow();
 
                     expect(instance.myMethod).toBeDefined();
@@ -1028,9 +1034,11 @@ define(
             // ------------------------------
 
             // Constructor
-            xdescribe('constructor injection', function() {
+            describe('constructor injection', function() {
 
-                function MyFactory() {}
+                function MyFactory() {
+                    return function MyFactoryInstance() {};
+                }
 
                 function MyType() {}
 
@@ -1039,26 +1047,36 @@ define(
                 function MySingletonType() {}
 
                 function MyDependantFactory(myFactory, myType, mySingletonType, myValue) {
-                    this.myFactory = myFactory;
-                    this.myType = myType;
-                    this.mySingletonType = mySingletonType;
-                    this.myValue = myValue;
+                    return function MyDependantFactoryInstance() {
+                        this.myFactory = myFactory;
+                        this.myType = myType;
+                        this.mySingletonType = mySingletonType;
+                        this.myValue = myValue;
+                    };
                 }
 
                 function MyDependantType(myFactory, myType, mySingletonType, myValue) {
-                    this.myFactory = myFactory;
+
+                    var instance = new myFactory();
+
+                    this.myFactoryInstance = instance;
                     this.myType = myType;
                     this.mySingletonType = mySingletonType;
                     this.myValue = myValue;
                 }
 
                 function MyNestedDependantFactory(myDependantFactory, myDependantType) {
-                    this.myFactory = myDependantFactory;
-                    this.myType = myDependantType;
+                    return function MyNestedDependantFactoryInstance() {
+                        this.myFactory = myDependantFactory;
+                        this.myType = myDependantType;
+                    };
                 }
 
                 function MyNestedDependantType(myDependantFactory, myDependantType) {
-                    this.myFactory = myDependantFactory;
+
+                    var instance = new myDependantFactory();
+
+                    this.myFactoryInstance = instance;
                     this.myType = myDependantType;
                 }
 
@@ -1135,18 +1153,18 @@ define(
 
                 it(' should inject a factory constructor with dependencies specified in using()', function() {
 
-                    var instance = injector.get('MyDependantFactory').make();
+                    var Constructor = injector.get('MyDependantFactory'),
+                        instance = new Constructor();
 
-                    expect(instance.constructor.name).toBe('MyDependantFactory');
-                    expect(instance.myFactory.make().constructor.name).toBe('MyFactory');
+                    expect(instance.constructor.name).toBe('MyDependantFactoryInstance');
                     expect(instance.myType.constructor.name).toBe('MyType');
                     expect(instance.mySingletonType.constructor.name).toBe('MySingletonType');
                     expect(instance.myValue.constructor.name).toBe('MyValue');
 
-                    instance = injector.get('MyNestedDependantFactory').make();
+                    Constructor = injector.get('MyNestedDependantFactory');
+                    instance = new Constructor();
 
-                    expect(instance.constructor.name).toBe('MyNestedDependantFactory');
-                    expect(instance.myFactory.make().constructor.name).toBe('MyDependantFactory');
+                    expect(instance.constructor.name).toBe('MyNestedDependantFactoryInstance');
                     expect(instance.myType.constructor.name).toBe('MyDependantType');
                 });
 
@@ -1155,7 +1173,7 @@ define(
                     var instance = injector.get('MyDependantType');
 
                     expect(instance.constructor).toBe(MyDependantType);
-                    expect(instance.myFactory.make().constructor.name).toBe('MyFactory');
+                    expect(instance.myFactoryInstance.constructor.name).toBe('MyFactoryInstance');
                     expect(instance.myType.constructor.name).toBe('MyType');
                     expect(instance.mySingletonType.constructor.name).toBe('MySingletonType');
                     expect(instance.myValue.constructor.name).toBe('MyValue');
@@ -1163,13 +1181,13 @@ define(
                     instance = injector.get('MyNestedDependantType');
 
                     expect(instance.constructor).toBe(MyNestedDependantType);
-                    expect(instance.myFactory.make().constructor.name).toBe('MyDependantFactory');
+                    expect(instance.myFactoryInstance.constructor.name).toBe('MyDependantFactoryInstance');
                     expect(instance.myType.constructor.name).toBe('MyDependantType');
                 });
             });
 
             // Property
-            xdescribe('property injection', function() {
+            describe('property injection', function() {
 
                 var myPropValue = 'MyProp';
 
@@ -1273,7 +1291,7 @@ define(
             });
 
             // Circular dependencies
-            xdescribe('Circular dependencies', function() {
+            describe('Circular dependencies', function() {
 
                 it(' should throw if a circular dependency is encountered', function() {
 
@@ -1346,7 +1364,7 @@ define(
 
             // postConstruct()
             // ------------------------------
-            xdescribe('postConstruct', function() {
+            describe('postConstruct', function() {
 
                 var MyValue = {
                     isConstructed: false,
@@ -1356,9 +1374,12 @@ define(
                 };
 
                 function MyFactory() {
-                    this.isConstructed = false;
-                    this.postConstruct = function() {
-                        this.isConstructed = true;
+
+                    return function MyFactoryInstance() {
+                        this.isConstructed = false;
+                        this.postConstruct = function() {
+                            this.isConstructed = true;
+                        };
                     };
                 }
 
@@ -1436,9 +1457,11 @@ define(
             // ------------------------------
             describe('resolveFactory()', function() {
 
-                function MyFactory(myFactoryArg, myInstanceArg) {
-                    this.myFactoryArg = myFactoryArg;
-                    this.myInstanceArg = myInstanceArg;
+                function MyFactory(myFactoryArg) {
+                    return function MyInstance(myInstanceArg) {
+                        this.myFactoryArg = myFactoryArg;
+                        this.myInstanceArg = myInstanceArg;
+                    };
                 }
 
                 beforeEach(function() {
@@ -1449,28 +1472,13 @@ define(
 
                 it(' should resolve the supplied target as a Factory', function() {
 
-                    var factory = injector.resolveFactory(MyFactory, 'MyFactoryArg'),
-                        instance = factory.make('MyInstanceArg');
+                    var Constructor = injector.resolveFactory(MyFactory, 'MyFactoryArg'),
+                        instance = new Constructor('MyInstanceArg');
 
-                    expect(is(factory.make, 'function')).toBe(true);
-
-                    expect(instance.constructor.name).toBe('MyFactory');
+                    expect(instance.constructor.name).toBe('MyInstance');
 
                     expect(instance.myFactoryArg).toBe('MyFactoryArg');
                     expect(instance.myInstanceArg).toBe('MyInstanceArg');
-                });
-
-                it(' should ONLY throw when calling make()', function() {
-
-                    function MyArgFactory(myMissingArg) {}
-
-                    expect(function() {
-                        injector.resolveFactory(MyArgFactory, 'MyMissingArg');
-                    }).not.toThrow();
-
-                    expect(function() {
-                        injector.resolveFactory(MyArgFactory, 'MyMissingArg').make();
-                    }).toThrow(NO_MAPPING);
                 });
 
                 it(' should throw if a constructor dependency cannot be resolved', function() {
@@ -1478,7 +1486,7 @@ define(
                     function MyFactory(myMissingArg) {}
 
                     expect(function() {
-                        injector.resolveFactory(MyFactory, 'MyMissingArg').make();
+                        injector.resolveFactory(MyFactory, 'MyMissingArg');
                     }).toThrow(NO_MAPPING);
                 });
 
@@ -1488,9 +1496,13 @@ define(
                         injector.resolveFactory('MyFactory');
                     }).toThrow(INVALID_TARGET);
                 });
+
+                it(' should throw if the factory function does not return a value', function() {
+
+                });
             });
 
-            xdescribe('resolveType()', function() {
+            describe('resolveType()', function() {
 
                 function MyType(MyArg) {
                     this.myArg = MyArg;
@@ -1528,7 +1540,7 @@ define(
                 });
             });
 
-            xdescribe('resolveValue()', function() {
+            describe('resolveValue()', function() {
 
                 var myValue = {
                     MyProp: '{I}'

@@ -7,13 +7,12 @@
  * NEXT
  * ------------------------------
  * ++
- * @TODO: Remove postConstruct()
- *  - it is no longer necessary as only toValue Objects use property injection
- *
- * ++
  * @TODO: Factory updates
  *  - Tidy up factory tests
  *  - Add tests for factories that return Objects and primitives
+ *
+ * ++
+ * @TODO: Split pipe into discreet functions that mutate and return a mapping vo
  *
  * ++
  * @TODO: Set name(key) as a property on the VO
@@ -64,6 +63,8 @@
  * ++
  * @TODO: Bower
  *  - Move src contents to root
+ *
+ * @TODO: Update documentation
  *
  * ------------------------------
  *
@@ -262,7 +263,6 @@
                     setProps: function() {
 
                         vo.deps.forEach(function(dep) {
-
                             vo.instance[dep] = _injector.get(dep);
                         });
 
@@ -298,7 +298,6 @@
                             return _injector.get(key);
                         }))
                         .checkInterface()
-                        .post()
                         .value('instance');
                 }
             }
@@ -325,7 +324,10 @@
 
                     vo.instance = vo.target;
 
-                    pipe(vo).checkInterface().setProps();
+                    pipe(vo)
+                        .checkInterface()
+                        .setProps()
+                        .post();
                 }
 
                 return vo.instance;
@@ -419,10 +421,6 @@
                      *  @param {Array} [config.using] Any constructor dependencies.
                      * @returns {DiCast} A reference back to the DiCast instance.
                      */
-                     /**
-                      * @TODO: turn on isSingleton
-                      *  - Then any factory return will access the same deps
-                      */
                     toFactory: function(config) {
 
                         validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);

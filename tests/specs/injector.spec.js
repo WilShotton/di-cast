@@ -1366,89 +1366,63 @@ define(
             // ------------------------------
             describe('postConstruct', function() {
 
-                var MyValue = {
-                    isConstructed: false,
-                    postConstruct: function() {
-                        this.isConstructed = true;
-                    }
-                };
-
-                function MyFactory() {
-
-                    return function MyFactoryInstance() {
-                        this.isConstructed = false;
-                        this.postConstruct = function() {
-                            this.isConstructed = true;
-                        };
-                    };
-                }
-
-                function MySingleton() {
-                    this.counter = 0;
-                    this.postConstruct = function() {
-                        this.counter++;
-                    };
-                }
-
-                function MyType() {
-                    this.injector = null;
-                    this.isConstructed = false;
-                    this.postConstruct = function(injector) {
-                        this.injector = injector;
-                        this.isConstructed = true;
-                    };
-                }
-
                 beforeEach(function() {
 
                     injector = new Injector();
 
-                    injector.map('MyFactory').toFactory({
-                        target: MyFactory
-                    });
-
-                    injector.map('MySingleton').toConstructor({
-                        target: MySingleton,
-                        isSingleton: true
-                    });
-
-                    injector.map('MyType').toConstructor({
-                        target: MyType
-                    });
-
                     injector.map('MyValue').toValue({
-                        target: MyValue
+                        target: {
+                            counter: 0,
+                            postConstruct: function() {
+                                this.counter++;
+                            }
+                        }
                     });
                 });
 
-                it(' should call postConstruct on toFactory mappings after injecting dependencies', function() {
+                it(' should call postConstruct on toValue mappings', function() {
 
-                    expect(injector.get('MyFactory').make().isConstructed).toBe(true);
+                    expect(injector.get('MyValue').counter).toBe(1);
                 });
 
-                it(' should pass the injector as an argument', function() {
+                it(' should only call postConstruct once for a toValue mapping', function() {
 
-                    expect(injector.get('MyType').injector).toBe(injector);
+                    var myValue_1 = injector.get('MyValue'),
+                        myValue_2 = injector.get('MyValue');
+
+                    expect(myValue_1).toBe(myValue_2);
+                    expect(myValue_1.counter).toBe(1);
+                    expect(myValue_2.counter).toBe(1);
                 });
 
-                it(' should call postConstruct on toConstructor mappings after injecting dependencies', function() {
+                it(' should NOT call postConstruct on toConstructor mappings', function() {
 
-                    expect(injector.get('MyType').isConstructed).toBe(true);
+                    injector.map('MyConstructor').toConstructor({
+                       target: function MyConstructor() {
+                           this.counter = 0;
+                           this.postConstruct = function() {
+                               this.counter++;
+                           };
+                       }
+                    });
+
+                    expect(injector.get('MyConstructor').counter).toBe(0);
                 });
 
-                it(' should only call postConstruct once for a singleton', function() {
+                it(' should NOT call postConstruct on toFactory mappings', function() {
 
-                    var mySingleton_1 = injector.get('MySingleton'),
-                        mySingleton_2 = injector.get('MySingleton');
+                    injector.map('MyFactory').toFactory({
+                        target: function MyFactory() {
+                            return {
+                                counter: 0,
+                                postConstruct: function() {
+                                    this.counter++;
+                                }
+                            };
+                        }
+                    });
 
-                    expect(mySingleton_1).toBe(mySingleton_2);
-                    expect(mySingleton_1.counter).toBe(1);
-                    expect(mySingleton_2.counter).toBe(1);
-                });
-
-                it(' should NOT call postConstruct on toValue mappings', function() {
-
-                    expect(injector.get('MyValue').isConstructed).toBe(false);
+                    expect(injector.get('MyFactory').counter).toBe(0);
                 });
             });
 

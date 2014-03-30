@@ -257,7 +257,7 @@ define(
             // ------------------------------
 
             // toFactory()
-            describe('toFactory', function() {
+            describe('toFactory() mapping', function() {
 
                 function myFactory(MyName) {
                     return function MyConstructor() {
@@ -330,50 +330,7 @@ define(
                 });
             });
 
-            describe('toFactory Facade', function() {
-
-                function myFactory(myArg) {
-                    return function MyConstructor() {
-                        this.myArg = myArg;
-                    };
-                }
-
-                beforeEach(function() {
-
-                    injector = new Injector();
-
-                    injector.map('MyFactory').toFactory({
-                        target: myFactory
-                    });
-                });
-
-                it(' should return something or throw', function() {
-
-                    expect(injector.get('MyFactory')).not.toBeNull();
-
-                    injector.map('myNullFactory').toFactory({
-                        target: function myNullFactory() {}
-                    });
-
-                    expect(function() {
-                        injector.get('myNullFactory')
-                    }).toThrow(INVALID_FACTORY);
-                });
-
-                it(' should throw for missing dependencies', function() {
-
-                    injector.map('MyMissingFactory').toFactory({
-                        target: function myMissingFactory() {},
-                        using: ['MyMissingDep']
-                    });
-
-                    expect(function() {
-                        injector.get('MyMissingFactory');
-                    }).toThrow(NO_MAPPING);
-                });
-            });
-
-            describe('toFactory instances', function() {
+            describe('toFactory() response', function() {
 
                 var F1, F2;
 
@@ -479,6 +436,29 @@ define(
                         C2 = injector.get('MySingletonFactory');
 
                     expect(new C1().MyType).toBe(new C2().MyType);
+                });
+
+                it(' should throw if the factory does not return a value', function() {
+
+                    injector.map('myNullFactory').toFactory({
+                        target: function myNullFactory() {}
+                    });
+
+                    expect(function() {
+                        injector.get('myNullFactory')
+                    }).toThrow(INVALID_FACTORY);
+                });
+
+                it(' should throw for missing dependencies', function() {
+
+                    injector.map('MyMissingFactory').toFactory({
+                        target: function myMissingFactory() {},
+                        using: ['MyMissingDep']
+                    });
+
+                    expect(function() {
+                        injector.get('MyMissingFactory');
+                    }).toThrow(NO_MAPPING);
                 });
             });
 

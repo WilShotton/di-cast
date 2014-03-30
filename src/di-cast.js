@@ -6,10 +6,6 @@
  *
  * NEXT
  * ------------------------------
- * ++
- * @TODO: Factory updates
- *  - Tidy up factory tests
- *  - Add tests for factories that return Objects and primitives
  *
  * ++
  * @TODO: Split pipe into discreet functions that mutate and return a mapping vo

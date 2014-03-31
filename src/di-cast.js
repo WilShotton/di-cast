@@ -131,6 +131,26 @@
 
             slice = Array.prototype.slice;
 
+        function extend(target) {
+
+            slice.call(arguments, 1).forEach(function(source) {
+
+                Object.keys(source).forEach(function(key) {
+                    target[key] = source[key];
+                });
+
+                /*
+                for (var prop in source) {
+                    if (source.hasOwnProperty(prop)) {
+                        target[prop] = source[prop];
+                    }
+                }
+                */
+            });
+
+            return target;
+        }
+
         function is(value, type) {
 
             return Object.prototype.toString
@@ -201,13 +221,25 @@
 
                 resolving = [],
 
+                mapping = {
+                    name: 'anon',
+                    target: null,
+                    deps: [],
+
+                    resolver: null,
+                    api: [],
+
+                    Builder: null,
+                    isSingleton: false
+                },
+
                 mappings = {
                     injector: {
                         name: 'injector',
-                        target: _injector,
                         resolver: makeValue,
-                        api: [],
-                        deps: []
+                        target: _injector,
+                        deps: [],
+                        api: []
                     }
                 };
 
@@ -366,6 +398,7 @@
                         validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
                         validateType(config.target, 'Function', INVALID_TARGET);
 
+                        /*
                         mappings[key] = {
 
                             name: key,
@@ -378,6 +411,17 @@
                             Builder: makeBuilder(config.target),
                             isSingleton: config.isSingleton || false
                         };
+                        */
+
+                        mappings[key] = extend(mapping, config, {
+
+                            name: key,
+                            resolver: makeConstructor,
+                            Builder: makeBuilder(config.target),
+
+                            // @TODO: Change deps to using and remove this
+                            deps: config.using || []
+                        });
 
                         return _injector;
                     },

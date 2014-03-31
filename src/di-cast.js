@@ -6,10 +6,6 @@
  *
  * NEXT
  * ------------------------------
- *
- * ++
- * @TODO: Split pipe into discreet functions that mutate and return a mapping vo
- *
  * ++
  * @TODO: Set name(key) as a property on the VO
  *  - useful for error handling
@@ -227,58 +223,42 @@
                 }
             }
 
-            function pipe(vo) {
+            // Mapping mutators.
+            function checkInterface(vo) {
 
-                return {
+                // @TODO: only check interface on first run
+                vo.api.forEach(function(item) {
 
-                    instantiate: function(args) {
+                    if (vo.instance[item.name] == null) {
 
-                        vo.instance = new vo.Builder(args);
-
-                        return this;
-                    },
-
-                    checkInterface: function() {
-
-                        vo.api.forEach(function(item) {
-
-                            if(vo.instance[item.name] == null) {
-
-                                throw new InjectionError(INTERFACE_MEMBER_MISSING, item);
-                            }
-
-                            if (item.hasOwnProperty('arity') && vo.instance[item.name].length !== item.arity) {
-
-                                throw new InjectionError(INTERFACE_METHOD_ARITY_MISMATCH, item);
-                            }
-                        });
-
-                        return this;
-                    },
-
-                    setProps: function() {
-
-                        vo.deps.forEach(function(dep) {
-                            vo.instance[dep] = _injector.get(dep);
-                        });
-
-                        return this;
-                    },
-
-                    post: function() {
-
-                        if (is(vo.instance.postConstruct, 'Function')) {
-                            vo.instance.postConstruct(_injector);
-                        }
-
-                        return this;
-                    },
-
-                    value: function(key) {
-
-                        return vo[key];
+                        throw new InjectionError(INTERFACE_MEMBER_MISSING, item);
                     }
-                };
+
+                    if (item.hasOwnProperty('arity') && vo.instance[item.name].length !== item.arity) {
+
+                        throw new InjectionError(INTERFACE_METHOD_ARITY_MISMATCH, item);
+                    }
+                });
+
+                return vo;
+            }
+
+            function setProps(vo) {
+
+                vo.deps.forEach(function(dep) {
+                    vo.instance[dep] = _injector.get(dep);
+                });
+
+                return vo;
+            }
+
+            function post(vo) {
+
+                if (is(vo.instance.postConstruct, 'Function')) {
+                    vo.instance.postConstruct(_injector);
+                }
+
+                return vo;
             }
 
             function makeConstructor(vo) {
@@ -289,12 +269,11 @@
 
                 } else {
 
-                    return pipe(vo)
-                        .instantiate(vo.deps.map(function(key) {
-                            return _injector.get(key);
-                        }))
-                        .checkInterface()
-                        .value('instance');
+                    vo.instance = new vo.Builder(vo.deps.map(function(key) {
+                        return _injector.get(key);
+                    }));
+
+                    return checkInterface(vo).instance;
                 }
             }
 
@@ -320,10 +299,7 @@
 
                     vo.instance = vo.target;
 
-                    pipe(vo)
-                        .checkInterface()
-                        .setProps()
-                        .post();
+                    post(setProps(checkInterface(vo)));
                 }
 
                 return vo.instance;

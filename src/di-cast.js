@@ -85,7 +85,8 @@
      */
     function factory() {
 
-        var INVALID_TARGET = 'The target must be an Object or Function',
+        var INVALID_PARENT = 'The parent injector must be an injector',
+            INVALID_TARGET = 'The target must be an Object or Function',
             INCORRECT_METHOD_SIGNATURE = 'Incorrect method signature supplied',
             INVALID_KEY_TYPE = 'The key must be a String',
 
@@ -335,7 +336,7 @@
          * @class DiCast
          * @constructor
          */
-        function DiCast() {
+        function DiCast(parent) {
 
             var _injector = this,
 
@@ -351,6 +352,10 @@
                     }
                 };
 
+            if (parent && parent.constructor !== this.constructor) {
+                throw new Error(INVALID_PARENT);
+            }
+
             /**
              * Initialises a mapping identifier and returns the options for creating a mapping.
              *
@@ -363,7 +368,7 @@
 
                 validateType(key, 'string', INVALID_KEY_TYPE);
 
-                if (_injector.has(key)) {
+                if (mappings.hasOwnProperty(key)) {
                     throw new InjectionError(MAPPING_EXISTS, {key: key});
                 }
 
@@ -474,7 +479,11 @@
 
                 validateType(key, 'String', INVALID_KEY_TYPE);
 
-                return mappings.hasOwnProperty(key);
+                var val = (mappings.hasOwnProperty(key) || parent && parent.has(key)) || false;
+
+                console.log('has: ' + val);
+
+                return val;
             };
 
             /**
@@ -503,6 +512,7 @@
                 }
 
                 resolving.push(key);
+                // @TODO: change this to use parental scope -> || parent.get(key)
                 instance = mappings[key].resolver(mappings[key]);
                 resolving.pop();
 

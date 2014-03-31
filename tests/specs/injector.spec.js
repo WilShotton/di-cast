@@ -13,7 +13,8 @@ define(
 
         "use strict";
 
-        var INVALID_TARGET = 'The target must be an Object or Function',
+        var INVALID_PARENT = 'The parent injector must be an injector',
+            INVALID_TARGET = 'The target must be an Object or Function',
             INCORRECT_METHOD_SIGNATURE = 'Incorrect method signature supplied',
             INVALID_KEY_TYPE = 'The key must be a String',
 
@@ -89,14 +90,36 @@ define(
 
             // Injector methods
             // ------------------------------
+            describe('parent', function() {
+
+                it(' should accept a parent injector as a constructor argument', function() {
+
+                    expect(function() {
+                        new Injector(new Injector());
+                    }).not.toThrow();
+                });
+
+                it(' should throw if the parent injector is not an injector', function() {
+
+                    expect(function() {
+                        new Injector({});
+                    }).toThrow(INVALID_PARENT);
+                });
+            });
 
             // map()
             describe('map', function() {
+
+                var parent = null,
+                    child = null;
 
                 beforeEach(function() {
 
                     injector = new Injector();
                     injector.map('MyMapping').toType({target: function() {}});
+
+                    parent = new Injector();
+                    child = new Injector(parent);
                 });
 
                 it(' should index a successful mapping to a key', function() {
@@ -119,6 +142,33 @@ define(
                     keys.forEach(function(key) {
                         expect(is(mapping[key], 'Function')).toBe(true);
                     });
+                });
+
+                it(' should NOT override parental mappings', function() {
+
+                    parent.map('MyValue').toValue({
+                        target: 'Parent'
+                    });
+
+                    child.map('MyValue').toValue({
+                        target: 'Child'
+                    });
+
+                    expect(parent.get('MyValue')).toBe('Parent');
+                    expect(child.get('MyValue')).toBe('Child');
+                });
+
+                it(' should NOT throw if a mapping key exists in the parent scope', function() {
+
+                    parent.map('MyValue').toValue({
+                        target: 'Parent'
+                    });
+
+                    expect(function() {
+                        child.map('MyValue').toValue({
+                            target: 'Child'
+                        });
+                    }).not.toThrow();
                 });
 
                 it(' should throw if the key is not a string', function() {
@@ -155,6 +205,18 @@ define(
                     expect(injector.has('MissingMapping')).toBe(false);
                 });
 
+                it(' should look in the parental scope for a missing mapping', function() {
+
+                    var parent = new Injector(),
+                        child = new Injector(parent);
+
+                    parent.map('MyValue').toValue({
+                        target: 'Parent'
+                    });
+
+                    expect(child.get('MyValue')).toBe('Parent');
+                });
+
                 it(' should throw if the key is not a string', function() {
 
                     expect(function() {
@@ -181,6 +243,11 @@ define(
                     injector.map('MyType').toType({target: MyType});
 
                     expect(injector.get('MyType').constructor).toBe(MyType);
+                });
+
+                it(' should look in the parental scope for missing mappings', function() {
+
+expect(true).toBe(false);
                 });
 
                 it(' should throw if the key is not a string', function() {
@@ -226,6 +293,12 @@ define(
                     expect(injector.has('MyFactory')).toBe(false);
                     expect(injector.has('MyType')).toBe(false);
                     expect(injector.has('MyValue')).toBe(false);
+                });
+
+                it(' should NOT remove mappings from the parental scope', function() {
+
+                    // NOTE: This means removing a mapping might effectively change it's value
+expect(true).toBe(false);
                 });
 
                 it(' should throw if a mapping depends on the mapping to be removed', function() {
@@ -462,7 +535,7 @@ define(
                 });
             });
 
-            // toType
+            // toType()
             describe('toType', function() {
 
                 function MyType() {}
@@ -517,7 +590,7 @@ define(
                 });
             });
 
-            // toValue
+            // toValue()
             describe('toValue', function() {
 
                 // @TODO: Add tests for primitives with custom properties

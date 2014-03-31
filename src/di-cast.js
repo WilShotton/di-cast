@@ -10,7 +10,6 @@
  * @TODO: Add parent injector stuff...
  *  - Add optional constructor arg
  *  - Defer to parent in get
- *  - refactor to higher order functions where possible and move out of Constructor
  *
  * ++
  * @TODO: Config object - IOC container
@@ -215,6 +214,118 @@
         InjectionError.prototype.name = 'InjectionError';
         InjectionError.prototype.constructor = InjectionError;
 
+        // Mapping mutators
+        // --------------------
+        function checkInterface(vo) {
+
+            // @TODO: only check interface on first run
+            vo.api.forEach(function(item) {
+
+                if (vo.instance[item.name] == null) {
+
+                    throw new InjectionError(INTERFACE_MEMBER_MISSING, item);
+                }
+
+                if (item.hasOwnProperty('arity') && vo.instance[item.name].length !== item.arity) {
+
+                    throw new InjectionError(INTERFACE_METHOD_ARITY_MISMATCH, item);
+                }
+            });
+
+            return vo;
+        }
+
+        function setProps(vo) {
+
+            vo.using.forEach(function(dep) {
+                vo.instance[dep] = vo.injector.get(dep);
+            });
+
+            return vo;
+        }
+
+        function post(vo) {
+
+            if (is(vo.instance.postConstruct, 'Function')) {
+                vo.instance.postConstruct(vo.injector);
+            }
+
+            return vo;
+        }
+
+        function makeBuilder(target) {
+
+            function Builder(args) {
+                return target.apply(this, args);
+            }
+
+            Builder.prototype = Object.create(target.prototype);
+
+            return Builder;
+        }
+
+        function parseProps(target) {
+
+            var list = [];
+
+            if (is(target, 'Object')) {
+
+                for (var key in target) {
+                    if (target[key] === I_POINT) {
+                        list[list.length] = key;
+                    }
+                }
+            }
+
+            return list;
+        }
+
+        // Factory functions.
+        // --------------------
+        function makeConstructor(vo) {
+
+            if (vo.isSingleton && vo.hasOwnProperty('instance')) {
+
+                return vo.instance;
+
+            } else {
+
+                vo.instance = new vo.Builder(vo.using.map(function(key) {
+                    return vo.injector.get(key);
+                }));
+
+                return checkInterface(vo).instance;
+            }
+        }
+
+        function makeFactory(vo) {
+
+            if (!vo.hasOwnProperty('instance') || !vo.isSingleton) {
+
+                vo.instance = vo.target.apply(this, vo.using.map(function(key) {
+                    return vo.injector.get(key);
+                }));
+
+                if (vo.instance == null) {
+                    throw new InjectionError(INVALID_FACTORY, {name: vo.name});
+                }
+            }
+
+            return vo.instance;
+        }
+
+        function makeValue(vo) {
+
+            if (!vo.hasOwnProperty('instance')) {
+
+                vo.instance = vo.target;
+
+                post(setProps(checkInterface(vo)));
+            }
+
+            return vo.instance;
+        }
+
         /**
          * A JavaScript dependency injector.
          *
@@ -240,124 +351,6 @@
                     }
                 };
 
-            function validateKey(key) {
-
-                validateType(key, 'string', INVALID_KEY_TYPE);
-
-                if (_injector.has(key)) {
-                    throw new InjectionError(MAPPING_EXISTS, {key: key});
-                }
-            }
-
-            // Mapping mutators.
-            function checkInterface(vo) {
-
-                // @TODO: only check interface on first run
-                vo.api.forEach(function(item) {
-
-                    if (vo.instance[item.name] == null) {
-
-                        throw new InjectionError(INTERFACE_MEMBER_MISSING, item);
-                    }
-
-                    if (item.hasOwnProperty('arity') && vo.instance[item.name].length !== item.arity) {
-
-                        throw new InjectionError(INTERFACE_METHOD_ARITY_MISMATCH, item);
-                    }
-                });
-
-                return vo;
-            }
-
-            function setProps(vo) {
-
-                vo.using.forEach(function(dep) {
-                    vo.instance[dep] = _injector.get(dep);
-                });
-
-                return vo;
-            }
-
-            function post(vo) {
-
-                if (is(vo.instance.postConstruct, 'Function')) {
-                    vo.instance.postConstruct(_injector);
-                }
-
-                return vo;
-            }
-
-            function makeConstructor(vo) {
-
-                if (vo.isSingleton && vo.hasOwnProperty('instance')) {
-
-                    return vo.instance;
-
-                } else {
-
-                    vo.instance = new vo.Builder(vo.using.map(function(key) {
-                        return _injector.get(key);
-                    }));
-
-                    return checkInterface(vo).instance;
-                }
-            }
-
-            function makeFactory(vo) {
-
-                if (!vo.hasOwnProperty('instance') || !vo.isSingleton) {
-
-                    vo.instance = vo.target.apply(this, vo.using.map(function(key) {
-                        return _injector.get(key);
-                    }));
-
-                    if (vo.instance == null) {
-                        throw new InjectionError(INVALID_FACTORY, {name: vo.name});
-                    }
-                }
-
-                return vo.instance;
-            }
-
-            function makeValue(vo) {
-
-                if (!vo.hasOwnProperty('instance')) {
-
-                    vo.instance = vo.target;
-
-                    post(setProps(checkInterface(vo)));
-                }
-
-                return vo.instance;
-            }
-
-            function makeBuilder(target) {
-
-                function Builder(args) {
-                    return target.apply(this, args);
-                }
-
-                Builder.prototype = Object.create(target.prototype);
-
-                return Builder;
-            }
-
-            function parseProps(target) {
-
-                var list = [];
-
-                if (is(target, 'Object')) {
-
-                    for (var key in target) {
-                        if (target[key] === I_POINT) {
-                            list[list.length] = key;
-                        }
-                    }
-                }
-
-                return list;
-            }
-
             /**
              * Initialises a mapping identifier and returns the options for creating a mapping.
              *
@@ -368,7 +361,11 @@
              */
             this.map = function(key) {
 
-                validateKey(key);
+                validateType(key, 'string', INVALID_KEY_TYPE);
+
+                if (_injector.has(key)) {
+                    throw new InjectionError(MAPPING_EXISTS, {key: key});
+                }
 
                 /**
                  *
@@ -396,6 +393,8 @@
 
                         mappings[key] = mapping(config, {
 
+                            injector: _injector,
+
                             name: key,
                             resolver: makeFactory
                         });
@@ -420,6 +419,8 @@
                         validateType(config.target, 'Function', INVALID_TARGET);
 
                         mappings[key] = mapping(config, {
+
+                            injector: _injector,
 
                             name: key,
                             resolver: makeConstructor,
@@ -446,6 +447,8 @@
                         }
 
                         mappings[key] = mapping(config, {
+
+                            injector: _injector,
 
                             name: key,
                             resolver: makeValue,
@@ -549,6 +552,8 @@
 
                 return makeFactory(mapping({
 
+                    injector: _injector,
+
                     target: target,
                     using: slice.call(arguments, 1)
                 }));
@@ -566,6 +571,8 @@
                 validateType(target, 'Function', INVALID_TARGET);
 
                 return makeConstructor(mapping({
+
+                    injector: _injector,
 
                     target: target,
                     using: slice.call(arguments, 1),
@@ -585,6 +592,8 @@
                 validateType(target, 'Object', INVALID_TARGET);
 
                 return makeValue(mapping({
+
+                    injector: _injector,
 
                     target: target,
                     using: parseProps(target)

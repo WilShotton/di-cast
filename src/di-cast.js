@@ -7,10 +7,6 @@
  * NEXT
  * ------------------------------
  * ++
- * @TODO: Set name(key) as a property on the VO
- *  - useful for error handling
- *
- * ++
  * @TODO: Add parent injector stuff...
  *
  * ++
@@ -128,7 +124,7 @@
 
             CIRCULAR_DEPENDENCY = {
                 message: 'Can not resolve a circular dependency',
-                info: '{{target}} has a dependency that depends on {{dependency}}'
+                info: '{{target}} has a dependency that depends on {{target}}'
             },
 
             I_POINT = '{I}',
@@ -207,6 +203,7 @@
 
                 mappings = {
                     injector: {
+                        name: 'injector',
                         target: _injector,
                         resolver: makeValue,
                         api: [],
@@ -286,7 +283,7 @@
                     }));
 
                     if (vo.instance == null) {
-                        throw new InjectionError(INVALID_FACTORY, {name: 'TODO'});
+                        throw new InjectionError(INVALID_FACTORY, {name: vo.name});
                     }
                 }
 
@@ -480,9 +477,7 @@
 
                 if (resolving.indexOf(key) !== -1) {
                     resolving.push(key);
-                    console.log('target: ' + resolving[0]);
-                    console.log('dep: ' + key);
-                    throw new InjectionError(CIRCULAR_DEPENDENCY, {target: resolving[0], dependency: key});
+                    throw new InjectionError(CIRCULAR_DEPENDENCY, {target: key});
                 }
 
                 resolving.push(key);
@@ -535,9 +530,8 @@
 
                 return makeFactory({
 
-                    Builder: makeBuilder(target),
+                    name: 'anon',
                     target: target,
-                    api: [],
                     deps: slice.call(arguments, 1)
                 });
             };
@@ -549,17 +543,19 @@
              * @param {Function} target The target Function.
              * @returns {Object} A injected instance of the target Function.
              */
-            // @TODO: Rename resolveConstructor
             this.resolveType = function(target) {
 
                 validateType(target, 'Function', INVALID_TARGET);
 
                 return makeConstructor({
 
-                    Builder: makeBuilder(target),
+                    name: 'anon',
                     target: target,
-                    api: [],
                     deps: slice.call(arguments, 1),
+
+                    api: [],
+
+                    Builder: makeBuilder(target),
                     isSingleton: false
                 });
             };
@@ -577,9 +573,11 @@
 
                 return makeValue({
 
+                    name: 'anon',
                     target: target,
-                    api: [],
-                    deps: parseProps(target)
+                    deps: parseProps(target),
+
+                    api: []
                 });
             };
         }

@@ -380,32 +380,6 @@
                 return {
 
                     /**
-                     * Maps a key to a constructor function mapping.
-                     *
-                     * @method toConstructor
-                     * @param {Object} config The config settings for the mapping.
-                     *  @param {Function} config.target The factory function.
-                     *  @param {Array} [config.api] The interface definition for duck typing.
-                     *  @param {Array} [config.using] Any constructor dependencies.
-                     *  @param {Boolean} [config.isSingleton] If the mapping should be treated as a singleton.
-                     * @returns {DiCast} A reference back to the DiCast instance.
-                     */
-                    toConstructor: function(config) {
-
-                        validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
-                        validateType(config.target, 'Function', INVALID_TARGET);
-
-                        mappings[key] = mapping(config, {
-
-                            name: key,
-                            resolver: makeConstructor,
-                            Builder: makeBuilder(config.target)
-                        });
-
-                        return _injector;
-                    },
-
-                    /**
                      * Maps a key to a factory mapping.
                      *
                      * @method toFactory
@@ -424,6 +398,32 @@
 
                             name: key,
                             resolver: makeFactory
+                        });
+
+                        return _injector;
+                    },
+
+                    /**
+                     * Maps a key to a constructor function mapping.
+                     *
+                     * @method toType
+                     * @param {Object} config The config settings for the mapping.
+                     *  @param {Function} config.target The factory function.
+                     *  @param {Array} [config.api] The interface definition for duck typing.
+                     *  @param {Array} [config.using] Any constructor dependencies.
+                     *  @param {Boolean} [config.isSingleton] If the mapping should be treated as a singleton.
+                     * @returns {DiCast} A reference back to the DiCast instance.
+                     */
+                    toType: function(config) {
+
+                        validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
+                        validateType(config.target, 'Function', INVALID_TARGET);
+
+                        mappings[key] = mapping(config, {
+
+                            name: key,
+                            resolver: makeConstructor,
+                            Builder: makeBuilder(config.target)
                         });
 
                         return _injector;

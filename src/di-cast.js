@@ -8,6 +8,9 @@
  * ------------------------------
  * ++
  * @TODO: Add parent injector stuff...
+ *  - Add optional constructor arg
+ *  - Defer to parent in get
+ *  - refactor to higher order functions where possible and move out of Constructor
  *
  * ++
  * @TODO: Config object - IOC container
@@ -131,24 +134,30 @@
 
             slice = Array.prototype.slice;
 
-        function extend(target) {
+        function mapping() {
 
-            slice.call(arguments, 1).forEach(function(source) {
+            var base = {
+
+                name: 'anon',
+                target: null,
+                using: [],
+
+                resolver: null,
+                api: [],
+                Builder: null,
+                isSingleton: false
+            };
+
+            slice.call(arguments).forEach(function(source) {
 
                 Object.keys(source).forEach(function(key) {
-                    target[key] = source[key];
-                });
-
-                /*
-                for (var prop in source) {
-                    if (source.hasOwnProperty(prop)) {
-                        target[prop] = source[prop];
+                    if (source[key] != null) {
+                        base[key] = source[key];
                     }
-                }
-                */
+                });
             });
 
-            return target;
+            return base;
         }
 
         function is(value, type) {
@@ -221,24 +230,12 @@
 
                 resolving = [],
 
-                mapping = {
-                    name: 'anon',
-                    target: null,
-                    deps: [],
-
-                    resolver: null,
-                    api: [],
-
-                    Builder: null,
-                    isSingleton: false
-                },
-
                 mappings = {
                     injector: {
                         name: 'injector',
                         resolver: makeValue,
                         target: _injector,
-                        deps: [],
+                        using: [],
                         api: []
                     }
                 };
@@ -274,7 +271,7 @@
 
             function setProps(vo) {
 
-                vo.deps.forEach(function(dep) {
+                vo.using.forEach(function(dep) {
                     vo.instance[dep] = _injector.get(dep);
                 });
 
@@ -298,7 +295,7 @@
 
                 } else {
 
-                    vo.instance = new vo.Builder(vo.deps.map(function(key) {
+                    vo.instance = new vo.Builder(vo.using.map(function(key) {
                         return _injector.get(key);
                     }));
 
@@ -310,7 +307,7 @@
 
                 if (!vo.hasOwnProperty('instance') || !vo.isSingleton) {
 
-                    vo.instance = vo.target.apply(this, vo.deps.map(function(key) {
+                    vo.instance = vo.target.apply(this, vo.using.map(function(key) {
                         return _injector.get(key);
                     }));
 
@@ -398,29 +395,11 @@
                         validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
                         validateType(config.target, 'Function', INVALID_TARGET);
 
-                        /*
-                        mappings[key] = {
+                        mappings[key] = mapping(config, {
 
                             name: key,
                             resolver: makeConstructor,
-                            target: config.target,
-                            deps: config.using || [],
-
-                            api: config.api || [],
-
-                            Builder: makeBuilder(config.target),
-                            isSingleton: config.isSingleton || false
-                        };
-                        */
-
-                        mappings[key] = extend(mapping, config, {
-
-                            name: key,
-                            resolver: makeConstructor,
-                            Builder: makeBuilder(config.target),
-
-                            // @TODO: Change deps to using and remove this
-                            deps: config.using || []
+                            Builder: makeBuilder(config.target)
                         });
 
                         return _injector;
@@ -441,15 +420,11 @@
                         validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
                         validateType(config.target, 'Function', INVALID_TARGET);
 
-                        mappings[key] = {
+                        mappings[key] = mapping(config, {
 
                             name: key,
-                            resolver: makeFactory,
-                            target: config.target,
-                            deps: config.using || [],
-
-                            isSingleton: config.isSingleton || false
-                        };
+                            resolver: makeFactory
+                        });
 
                         return _injector;
                     },
@@ -470,15 +445,12 @@
                             throw new InjectionError(MISSING_TARGET, {key: key});
                         }
 
-                        mappings[key] = {
+                        mappings[key] = mapping(config, {
 
                             name: key,
                             resolver: makeValue,
-                            target: config.target,
-                            deps: parseProps(config.target),
-
-                            api: config.api || []
-                        };
+                            using: parseProps(config.target)
+                        });
 
                         return _injector;
                     }
@@ -520,6 +492,9 @@
                 }
 
                 if (resolving.indexOf(key) !== -1) {
+
+                    // @TODO: Not sure pushing key is correct here.
+                    // Reset resolving instead - ie. resolving.length = 0;
                     resolving.push(key);
                     throw new InjectionError(CIRCULAR_DEPENDENCY, {target: key});
                 }
@@ -547,7 +522,7 @@
                     for (var n in mappings) {
 
                         if (mappings.hasOwnProperty(n) && n !== key) {
-                            if (mappings[n].deps.indexOf(key) !== -1) {
+                            if (mappings[n].using.indexOf(key) !== -1) {
                                 throw new InjectionError(MAPPING_HAS_DEPENDANTS, {key: key});
                             }
                         }
@@ -572,12 +547,11 @@
 
                 validateType(target, 'Function', INVALID_TARGET);
 
-                return makeFactory({
+                return makeFactory(mapping({
 
-                    name: 'anon',
                     target: target,
-                    deps: slice.call(arguments, 1)
-                });
+                    using: slice.call(arguments, 1)
+                }));
             };
 
             /**
@@ -591,17 +565,12 @@
 
                 validateType(target, 'Function', INVALID_TARGET);
 
-                return makeConstructor({
+                return makeConstructor(mapping({
 
-                    name: 'anon',
                     target: target,
-                    deps: slice.call(arguments, 1),
-
-                    api: [],
-
-                    Builder: makeBuilder(target),
-                    isSingleton: false
-                });
+                    using: slice.call(arguments, 1),
+                    Builder: makeBuilder(target)
+                }));
             };
 
             /**
@@ -615,14 +584,11 @@
 
                 validateType(target, 'Object', INVALID_TARGET);
 
-                return makeValue({
+                return makeValue(mapping({
 
-                    name: 'anon',
                     target: target,
-                    deps: parseProps(target),
-
-                    api: []
-                });
+                    using: parseProps(target)
+                }));
             };
         }
 

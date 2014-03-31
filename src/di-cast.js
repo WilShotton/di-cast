@@ -128,7 +128,7 @@
 
             CIRCULAR_DEPENDENCY = {
                 message: 'Can not resolve a circular dependency',
-                info: '{{target}} has a dependency that depends on {{target}}'
+                info: '{{target}} has a dependency that depends on {{dependency}}'
             },
 
             I_POINT = '{I}',
@@ -371,12 +371,14 @@
 
                         mappings[key] = {
 
-                            Builder: makeBuilder(config.target),
+                            name: key,
                             resolver: makeConstructor,
                             target: config.target,
-                            api: config.api || [],
                             deps: config.using || [],
 
+                            api: config.api || [],
+
+                            Builder: makeBuilder(config.target),
                             isSingleton: config.isSingleton || false
                         };
 
@@ -400,6 +402,7 @@
 
                         mappings[key] = {
 
+                            name: key,
                             resolver: makeFactory,
                             target: config.target,
                             deps: config.using || [],
@@ -428,10 +431,12 @@
 
                         mappings[key] = {
 
+                            name: key,
                             resolver: makeValue,
                             target: config.target,
-                            api: config.api || [],
-                            deps: parseProps(config.target)
+                            deps: parseProps(config.target),
+
+                            api: config.api || []
                         };
 
                         return _injector;
@@ -475,7 +480,9 @@
 
                 if (resolving.indexOf(key) !== -1) {
                     resolving.push(key);
-                    throw new InjectionError(CIRCULAR_DEPENDENCY, {target: key});
+                    console.log('target: ' + resolving[0]);
+                    console.log('dep: ' + key);
+                    throw new InjectionError(CIRCULAR_DEPENDENCY, {target: resolving[0], dependency: key});
                 }
 
                 resolving.push(key);

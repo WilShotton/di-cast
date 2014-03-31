@@ -7,11 +7,6 @@
  * NEXT
  * ------------------------------
  * ++
- * @TODO: Add parent injector stuff...
- *  - Add optional constructor arg
- *  - Defer to parent in get
- *
- * ++
  * @TODO: Config object - IOC container
  *
  *  {
@@ -481,9 +476,9 @@
 
                 var val = (mappings.hasOwnProperty(key) || parent && parent.has(key)) || false;
 
-                console.log('has: ' + val);
+                //console.log('has: ' + val);
 
-                return val;
+                return (mappings.hasOwnProperty(key) || parent && parent.has(key)) || false;
             };
 
             /**
@@ -505,15 +500,30 @@
 
                 if (resolving.indexOf(key) !== -1) {
 
-                    // @TODO: Not sure pushing key is correct here.
-                    // Reset resolving instead - ie. resolving.length = 0;
+                    /**
+                     * @TODO: Test the following re. circular dependency
+                     * ------------------------------
+                     * Not sure pushing key is correct here.
+                     *  - Reset resolving instead - ie. resolving.length = 0;
+                     *
+                     * What happens if 2 dependencies depend on the same dependency
+                     *  -> a    -> b    -> d
+                     *          -> c    -> d
+                     *
+                     * What happens if a dependency in the parent is requested multiple times
+                     *  -> a    -> b    -> (p)d
+                     *          -> c    -> (p)d
+                     */
                     resolving.push(key);
                     throw new InjectionError(CIRCULAR_DEPENDENCY, {target: key});
                 }
 
                 resolving.push(key);
-                // @TODO: change this to use parental scope -> || parent.get(key)
-                instance = mappings[key].resolver(mappings[key]);
+
+                instance = mappings.hasOwnProperty(key) ?
+                    mappings[key].resolver(mappings[key]) :
+                    parent.get(key);
+
                 resolving.pop();
 
                 return instance;

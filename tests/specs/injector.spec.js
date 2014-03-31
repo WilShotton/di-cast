@@ -205,7 +205,7 @@ define(
                     expect(injector.has('MissingMapping')).toBe(false);
                 });
 
-                it(' should look in the parental scope for a missing mapping', function() {
+                it(' should look in the parental scope for missing mappings', function() {
 
                     var parent = new Injector(),
                         child = new Injector(parent);
@@ -247,7 +247,14 @@ define(
 
                 it(' should look in the parental scope for missing mappings', function() {
 
-expect(true).toBe(false);
+                    var parent = new Injector(),
+                        child = new Injector(parent);
+
+                    parent.map('MyValue').toValue({
+                        target: 'Parent'
+                    });
+
+                    expect(child.get('MyValue')).toBe('Parent');
                 });
 
                 it(' should throw if the key is not a string', function() {
@@ -298,7 +305,22 @@ expect(true).toBe(false);
                 it(' should NOT remove mappings from the parental scope', function() {
 
                     // NOTE: This means removing a mapping might effectively change it's value
-expect(true).toBe(false);
+                    var parent = new Injector(),
+                        child = new Injector(parent);
+
+                    parent.map('MyValue').toValue({
+                        target: 'Parent'
+                    });
+
+                    child.map('MyValue').toValue({
+                        target: 'Child'
+                    });
+
+                    expect(child.get('MyValue')).toBe('Child');
+
+                    child.remove('MyValue');
+
+                    expect(child.get('MyValue')).toBe('Parent');
                 });
 
                 it(' should throw if a mapping depends on the mapping to be removed', function() {
@@ -592,9 +614,6 @@ expect(true).toBe(false);
 
             // toValue()
             describe('toValue', function() {
-
-                // @TODO: Add tests for primitives with custom properties
-                // @TODO: Add tests for Object.create() etc.
 
                 var myArray = [1, 2, 3],
                     myBoolean = true,

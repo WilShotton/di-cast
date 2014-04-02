@@ -7,6 +7,9 @@
  * NEXT
  * ------------------------------
  * ++
+ * @TODO: Complete circular dependency tests
+ *
+ * ++
  * @TODO: Config object - IOC container
  *
  *  {
@@ -214,7 +217,6 @@
         // --------------------
         function checkInterface(vo) {
 
-            // @TODO: only check interface on first run
             vo.api.forEach(function(item) {
 
                 if (vo.instance[item.name] == null) {
@@ -280,18 +282,16 @@
         // --------------------
         function makeConstructor(vo) {
 
-            if (vo.isSingleton && vo.hasOwnProperty('instance')) {
-
-                return vo.instance;
-
-            } else {
+            if (!vo.hasOwnProperty('instance') || !vo.isSingleton) {
 
                 vo.instance = new vo.Builder(vo.using.map(function(key) {
                     return vo.injector.get(key);
                 }));
 
-                return checkInterface(vo).instance;
+                checkInterface(vo);
             }
+
+            return vo.instance;
         }
 
         function makeFactory(vo) {
@@ -473,10 +473,6 @@
             this.has = function(key) {
 
                 validateType(key, 'String', INVALID_KEY_TYPE);
-
-                var val = (mappings.hasOwnProperty(key) || parent && parent.has(key)) || false;
-
-                //console.log('has: ' + val);
 
                 return (mappings.hasOwnProperty(key) || parent && parent.has(key)) || false;
             };

@@ -2,6 +2,8 @@
  * Created by wil on 15/01/2014.
  */
 
+
+
 module.exports = function(grunt) {
 
     "use strict";
@@ -64,10 +66,7 @@ module.exports = function(grunt) {
             coverage: {
 
                 src: [
-                    '<%= meta.js.src %>/**/*.js',
-
-                    '!<%= meta.js.src %>/my-dep.js',
-                    '!<%= meta.js.src %>/sub-dep.js'
+                    '<%= meta.js.src %>/**/*.js'
                 ],
 
                 options: {
@@ -96,11 +95,7 @@ module.exports = function(grunt) {
 
                             requireConfig: {
 
-                                baseUrl: './<%= meta.js.src %>/',
-
-                                paths: {
-                                    jquery: '/libs/jquery.min'
-                                }
+                                baseUrl: './<%= meta.js.src %>/'
                             }
                         }
                     }

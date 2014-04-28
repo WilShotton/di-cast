@@ -10,35 +10,6 @@
  * @TODO: Complete circular dependency tests
  *
  * ++
- * @TODO: Config object - IOC container
- *
- *  {
- *      constructors: [
- *          {
- *              name: '',
- *              target: function() {},
- *              using: ['', ...],
- *              api: ['', ...],
- *              singleton: false
- *          }
- *      ],
- *      factories: [
- *          {
- *              name: '',
- *              target: function() {},
- *              using: ['', ...],
- *              api: ['', ...]
- *          }
- *      ],
- *      values: [
- *          {
- *              name: '',
- *              target: *
- *          }
- *      ]
- *  }
- *
- * ++
  * @TODO: testing the api on toValue function mappings
  *  - will return unexpected results
  *

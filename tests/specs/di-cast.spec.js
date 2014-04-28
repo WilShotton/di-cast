@@ -1431,6 +1431,42 @@ define(
                         injector.get('MyTypeA');
                     }).toThrow(CIRCULAR_DEPENDENCY);
                 });
+
+                it(' should continue working after a circular dependency error has been handled', function() {
+
+                    injector = new Injector();
+
+                    injector.map('MyTypeA').toType({
+
+                        target: function MyTypeA(MyTypeB, MyTypeC) {},
+                        using: ['MyTypeB', 'MyTypeC']
+                    });
+
+                    injector.map('MyTypeB').toType({
+
+                        target: function MyTypeB(MyTypeA) {},
+                        using: ['MyTypeA']
+                    });
+
+                    injector.map('MyTypeC').toType({
+
+                        target: function MyTypeC() {}
+                    });
+
+                    injector.map('MyTypeAA').toType({
+
+                        target: function MyTypeAA(MyTypeC) {
+                            this.MyTypeC = MyTypeC;
+                        },
+                        using: ['MyTypeC']
+                    });
+
+                    expect(function() {
+                        injector.get('MyTypeA');
+                    }).toThrow(CIRCULAR_DEPENDENCY);
+
+                    expect(injector.get('MyTypeAA').MyTypeC.constructor.name).toBe('MyTypeC');
+                });
             });
 
 

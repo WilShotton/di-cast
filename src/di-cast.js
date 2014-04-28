@@ -7,9 +7,6 @@
  * NEXT
  * ------------------------------
  * ++
- * @TODO: Complete circular dependency tests
- *
- * ++
  * @TODO: testing the api on toValue function mappings
  *  - will return unexpected results
  *
@@ -467,20 +464,6 @@
 
                 if (resolving.indexOf(key) !== -1) {
 
-                    /**
-                     * @TODO: Test the following re. circular dependency
-                     * ------------------------------
-                     * Not sure pushing key is correct here.
-                     *  - Reset resolving instead - ie. resolving.length = 0;
-                     *
-                     * What happens if 2 dependencies depend on the same dependency
-                     *  -> a    -> b    -> d
-                     *          -> c    -> d
-                     *
-                     * What happens if a dependency in the parent is requested multiple times
-                     *  -> a    -> b    -> (p)d
-                     *          -> c    -> (p)d
-                     */
                     resolving.push(key);
                     throw new InjectionError(CIRCULAR_DEPENDENCY, {target: key});
                 }

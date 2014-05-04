@@ -515,22 +515,26 @@ define(
                     expect(new F1().getValue()).toBe(new F2().getValue());
                 });
 
-                it(' should return values with the same dependencies if the factory is a singleton', function() {
+                it(' should return the same value if the factory is a singleton', function() {
 
                     injector.map('MySingletonFactory').toFactory({
                         target: function MySingletonFactory(MyType) {
-                            return function MySingletonInstance() {
-                                this.MyType = MyType;
+                            return {
+                                MyType: MyType
                             };
                         },
                         using: ['MyType'],
                         isSingleton: true
                     });
 
-                    var C1 = injector.get('MySingletonFactory'),
-                        C2 = injector.get('MySingletonFactory');
+                    var F1 = injector.get('MyFactory'),
+                        F2 = injector.get('MyFactory'),
 
-                    expect(new C1().MyType).toBe(new C2().MyType);
+                        S1 = injector.get('MySingletonFactory'),
+                        S2 = injector.get('MySingletonFactory');
+
+                    expect(F1).not.toBe(F2);
+                    expect(S1).toBe(S2);
                 });
 
                 it(' should throw if the factory does not return a value', function() {

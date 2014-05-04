@@ -1,44 +1,3 @@
-/**
- * Created by wil on 14/01/2014.
- */
-
-/**
- *
- * NEXT
- * ------------------------------
- * ++
- * @TODO: testing the api on toValue function mappings
- *  - will return unexpected results
- *
- * ++
- * @TODO: Integrate Karma into grunt for Browser tests
- *
- * ++
- * @TODO: NPM
- *
- * ++
- * @TODO: Bower
- *  - Move src contents to root
- *
- * @TODO: Update documentation
- *
- * ------------------------------
- *
- * ++
- * @TODO: The API checking should be a separate mapping (like injector)
- *  - This could also help with memory footprint with nested injectors
- *
- * ++
- * @TODO: I_POINT setter
- *  - NOTE: Will have to dynamically generate regex
- *
- * ++
- * @TODO: DiCast.autoInject() for Angular style constructor injection
- *  - NOTE: Will need to split tests into pre / post compile
- *
- *  - http://docs.angularjs.org/api/auto/service/$injector
- */
-
 ;(function(root) {
 
     "use strict";
@@ -144,11 +103,14 @@
 
 //        function sequence() {
 //
-//            return Array.prototype.reduce.call(Array.prototype.slice.call(arguments).reverse(), function(composite, fn) {
-//                return function() {
-//                    return composite(fn.apply(null, arguments));
-//                };
-//            });
+//            return Array.prototype.reduce.call(
+//                Array.prototype.slice.call(arguments).reverse(),
+//                function(composite, fn) {
+//                    return function() {
+//                        return composite(fn.apply(null, arguments));
+//                    };
+//                }
+//            );
 //        }
 
         /**

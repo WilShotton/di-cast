@@ -1,12 +1,10 @@
 # Di-cast
-
 A JavaScript dependency injector for Node.js and the Browser.
 
 ## Set up.
-
 Di-cast can be used in AMD, Browser and CommonJS environments.
 
-#### AMD
+##### AMD
 
 ```
 require(['path/to/di-cast'], function(DiCast) {
@@ -23,7 +21,7 @@ define('Module', ['path/to/di-cast'], function(DiCast) {
 
 ```
 
-#### Browser
+##### Browser
 
 	<script src="path/to/di-cast"></script>
 
@@ -33,7 +31,7 @@ define('Module', ['path/to/di-cast'], function(DiCast) {
 		
 	</script>
 
-#### CommonJS
+##### CommonJS
 
 ```
 var Injector = require('path/to/injector.js).DiCast;
@@ -42,126 +40,147 @@ var injector = new DiCast();
 
 ```
 
-## Creating basic mappings.
+## Basic mappings.
+Mappings are created by calling the Injector's `map` method.
+
+A mapping is defines the properties the injector uses to describe an injection. The injector stores each mapping against a key. 
+
+At the very least a mapping must have a `target` property which is the value to be injected when the mapping is requested.
 
 ```
-// Create a mapping	
+// Create a basic mapping
 injector.map('greeting').toValue({
+
 	target: 'Hello World'
 });
-	
-console.log(injector.get('greeting'));
-// 'Hello World'
+```
 
-```	
-
-## Creating mappings with constructor injection.
-
-Mappings can define an Array of dependencies in their settings object with the `using` option. The dependencies are resolved lazily whenever a mapping is instantiated and are supplied to the target in the same order as they are listed.
-
-If a mapping cannot be resolved the injector will throw an error.
+Mappings can be retrieved using the `get` method.
 
 ```
-injector.map('welcome').toType({
+// Retrieve the mapping
+var greeting = injector.get('greeting');
+
+console.log(greeting);
+// 'Hello World'
+```
+
+Mappings can also be retrieved by defining them as dependencies of other mappings.
+
+```
+injector.map('MyType').toType({
+
 	target: function(greeting) {
-		this.greeting = greeting;
+		this.sayHello = function() {
+			return greeting;
+		};
 	},
+
 	using: ['greeting']
 });
-
-console.log(injector.get('welcome').greeting);
-// 'Hello World'
-
 ```
 
-__Note:__ only the `toFactory` and `toType` mapping methods can make use of constructor injection as the target must be instantiated by the injector. To inject `toValue` mappings use property injection.
+There are three different kinds of mapping available.
 
-## Creating mappings with property injection.
 
-Target objects and constructor functions can define their own mappings by declaring public properties with an initial value of `'{I}'`.
+## toValue mappings.
+Returns the `target` value when requested. The `target` can be any type value.
 
-If a mapping cannot be resolved the injector will throw an error.
+The injector will return the value unchanged unless the `target` is an Object with public properties that are marked as injectable using the `'{I}'` token. In this case, the injector will attempt to resolve the property as a dependency using the property name as the mapping key.
 
 ```
-injector.map('salutation').toValue({
+injector.map('MyValue').toValue({
+
 	target: {
 		greeting: '{I}',
 		greet: function() {
 			console.log(this.greeting);
 		}
-	}
+	},
+
+	api: [{name: 'greet'}]
 });
 
-injector.get('salutation').greet();
-// 'Hello World'
 ```
 
-## Type checking mappings.
+##### Config options.
 
-To ensure the correct interface is set on a mapping an optional `api` property can be specified in the config object.
+__target__ The value to be returned. It can be anything. __Required.__
 
-```
-var IMyInterface = [
+__api__ An Array describing the value interface.
 
-	{name: 'myMethod', arity: 1},
-    {name: 'myProperty'},
-    {name: 'myPrototypeMethod'},
-    {name: 'myPrototypeProperty'}
-];
-
-injector.map('duckTyped').toType({
-	target: function() {},
-	api: IMyInterface
-});
-
-var duckTyped = injector.get('duckTyped');
-// Throws an InjectionError
-
-```
 
 ## toType mappings.
 
-This mapping method takes a constructor function as a target and returns a new instance with all it's dependencies resolved when requested. 
-
-Target functions passed to the toType method should have the following structure:
+Returns a new instance from the `target' constructor function when requested.
 
 ```
-function MyType(ConstructorDependency) {
+injector.map('MyType').toType({
+
+	target: function MyType(MyDependency) {
 	
-	this.propertyDependency = '{I}';
+		this.MyDependency = MyDependency;
+	},
 	
-	this.getProperty = function() {
+	api: [{name: 'getProperty'}],
 	
-		return this.propertyDependency;
-	};
-}
+	isSingleton: true,
+
+	using: ['MyDependency']
+});
+
 ```
 
-#### Config options.
+##### Config options.
 
-__target__ The factory function. __Required.__
+__target__ The factory constructor function. __Required.__
 
 __api__ An array describing the factory instance interface.
 
 __isSingleton__ An optional Boolean flag which, when set, will always return the same instance.
 
-__using__ An Array of mapping keys to inject into the factory.
+__using__ An Array of mapping keys to inject into the factory as constructor arguments when it is instantiated. Dependencies will be resolved and injected lazily.
+
+
+## toFactory mappings.
+
+Similar to `toType` mappings but it returns the result of invoking the `target` factory function when requested.
+
+If a `toFactory` target function does not return a value an `InjectonError` will be thrown.
 
 ```
-injector.map('MyType').toType({
-	target: MyType,
-	api: [
-		{name: 'getProperty'}
-	],
+injector.map('MyFactory').toFactory({
+
+	target: function MyFactory(MyDependency) {
+
+		return {
+			myDependency: MyDependency
+		};
+	},
+
+	api: [{name: 'myDependency'}],
+
 	isSingleton: true,
-	using: [ConstructorDependency]
+
+	using: ['MyDependency']
 });
 
 ```
 
-#### Singleton mappings.
+##### Config options.
 
-Type mappings can be defined as singletons to ensure that the same Object can be used as a dependency everywhere.
+__target__ The factory function. __Required.__
+
+__api__ An Array describing the factory instance interface.
+
+__isSingleton__ An optional Boolean flag which, when set, will always return the same result.
+
+__using__ An Array of mapping keys to inject into the factory.
+
+
+## Singleton mappings.
+
+`toFactory` and `toType` mappings can be defined as singletons in the config options to ensure that the same value is always returned.
 
 ```
 injector.map('singleton').toType({
@@ -174,112 +193,60 @@ injector.get('singleton') === injector.get('singleton');
 
 ```
 
-#### Retrieving a type instance.
+## Type checking mappings.
 
-```	
-var myType = injector.get('MyType');
+To ensure the correct interface is set on a mapping an optional `api` property can be specified in the config options.
 
-```
-
-## toValue mappings.
-This mapping method maps a value of any type against a key and returns it when requested. If the value is an Object the injector will attempt to resolve any public properties that are marked as injectable.  
-
-toValue mappings are always singletons.
-
-#### Config options.
-
-__target__ The factory function. __Required.__
-
-__api__ An Array describing the value interface.
-
-toFactory mappings are always singletons.
+The `api` property expects an Array of definition objects. Each definition must have a `name` property which is the name of a property required on the `target`. Each definition can also have an optional `arity` property which sets the number of arguments a required function should have. 
 
 ```
-injector.map('MyValue').toValue({
-	target: {
-		greeting: '{I}', 
-		greet: function() {
-			console.log(greeting);
-		}
+var IMyInterface = [
+
+	{name: 'myMethod', arity: 1},
+    {name: 'myProperty'}
+];
+
+// A valid mapping
+injector.map('typed').toType({
+
+	target: function() {
+		this.myMethod = function(myArg) {};
+		this.myProperty = 'myProperty';
 	},
-	api: [
-		{name: 'greet'}
-	]
+
+	api: IMyInterface
 });
 
-```
+injector.get('typed');
 
-#### Retrieving a value mapping.
+// An invalid mapping
+injector.map('notTyped').toType({
 
-```	
-var myValue = injector.get('MyValue');
+	target: function() {},
 
-myValue.greet();
-// Hello World
-
-// or
-
-injector.map('MyType').toType({
-	target: function(MyValue) {},
-	using: ['MyValue']
+	api: IMyInterface
 });
 
-```
-
-## toFactory mappings.
-
-This mapping method takes a factory function as a target and creates an Object with a variadic `make()` method. When invoked `make()` will return a new instance from the factroy method with any arguments passed to the instance constructor. 
-
-Target functions passed to the `toFactory` method should have the following structure:
-
-```
-function MyFactory(ConstructorDependency) {
-
-	return function MyFactoryInstance(Arg) {
-	
-		this.propertyDependency = '{I}';
-		
-		this.getArg = function() {
-			return Arg;
-		};
-	};
-}
-```
-
-Constructor dependencies will be injected into the Factory constructor which will scope them to the instance. 
-
-Property dependencies should be defined in the instance constructor itself.  
-
-#### Config options.
-
-__target__ The factory function. __Required.__
-
-__api__ An Array describing the factory instance interface.
-
-__using__ An Array of mapping keys to inject into the factory.
-
-toFactory mappings are always singletons.
-
-```
-injector.map('MyFactory').toFactory({
-	target: MyFactory,
-	api: [
-		{name: 'getProperty'}
-	],
-	using: [ConstructorDependency]
-});
+injector.get('notTyped');
+// Throws an InjectionError
 
 ```
 
-#### Retrieving a factory instance
+## Nested injection.
+Di-Cast instances can take an optional parent injector constructor argument. If an injector with a parent cannot resolve a dependency in it's local scope it will look in the parental scope before throwing an error.
 
-```	
-var myFactoryInstance = injector.get('MyFactory').make('Hello');
+Dependencies with the same name as a dependency in the parental scope will overwrite in the local scope but will not affect the parent scope.
 
-myFactoryInstance.getArg()
-// 'Hello'
 
-```
+## Injection errors.
+Di-Cast has a custom error type with the following properties:
+
+__stack__ The stack trace for the error.
+
+__message__ Basic error information.
+
+__info__ A context specific description of the error.
+
 
 ## Grunt tasks.
 
@@ -290,23 +257,3 @@ myFactoryInstance.getArg()
 `> grunt plato` Generate a code complexity report in `bin/complexity`.
 
 `> grunt dist` Generate a minified file in `dist`
-
-
-## Known bugs.
-
-Non singleton type mappings injected into a factory will behave as a singleton for all instances created by that factory.
-
-
-## To do.
-
-#### Automatic constructor injection.
-
-Convert the constructor function to a string and inspect its arguments to derive dependencies.
- 
-__NOTE:__ This approach will only work for non minified code so tests will need to split into pre / post compile.
-
-#### Nested injection.
-
-Injectors should take an optional parent injector constructor argument. If an injector cannot resolve a dependency it should look to its parental scope. 
-
-#### Circular dependency management.

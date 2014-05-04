@@ -1,8 +1,8 @@
-# Di-cast
+# Di-Cast
 A JavaScript dependency injector for Node.js and the Browser.
 
 ## Set up.
-Di-cast can be used in AMD, Browser and CommonJS environments.
+Di-Cast can be used in AMD, Browser and CommonJS environments.
 
 ##### AMD
 

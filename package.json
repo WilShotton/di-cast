@@ -1,7 +1,7 @@
 {
     "name": "Di-cast",
     "description": "A simple JavaScript dependency injector.",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "main": "src/di-cast.js",
     "homepage": "https://bitbucket.org/wilshotton/di-cast",
     "author": {

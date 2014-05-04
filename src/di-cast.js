@@ -101,18 +101,6 @@
             }
         }
 
-//        function sequence() {
-//
-//            return Array.prototype.reduce.call(
-//                Array.prototype.slice.call(arguments).reverse(),
-//                function(composite, fn) {
-//                    return function() {
-//                        return composite(fn.apply(null, arguments));
-//                    };
-//                }
-//            );
-//        }
-
         /**
          * A custom Error class for the dependency injector.
          *
@@ -255,9 +243,6 @@
         /**
          * A JavaScript dependency injector.
          *
-         * Injects dependencies via constructor arguments and
-         * public properties prefixed with an initial value set to '{I}'.
-         *
          * @class DiCast
          * @constructor
          */
@@ -282,7 +267,7 @@
             }
 
             /**
-             * Initialises a mapping identifier and returns the options for creating a mapping.
+             * Initialises a mapping key and returns the different methods for creating a mapping.
              *
              * @method map
              * @for DiCast
@@ -301,22 +286,21 @@
                  *
                  * @class MapOptions
                  * @constructor
-                 *
-                 * @TODO: An Object can't really be a assigned to @constructor
                  */
-                return {
+                function MapOptions() {
 
                     /**
-                     * Maps a key to a factory mapping.
+                     * Maps a key to a factory function.
                      *
                      * @method toFactory
-                     * @param {Object} config The config settings for the mapping.
+                     * @param {Object} config The config options for the mapping.
                      *  @param {Function} config.target The factory function.
-                     *  @param {Array} [config.api] The interface definition for duck typing.
+                     *  @param {Array} [config.api] An interface definition for duck typing.
+                     *  @param {Boolean} [config.isSingleton] If the mapping should be treated as a singleton.
                      *  @param {Array} [config.using] Any constructor dependencies.
                      * @returns {DiCast} A reference back to the DiCast instance.
                      */
-                    toFactory: function(config) {
+                    this.toFactory = function(config) {
 
                         validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
                         validateType(config.target, 'Function', INVALID_TARGET);
@@ -330,20 +314,20 @@
                         });
 
                         return _injector;
-                    },
+                    };
 
                     /**
-                     * Maps a key to a constructor function mapping.
+                     * Maps a key to a constructor function.
                      *
                      * @method toType
-                     * @param {Object} config The config settings for the mapping.
+                     * @param {Object} config The config options for the mapping.
                      *  @param {Function} config.target The factory function.
-                     *  @param {Array} [config.api] The interface definition for duck typing.
-                     *  @param {Array} [config.using] Any constructor dependencies.
+                     *  @param {Array} [config.api] An interface definition for duck typing.
                      *  @param {Boolean} [config.isSingleton] If the mapping should be treated as a singleton.
+                     *  @param {Array} [config.using] Any constructor dependencies.
                      * @returns {DiCast} A reference back to the DiCast instance.
                      */
-                    toType: function(config) {
+                    this.toType = function(config) {
 
                         validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
                         validateType(config.target, 'Function', INVALID_TARGET);
@@ -358,17 +342,18 @@
                         });
 
                         return _injector;
-                    },
+                    };
 
                     /**
-                     * Maps a key to a value mapping.
+                     * Maps a key to a value.
                      *
                      * @method toValue
-                     * @param {Object} config The config settings for the mapping.
+                     * @param {Object} config The config options for the mapping.
+                     *  @param {*} config.target The value.
                      *  @param {Array} [config.api] The interface definition for duck typing.
                      * @returns {DiCast} A reference back to the DiCast instance.
                      */
-                    toValue: function(config) {
+                    this.toValue = function(config) {
 
                         validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
 
@@ -386,19 +371,21 @@
                         });
 
                         return _injector;
-                    }
-                };
+                    };
+                }
+
+                return new MapOptions();
             };
 
             /**
-             * Returns true if a mapping exists.
+             * Check to see if the injector has a mapping for a given key.
              *
              * If no mapping exists and DiCast has a parent then resolution is deferred to the parent.
              *
              * @method has
              * @for DiCast
              * @param {String} key The mapping key.
-             * @return {Boolean} true if a mapping exists.
+             * @return {Boolean} true if a mapping is found.
              */
             this.has = function(key) {
 
@@ -408,13 +395,13 @@
             };
 
             /**
-             * Returns a resolved mapping for the given key.
+             * Returns a fully resolved target for the given key as described by the mapping options.
              *
-             * If no mapping is found an Error is thrown.
+             * If no mapping is found an Injection Error is thrown.
              *
              * @method get
              * @param {String} key The mapping key.
-             * @return {*} The dependency.
+             * @return {*} The resolved target.
              */
             this.get = function(key) {
 
@@ -442,7 +429,7 @@
             };
 
             /**
-             * Remove a mapping.
+             * Removes a mapping from the local Injector scope.
              *
              * @method remove
              * @param {String} key The mapping key.
@@ -472,11 +459,11 @@
             };
 
             /**
-             * Creates a factory from the supplied target with all it's dependencies resolved.
+             * Returns the result of the target factory function with all dependencies resolved.
              *
              * @method resolveFactory
-             * @param {Function} target The target Function.
-             * @returns {Object} The factory object.
+             * @param {Function} target The factory function.
+             * @returns {Object} The injecteed result of invoking the factory function.
              */
             this.resolveFactory = function(target) {
 
@@ -492,11 +479,11 @@
             };
 
             /**
-             * Creates an instance from the supplied target with all it's dependencies resolved.
+             * Returns an instance of the target constructor function with all it's dependencies resolved.
              *
              * @method resolveType
-             * @param {Function} target The target Function.
-             * @returns {Object} A injected instance of the target Function.
+             * @param {Function} target The constructor function.
+             * @returns {Object} An injected instance of the constructor function.
              */
             this.resolveType = function(target) {
 
@@ -513,11 +500,11 @@
             };
 
             /**
-             * Resolves the property dependencies defined in the target Object.
+             * Resolves the property dependencies defined in the target object.
              *
              * @method resolveValue
-             * @param {Object} target The target Object.
-             * @returns {Object} The injected Object.
+             * @param {Object} target The target object.
+             * @returns {Object} The injected object.
              */
             this.resolveValue = function(target) {
 

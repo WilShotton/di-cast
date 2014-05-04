@@ -1,8 +1,8 @@
-# Di-Cast
+# DiCast
 A JavaScript dependency injector for Node.js and the Browser.
 
 ## Set up.
-Di-Cast can be used in AMD, Browser and CommonJS environments.
+DiCast can be used in AMD, Browser and CommonJS environments.
 
 ##### AMD
 
@@ -233,13 +233,13 @@ injector.get('notTyped');
 ```
 
 ## Nested injection.
-Di-Cast instances can take an optional parent injector constructor argument. If an injector with a parent cannot resolve a dependency in it's local scope it will look in the parental scope before throwing an error.
+DiCast instances can take an optional parent injector constructor argument. If an injector with a parent cannot resolve a dependency in it's local scope it will look in the parental scope before throwing an error.
 
 Dependencies with the same name as a dependency in the parental scope will overwrite in the local scope but will not affect the parent scope.
 
 
 ## Injection errors.
-Di-Cast has a custom error type with the following properties:
+DiCast has a custom error type with the following properties:
 
 __stack__ The stack trace for the error.
 

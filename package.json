@@ -1,15 +1,15 @@
 {
-    "name": "Di-cast",
+    "name": "DiCast",
     "description": "A simple JavaScript dependency injector.",
     "version": "0.0.5",
     "main": "src/di-cast.js",
-    "homepage": "https://bitbucket.org/wilshotton/di-cast",
+    "homepage": "https://github.com/WilShotton/di-cast",
     "author": {
         "name": "Wil Shotton"
     },
     "repository": {
         "type": "git",
-        "url": "https://wilshotton@bitbucket.org/wilshotton/di-cast.git"
+        "url": "https://github.com/WilShotton/di-cast"
     },
     "engines": {
         "node": ">=0.8.0"

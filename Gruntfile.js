@@ -19,7 +19,8 @@ module.exports = function(grunt) {
 
             bin: {
                 complexity: 'bin/complexity',
-                coverage: 'bin/coverage'
+                coverage: 'bin/coverage',
+                docs: 'bin/docs'
             },
 
             server: {
@@ -137,10 +138,8 @@ module.exports = function(grunt) {
                 options: jsHintOptions,
 
                 src: [
-                    'src/**/*.js',
-                    'tests/**/*.js',
-
-                    '!src/libs/*'
+                    '<%= meta.js.src %>/**/*.js',
+                    '<%= meta.js.tests %>/**/*.js'
                 ]
             }
         },
@@ -166,7 +165,7 @@ module.exports = function(grunt) {
                   report: 'gzip'
                 },
                 files: {
-                    'dist/di-cast.min.js': ['src/di-cast.js']
+                    'dist/di-cast.min.js': ['<%= meta.js.src %>/di-cast.js']
                 }
             }
         },
@@ -175,7 +174,7 @@ module.exports = function(grunt) {
 
             all: {
 
-                files: ['src/**/*'],
+                files: ['<%= meta.js.src %>/**/*'],
                 tasks: ['default']
             }
         },
@@ -185,9 +184,10 @@ module.exports = function(grunt) {
                 name: '<%= package.name %>',
                 description: '<%= package.description %>',
                 version: '<%= package.version %>',
+                logo: '',
                 options: {
-                    paths: 'src/',
-                    outdir: 'bin/docs/'
+                    paths: '<%= meta.js.src %>/',
+                    outdir: '<%= meta.bin.docs %>'
                 }
             }
         }

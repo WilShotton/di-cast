@@ -1,8 +1,14 @@
 {
     "name": "di-cast",
     "description": "A simple JavaScript dependency injector.",
-    "version": "0.0.5",
+    "version": "0.1.0",
     "main": "src/di-cast.js",
+    "license": "MIT",
+    "keywords": [
+        "dependency",
+        "injection",
+        "javascript"
+    ],
     "scripts": [
         "src/di-cast.js"
     ],
@@ -16,6 +22,5 @@
         "package.json",
         "README.md"
     ],
-    "license": "MIT",
     "_source": "https://github.com/WilShotton/di-cast"
 }

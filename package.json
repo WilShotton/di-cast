@@ -1,11 +1,18 @@
 {
-  "name": "DiCast",
+  "name": "di-cast",
   "description": "A simple JavaScript dependency injector.",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "main": "src/di-cast.js",
+  "license": "MIT",
+  "keywords": [
+    "dependency",
+    "injection",
+    "javascript"
+  ],
   "homepage": "https://github.com/WilShotton/di-cast",
   "author": {
-    "name": "Wil Shotton"
+    "name": "Wil Shotton",
+    "email": "wil.shotton@gmail.com"
   },
   "repository": {
     "type": "git",

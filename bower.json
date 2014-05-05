@@ -1,5 +1,5 @@
 {
-    "name": "Di-cast",
+    "name": "di-cast",
     "description": "A simple JavaScript dependency injector.",
     "version": "0.0.4",
     "main": "src/di-cast.js",
@@ -9,6 +9,7 @@
     "ignore": [
         "bin/",
         "node_modules/",
+        "src/",
         "tests/",
         "Gruntfile.js",
         "karma.conf.js",

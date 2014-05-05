@@ -1,8 +1,3 @@
-/**
- * Created by wil on 15/01/2014.
- */
-
-
 
 module.exports = function(grunt) {
 
@@ -58,6 +53,17 @@ module.exports = function(grunt) {
                         }];
                     }
                 }
+            }
+        },
+
+        copy: {
+            dist: {
+                files: [{
+                    cwd: '<%= meta.js.src %>/',
+                    src: 'di-cast.js',
+                    dest: '<%= meta.js.dist %>/',
+                    expand: true
+                }]
             }
         },
 
@@ -117,11 +123,7 @@ module.exports = function(grunt) {
 
                         requireConfig: {
 
-                            baseUrl: './<%= meta.js.src %>/',
-
-                            paths: {
-                                jquery: '/libs/jquery.min'
-                            }
+                            baseUrl: './<%= meta.js.src %>/'
                         }
                     }
                 }
@@ -164,7 +166,7 @@ module.exports = function(grunt) {
                   report: 'gzip'
                 },
                 files: {
-                    'dist/di-cast.js': ['src/di-cast.js']
+                    'dist/di-cast.min.js': ['src/di-cast.js']
                 }
             }
         },
@@ -195,6 +197,7 @@ module.exports = function(grunt) {
     // https://github.com/maenu/grunt-template-jasmine-istanbul-example/tree/requirejs-client
 
     grunt.loadNpmTasks('grunt-contrib-connect');
+    grunt.loadNpmTasks('grunt-contrib-copy');
     grunt.loadNpmTasks('grunt-contrib-jasmine');
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-contrib-watch');
@@ -206,5 +209,5 @@ module.exports = function(grunt) {
     grunt.registerTask('doc', ['yuidoc']);
     grunt.registerTask('test', ['connect:coverage', 'jasmine:coverage']);
     grunt.registerTask('default', ['jshint']);
-    grunt.registerTask('dist', ['jshint', 'plato', 'uglify:dist', 'jasmine:dist']);
+    grunt.registerTask('dist', ['jshint', 'plato', 'copy:dist', 'uglify:dist', 'jasmine:dist']);
 };

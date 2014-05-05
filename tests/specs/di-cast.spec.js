@@ -357,7 +357,7 @@ define(
                 function myFactory(MyName) {
                     return function MyConstructor() {
                         this.MyName = MyName;
-                    }
+                    };
                 }
 
                 beforeEach(function() {
@@ -486,7 +486,7 @@ define(
                                 this.getValue = function() {
                                     return MyValue;
                                 };
-                            }
+                            };
                         },
                         using: ['MyType', 'MySingleton', 'MyValue']
                     });
@@ -544,7 +544,7 @@ define(
                     });
 
                     expect(function() {
-                        injector.get('myNullFactory')
+                        injector.get('myNullFactory');
                     }).toThrow(INVALID_FACTORY);
                 });
 
@@ -1131,11 +1131,9 @@ define(
                     };
                 }
 
-                function MyDependantType(myFactory, myType, mySingletonType, myValue) {
+                function MyDependantType(MyFactory, myType, mySingletonType, myValue) {
 
-                    var instance = new myFactory();
-
-                    this.myFactoryInstance = instance;
+                    this.myFactoryInstance = new MyFactory();
                     this.myType = myType;
                     this.mySingletonType = mySingletonType;
                     this.myValue = myValue;
@@ -1148,11 +1146,9 @@ define(
                     };
                 }
 
-                function MyNestedDependantType(myDependantFactory, myDependantType) {
+                function MyNestedDependantType(MyDependantFactory, myDependantType) {
 
-                    var instance = new myDependantFactory();
-
-                    this.myFactoryInstance = instance;
+                    this.myFactoryInstance = new MyDependantFactory();
                     this.myType = myDependantType;
                 }
 

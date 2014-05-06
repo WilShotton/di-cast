@@ -1,4 +1,4 @@
-# DiCast
+# DiCast [![Build Status](https://travis-ci.org/WilShotton/di-cast.svg?branch=master)](https://travis-ci.org/WilShotton/di-cast)
 A JavaScript dependency injector for Node.js and the Browser.
 
 ## Set up.

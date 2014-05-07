@@ -162,7 +162,8 @@ module.exports = function(grunt) {
         uglify: {
             dist: {
                 options: {
-                  report: 'gzip'
+                    report: 'gzip',
+                    sourceMap: true
                 },
                 files: {
                     'dist/di-cast.min.js': ['<%= meta.js.src %>/di-cast.js']

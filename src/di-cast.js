@@ -273,6 +273,98 @@
             }
 
             /**
+             *
+             * @class MapOptions
+             * @constructor
+             */
+            function MapOptions(key) {
+
+                /**
+                 * Maps a key to a factory function.
+                 *
+                 * @method toFactory
+                 * @param {Object} config The config options for the mapping.
+                 *  @param {Function} config.target The factory function.
+                 *  @param {Array} [config.api] An interface definition for duck typing.
+                 *  @param {Boolean} [config.isSingleton] If the mapping should be treated as a singleton.
+                 *  @param {Array} [config.using] Any constructor dependencies.
+                 * @returns {DiCast} A reference back to the DiCast instance.
+                 */
+                this.toFactory = function(config) {
+
+                    validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
+                    validateType(config.target, 'Function', INVALID_TARGET);
+
+                    mappings[key] = mapping(config, {
+
+                        injector: _injector,
+
+                        name: key,
+                        resolver: makeFactory
+                    });
+
+                    return _injector;
+                };
+
+                /**
+                 * Maps a key to a constructor function.
+                 *
+                 * @method toType
+                 * @param {Object} config The config options for the mapping.
+                 *  @param {Function} config.target The factory function.
+                 *  @param {Array} [config.api] An interface definition for duck typing.
+                 *  @param {Boolean} [config.isSingleton] If the mapping should be treated as a singleton.
+                 *  @param {Array} [config.using] Any constructor dependencies.
+                 * @returns {DiCast} A reference back to the DiCast instance.
+                 */
+                this.toType = function(config) {
+
+                    validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
+                    validateType(config.target, 'Function', INVALID_TARGET);
+
+                    mappings[key] = mapping(config, {
+
+                        injector: _injector,
+
+                        name: key,
+                        resolver: makeConstructor,
+                        Builder: makeBuilder(config.target)
+                    });
+
+                    return _injector;
+                };
+
+                /**
+                 * Maps a key to a value.
+                 *
+                 * @method toValue
+                 * @param {Object} config The config options for the mapping.
+                 *  @param {*} config.target The value.
+                 *  @param {Array} [config.api] The interface definition for duck typing.
+                 * @returns {DiCast} A reference back to the DiCast instance.
+                 */
+                this.toValue = function(config) {
+
+                    validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
+
+                    if (!config.hasOwnProperty('target')) {
+                        throw new InjectionError(MISSING_TARGET, {key: key});
+                    }
+
+                    mappings[key] = mapping(config, {
+
+                        injector: _injector,
+
+                        name: key,
+                        resolver: makeValue,
+                        using: parseProps(config.target)
+                    });
+
+                    return _injector;
+                };
+            }
+
+            /**
              * Initialises a mapping key and returns the different methods for creating a mapping.
              *
              * @method map
@@ -288,99 +380,7 @@
                     throw new InjectionError(MAPPING_EXISTS, {key: key});
                 }
 
-                /**
-                 *
-                 * @class MapOptions
-                 * @constructor
-                 */
-                function MapOptions() {
-
-                    /**
-                     * Maps a key to a factory function.
-                     *
-                     * @method toFactory
-                     * @param {Object} config The config options for the mapping.
-                     *  @param {Function} config.target The factory function.
-                     *  @param {Array} [config.api] An interface definition for duck typing.
-                     *  @param {Boolean} [config.isSingleton] If the mapping should be treated as a singleton.
-                     *  @param {Array} [config.using] Any constructor dependencies.
-                     * @returns {DiCast} A reference back to the DiCast instance.
-                     */
-                    this.toFactory = function(config) {
-
-                        validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
-                        validateType(config.target, 'Function', INVALID_TARGET);
-
-                        mappings[key] = mapping(config, {
-
-                            injector: _injector,
-
-                            name: key,
-                            resolver: makeFactory
-                        });
-
-                        return _injector;
-                    };
-
-                    /**
-                     * Maps a key to a constructor function.
-                     *
-                     * @method toType
-                     * @param {Object} config The config options for the mapping.
-                     *  @param {Function} config.target The factory function.
-                     *  @param {Array} [config.api] An interface definition for duck typing.
-                     *  @param {Boolean} [config.isSingleton] If the mapping should be treated as a singleton.
-                     *  @param {Array} [config.using] Any constructor dependencies.
-                     * @returns {DiCast} A reference back to the DiCast instance.
-                     */
-                    this.toType = function(config) {
-
-                        validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
-                        validateType(config.target, 'Function', INVALID_TARGET);
-
-                        mappings[key] = mapping(config, {
-
-                            injector: _injector,
-
-                            name: key,
-                            resolver: makeConstructor,
-                            Builder: makeBuilder(config.target)
-                        });
-
-                        return _injector;
-                    };
-
-                    /**
-                     * Maps a key to a value.
-                     *
-                     * @method toValue
-                     * @param {Object} config The config options for the mapping.
-                     *  @param {*} config.target The value.
-                     *  @param {Array} [config.api] The interface definition for duck typing.
-                     * @returns {DiCast} A reference back to the DiCast instance.
-                     */
-                    this.toValue = function(config) {
-
-                        validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
-
-                        if (!config.hasOwnProperty('target')) {
-                            throw new InjectionError(MISSING_TARGET, {key: key});
-                        }
-
-                        mappings[key] = mapping(config, {
-
-                            injector: _injector,
-
-                            name: key,
-                            resolver: makeValue,
-                            using: parseProps(config.target)
-                        });
-
-                        return _injector;
-                    };
-                }
-
-                return new MapOptions();
+                return new MapOptions(key);
             };
 
             /**

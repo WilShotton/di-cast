@@ -10,49 +10,52 @@
      */
     function factory() {
 
-        var INVALID_PARENT = 'The parent injector must be an injector',
-            INVALID_TARGET = 'The target must be an Object or Function',
-            INCORRECT_METHOD_SIGNATURE = 'Incorrect method signature supplied',
-            INVALID_KEY_TYPE = 'The key must be a String',
-
-            MISSING_TARGET = {
-                message: 'The target must be specified',
-                info: 'The mapping for {{key}} must have a target property'
+        var CIRCULAR_DEPENDENCY = {
+                message: 'Circular dependency',
+                info: '{{target}} has a dependency that depends on {{target}}'
             },
 
-            MAPPING_EXISTS = {
-                message: 'A mapping already exists',
-                info: 'The mapping {{key}} is already in use'
-            },
-
-            NO_MAPPING = {
-                message: 'No mapping found',
-                info: 'No mapping for [{{key}}] found'
-            },
-
-            MAPPING_HAS_DEPENDANTS = {
-                message: 'The mapping has dependants',
-                info: '{{key}} could not be removed as other mapping depend on it'
-            },
+            INCORRECT_METHOD_SIGNATURE = 'Incorrect method signature',
 
             INTERFACE_MEMBER_MISSING = {
-                message: 'The mapping is missing a required member',
+                message: 'Interface missing member',
                 info: 'The mapping must have a member called {{name}}'
             },
 
             INTERFACE_METHOD_ARITY_MISMATCH = {
-                message: 'The mapping has an interface method with an incorrect arity',
+                message: 'Interface method with arity mismatch',
                 info: 'The method signature for {{name}} requires {{arity}} arguments'
             },
 
             INVALID_FACTORY = {
-                message: 'The factory function must return a value',
+                message: 'Invalid factory',
                 info: '{{name}} must return a value'
             },
 
-            CIRCULAR_DEPENDENCY = {
-                message: 'Can not resolve a circular dependency',
-                info: '{{target}} has a dependency that depends on {{target}}'
+            INVALID_KEY_TYPE = 'The key must be a String',
+
+            INVALID_PARENT = 'The parent injector must be an injector',
+
+            INVALID_TARGET = 'The target must be an Object or Function',
+
+            MAPPING_EXISTS = {
+                message: 'Mapping exists',
+                info: 'The mapping {{key}} is already in use'
+            },
+
+            MAPPING_HAS_DEPENDANTS = {
+                message: 'Mapping has dependants',
+                info: '{{key}} could not be removed as other mapping depend on it'
+            },
+
+            MISSING_TARGET = {
+                message: 'Missing target',
+                info: 'The mapping for {{key}} must have a target property'
+            },
+
+            NO_MAPPING = {
+                message: 'No mapping',
+                info: 'No mapping for [{{key}}] found'
             },
 
             I_POINT = '{I}',
@@ -122,10 +125,13 @@
                 stack != null ? stack.split('\n').slice(1).join('\n') : ''
             );
 
-            this.message = template.message;
-            this.info = template.info.replace(/\{\{(\w+)\}\}/g, function(_, match) {
-                return context[match];
-            });
+            this.message = ''.concat(
+                template.message.toUpperCase(),
+                ': ',
+                template.info.replace(/\{\{(\w+)\}\}/g, function(_, match) {
+                    return context[match];
+                })
+            );
         }
         InjectionError.prototype = new Error();
         InjectionError.prototype.name = 'InjectionError';

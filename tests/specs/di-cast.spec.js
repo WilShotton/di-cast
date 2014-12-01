@@ -13,20 +13,7 @@ define(
 
         "use strict";
 
-        var INVALID_PARENT = 'The parent injector must be an injector',
-            INVALID_TARGET = 'The target must be an Object or Function',
-            INCORRECT_METHOD_SIGNATURE = 'Incorrect method signature supplied',
-            INVALID_KEY_TYPE = 'The key must be a String',
-
-            MISSING_TARGET = 'The target must be specified',
-            MAPPING_EXISTS = 'A mapping already exists',
-            NO_MAPPING = 'No mapping found',
-            MAPPING_HAS_DEPENDANTS = 'The mapping has dependants',
-            INTERFACE_MEMBER_MISSING = 'The mapping is missing a required member',
-            INTERFACE_METHOD_ARITY_MISMATCH = 'The mapping has an interface method with an incorrect arity',
-            INVALID_FACTORY = 'The factory function must return a value',
-
-            CIRCULAR_DEPENDENCY = 'Can not resolve a circular dependency';
+        var NO_MAPPING = 'No mapping';
 
         function is(value, type) {
             return Object.prototype.toString
@@ -53,19 +40,7 @@ define(
 
                 } catch(error) {
 
-                    expect(error.message).toBe(NO_MAPPING);
-                }
-            });
-
-            it(' should have more info about the error', function() {
-
-                try {
-
-                    injector.get('missing');
-
-                } catch(error) {
-
-                    expect(error.info).toBe('No mapping for [missing] found');
+                    expect(error.message).toBeDefined();
                 }
             });
 
@@ -103,7 +78,7 @@ define(
 
                     expect(function() {
                         new Injector({});
-                    }).toThrow(INVALID_PARENT);
+                    }).toThrow();
                 });
             });
 
@@ -175,14 +150,14 @@ define(
 
                     expect(function() {
                         injector.map({});
-                    }).toThrow(INVALID_KEY_TYPE);
+                    }).toThrow();
                 });
 
                 it(' should throw if a key is already in use', function() {
 
                     expect(function() {
                         injector.map('MyMapping');
-                    }).toThrow(MAPPING_EXISTS);
+                    }).toThrow();
                 });
             });
 
@@ -221,7 +196,7 @@ define(
 
                     expect(function() {
                         injector.has({});
-                    }).toThrow(INVALID_KEY_TYPE);
+                    }).toThrow();
                 });
             });
 
@@ -261,14 +236,14 @@ define(
 
                     expect(function() {
                         injector.get({});
-                    }).toThrow(INVALID_KEY_TYPE);
+                    }).toThrow();
                 });
 
                 it(' should throw if no mapping exists', function() {
 
                     expect(function() {
                         injector.get('NoMapping');
-                    }).toThrow(NO_MAPPING);
+                    }).toThrow();
                 });
             });
 
@@ -332,7 +307,7 @@ define(
 
                     expect(function() {
                         injector.remove('MyType');
-                    }).toThrow(MAPPING_HAS_DEPENDANTS);
+                    }).toThrow();
                 });
 
                 it(' should return a reference to the injector', function() {
@@ -405,14 +380,14 @@ define(
 
                     expect(function() {
                         injector.map('MyFactory1').toFactory();
-                    }).toThrow(INCORRECT_METHOD_SIGNATURE);
+                    }).toThrow();
                 });
 
                 it(' should throw if the config does not have a target property', function() {
 
                     expect(function() {
                         injector.map('MyFactory1').toFactory({});
-                    }).toThrow(INVALID_TARGET);
+                    }).toThrow();
                 });
 
                 it(' should throw if config.target is not a function', function() {
@@ -421,7 +396,7 @@ define(
                         injector.map('MyFactory1').toFactory({
                             target: {}
                         });
-                    }).toThrow(INVALID_TARGET);
+                    }).toThrow();
                 });
             });
 
@@ -545,7 +520,7 @@ define(
 
                     expect(function() {
                         injector.get('myNullFactory');
-                    }).toThrow(INVALID_FACTORY);
+                    }).toThrow();
                 });
 
                 it(' should throw for missing dependencies', function() {
@@ -557,7 +532,7 @@ define(
 
                     expect(function() {
                         injector.get('MyMissingFactory');
-                    }).toThrow(NO_MAPPING);
+                    }).toThrow();
                 });
             });
 
@@ -596,14 +571,14 @@ define(
 
                     expect(function() {
                         injector.map('MyType1').toType();
-                    }).toThrow(INCORRECT_METHOD_SIGNATURE);
+                    }).toThrow();
                 });
 
                 it(' should should throw if the config does not have a target property', function() {
 
                     expect(function() {
                         injector.map('MyType1').toType({});
-                    }).toThrow(INVALID_TARGET);
+                    }).toThrow();
                 });
 
                 it(' should throw if config.target is not a function', function() {
@@ -612,7 +587,7 @@ define(
                         injector.map('MyType1').toType({
                             target: {}
                         });
-                    }).toThrow(INVALID_TARGET);
+                    }).toThrow();
                 });
             });
 
@@ -765,14 +740,14 @@ define(
 
                     expect(function() {
                         injector.map('MyType1').toValue();
-                    }).toThrow(INCORRECT_METHOD_SIGNATURE);
+                    }).toThrow();
                 });
 
                 it(' should should throw if the config does not have a target property', function() {
 
                     expect(function() {
                         injector.map('MyType1').toValue({});
-                    }).toThrow(MISSING_TARGET);
+                    }).toThrow();
                 });
             });
 
@@ -1064,7 +1039,7 @@ define(
 
                     expect(function() {
                         injector.get('MyMissing');
-                    }).toThrow(INTERFACE_MEMBER_MISSING);
+                    }).toThrow();
                 });
 
                 it(' should throw if an interface method has the wrong arity', function() {
@@ -1101,7 +1076,7 @@ define(
 
                     expect(function() {
                         injector.get('MyMissing');
-                    }).toThrow(INTERFACE_METHOD_ARITY_MISMATCH);
+                    }).toThrow();
                 });
             });
 
@@ -1358,7 +1333,7 @@ define(
 
                     expect(function() {
                         injector.get('MyMissingValue');
-                    }).toThrow(NO_MAPPING);
+                    }).toThrow();
                 });
             });
 
@@ -1394,7 +1369,7 @@ define(
 
                     expect(function() {
                         injector.get('MyTypeA');
-                    }).toThrow(CIRCULAR_DEPENDENCY);
+                    }).toThrow();
 
                     expect(function() {
                         injector.get('MyControl');
@@ -1429,7 +1404,7 @@ define(
 
                     expect(function() {
                         injector.get('MyTypeA');
-                    }).toThrow(CIRCULAR_DEPENDENCY);
+                    }).toThrow();
                 });
 
                 it(' should continue working after a circular dependency error has been handled', function() {
@@ -1463,7 +1438,7 @@ define(
 
                     expect(function() {
                         injector.get('MyTypeA');
-                    }).toThrow(CIRCULAR_DEPENDENCY);
+                    }).toThrow();
 
                     expect(injector.get('MyTypeAA').MyTypeC.constructor.name).toBe('MyTypeC');
                 });
@@ -1569,14 +1544,14 @@ define(
 
                     expect(function() {
                         injector.resolveFactory(MyFactory, 'MyMissingArg');
-                    }).toThrow(NO_MAPPING);
+                    }).toThrow();
                 });
 
                 it(' should throw if the target is not a function', function() {
 
                     expect(function() {
                         injector.resolveFactory('MyFactory');
-                    }).toThrow(INVALID_TARGET);
+                    }).toThrow();
                 });
 
                 it(' should throw if the factory function does not return a value', function() {
@@ -1611,14 +1586,14 @@ define(
 
                     expect(function() {
                         injector.resolveType(MyType, 'MyMissingArg');
-                    }).toThrow(NO_MAPPING);
+                    }).toThrow();
                 });
 
                 it(' should throw if the target is not a function', function() {
 
                     expect(function() {
                         injector.resolveType('MyType');
-                    }).toThrow(INVALID_TARGET);
+                    }).toThrow();
                 });
             });
 
@@ -1643,7 +1618,7 @@ define(
 
                     expect(function() {
                         injector.resolveValue('myValue');
-                    }).toThrow(INVALID_TARGET);
+                    }).toThrow();
                 });
             });
         });

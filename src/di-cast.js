@@ -2,8 +2,6 @@
 
     "use strict";
 
-    var deps = [];
-
     /**
      * @module DiCast
      * @returns {DiCast}
@@ -534,19 +532,15 @@
     /* istanbul ignore next */
     if (typeof define === 'function' && define.amd) {
 
-        define(deps, factory);
+        define(factory);
 
     } else if (typeof module !== 'undefined' && module.exports) {
 
-        module.exports = factory.apply(factory, deps.map(function(dep) {
-            return require(dep);
-        }));
+        module.exports = factory();
 
     } else {
 
-        root['DiCast'] = factory.apply(factory, deps.map(function(dep) {
-            return root[dep];
-        }));
+        root['DiCast'] = factory();
     }
 
 })(this);

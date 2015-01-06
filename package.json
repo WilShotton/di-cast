@@ -1,7 +1,7 @@
 {
   "name": "di-cast",
   "description": "A simple JavaScript dependency injector.",
-  "version": "0.1.2",
+  "version": "0.1.5",
   "main": "src/di-cast.js",
   "license": "MIT",
   "keywords": [

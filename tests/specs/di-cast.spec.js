@@ -536,6 +536,54 @@ define(
                 });
             });
 
+            // toLens()
+            describe('toLens', function() {
+
+                var lensConfig = {
+                    target: 'MyTarget.a.b.c'
+                };
+
+                beforeEach(function() {
+
+                    injector = new Injector();
+                    injector.map('MyTarget').toValue({
+                        target: {
+                            a: {
+                                b: {
+                                    c: 'C'
+                                }
+                            }
+                        }
+                    });
+                });
+
+                it(' should return a reference to the injector', function() {
+
+                    expect(injector.map('MyLens').toLens(lensConfig)).toBe(injector);
+                });
+
+                it(' should throw if no config object is provided', function() {
+
+                    expect(function() {
+                        injector.map('MyLens').toLens();
+                    }).toThrow();
+                });
+
+                it(' should should throw if the config does not have a target property', function() {
+
+                    expect(function() {
+                        injector.map('MyLens').toLens({});
+                    }).toThrow();
+                });
+
+                it(' should resolve to a member of another dependency', function() {
+
+                    injector.map('MyLens').toLens(lensConfig);
+
+                    expect(injector.get('MyLens')).toBe('C');
+                });
+            });
+
             // toType()
             describe('toType', function() {
 
@@ -1558,6 +1606,8 @@ define(
 
                 });
             });
+
+            // @TODO: resolveLens()
 
             describe('resolveType()', function() {
 

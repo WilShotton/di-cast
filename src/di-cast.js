@@ -232,6 +232,22 @@
             return vo.instance;
         }
 
+        function makeLens(vo) {
+
+            if (!vo.hasOwnProperty('instance')) {
+
+                var path = vo.target.split('.');
+
+                vo.instance = path.reduce(function(previous, current) {
+
+                    return previous[current];
+
+                }, vo.injector.get(path.shift()));
+            }
+
+            return vo.instance;
+        }
+
         function makeValue(vo) {
 
             if (!vo.hasOwnProperty('instance')) {
@@ -299,6 +315,30 @@
 
                         name: key,
                         resolver: makeFactory
+                    });
+
+                    return _injector;
+                };
+
+                /**
+                 * Maps a key to a member of another dependency.
+                 *
+                 * @method toLens
+                 * @param {Object} config The config options for the mapping.
+                 *  @param {String} config.target The dot delimited path to the dependency.
+                 * @returns {DiCast} A reference back to the DiCast instance.
+                 */
+                this.toLens = function(config) {
+
+                    validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
+                    validateType(config.target, 'String', INVALID_TARGET);
+
+                    mappings[key] = mapping(config, {
+
+                        injector: _injector,
+
+                        name: key,
+                        resolver: makeLens
                     });
 
                     return _injector;

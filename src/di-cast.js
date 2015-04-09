@@ -507,7 +507,7 @@
              *
              * @method resolveFactory
              * @param {Function} target The factory function.
-             * @returns {Object} The injecteed result of invoking the factory function.
+             * @returns {Object} The injected result of invoking the factory function.
              */
             this.resolveFactory = function(target) {
 
@@ -519,6 +519,25 @@
 
                     target: target,
                     using: slice.call(arguments, 1)
+                }));
+            };
+
+            /**
+             * Returns the result of the target factory function with all dependencies resolved.
+             *
+             * @method resolveLens
+             * @param {String} target The target dependency and path.
+             * @returns {*} The resolved dependency.
+             */
+            this.resolveLens = function(target) {
+
+                validateType(target, 'String', INVALID_TARGET);
+
+                return makeLens(mapping({
+
+                    injector: _injector,
+
+                    target: target
                 }));
             };
 

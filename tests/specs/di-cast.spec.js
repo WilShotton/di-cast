@@ -1607,7 +1607,29 @@ define(
                 });
             });
 
-            // @TODO: resolveLens()
+            describe('resolveLens()', function() {
+
+                beforeEach(function() {
+
+                    injector = new Injector();
+                    injector.map('MyTarget').toValue({
+                        target: {
+                            a: {
+                                b: {
+                                    c: 'C'
+                                }
+                            }
+                        }
+                    });
+                });
+
+                it(' should resolve the supplied target', function() {
+
+                    var instance = injector.resolveLens('MyTarget.a.b.c');
+
+                    expect(instance).toBe('C');
+                });
+            })
 
             describe('resolveType()', function() {
 

@@ -447,7 +447,7 @@
              * @param {String} key The mapping key.
              * @return {*} The resolved target.
              */
-           this.get = function(keys) {
+            this.get = function(keys) {
 
                 var instance = null;
 

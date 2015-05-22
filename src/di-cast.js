@@ -474,9 +474,8 @@
                 resolving.pop();
 
                 return properties.reduce(function(acc, property) {
-                    return acc[property]
+                    return acc[property];
                 }, instance);
-
             };
 
             /**

@@ -232,6 +232,22 @@
             return vo.instance;
         }
 
+        function makeLens(vo) {
+
+            if (!vo.hasOwnProperty('instance')) {
+
+                var path = vo.target.split('.');
+
+                vo.instance = path.reduce(function(previous, current) {
+
+                    return previous[current];
+
+                }, vo.injector.get(path.shift()));
+            }
+
+            return vo.instance;
+        }
+
         function makeValue(vo) {
 
             if (!vo.hasOwnProperty('instance')) {
@@ -299,6 +315,30 @@
 
                         name: key,
                         resolver: makeFactory
+                    });
+
+                    return _injector;
+                };
+
+                /**
+                 * Maps a key to a member of another dependency.
+                 *
+                 * @method toLens
+                 * @param {Object} config The config options for the mapping.
+                 *  @param {String} config.target The dot delimited path to the dependency.
+                 * @returns {DiCast} A reference back to the DiCast instance.
+                 */
+                this.toLens = function(config) {
+
+                    validateType(config, 'Object', INCORRECT_METHOD_SIGNATURE);
+                    validateType(config.target, 'String', INVALID_TARGET);
+
+                    mappings[key] = mapping(config, {
+
+                        injector: _injector,
+
+                        name: key,
+                        resolver: makeLens
                     });
 
                     return _injector;
@@ -407,9 +447,13 @@
              * @param {String} key The mapping key.
              * @return {*} The resolved target.
              */
-            this.get = function(key) {
+            this.get = function(keys) {
 
                 var instance = null;
+
+                var path = keys.split('.');
+                var key = path[0];
+                var properties = path.slice(1);
 
                 if (!_injector.has(key)) {
                     throw new InjectionError(NO_MAPPING, {key: key});
@@ -429,7 +473,9 @@
 
                 resolving.pop();
 
-                return instance;
+                return properties.reduce(function(acc, property) {
+                    return acc[property];
+                }, instance);
             };
 
             /**
@@ -467,7 +513,7 @@
              *
              * @method resolveFactory
              * @param {Function} target The factory function.
-             * @returns {Object} The injecteed result of invoking the factory function.
+             * @returns {Object} The injected result of invoking the factory function.
              */
             this.resolveFactory = function(target) {
 
@@ -479,6 +525,25 @@
 
                     target: target,
                     using: slice.call(arguments, 1)
+                }));
+            };
+
+            /**
+             * Returns the result of the target factory function with all dependencies resolved.
+             *
+             * @method resolveLens
+             * @param {String} target The target dependency and path.
+             * @returns {*} The resolved dependency.
+             */
+            this.resolveLens = function(target) {
+
+                validateType(target, 'String', INVALID_TARGET);
+
+                return makeLens(mapping({
+
+                    injector: _injector,
+
+                    target: target
                 }));
             };
 

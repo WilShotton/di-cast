@@ -1629,7 +1629,7 @@ define(
 
                     expect(instance).toBe('C');
                 });
-            })
+            });
 
             describe('resolveType()', function() {
 

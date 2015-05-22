@@ -447,9 +447,13 @@
              * @param {String} key The mapping key.
              * @return {*} The resolved target.
              */
-            this.get = function(key) {
+            this.get = function(keys) {
 
                 var instance = null;
+
+                var path = keys.split('.');
+                var key = path[0];
+                var properties = path.slice(1);
 
                 if (!_injector.has(key)) {
                     throw new InjectionError(NO_MAPPING, {key: key});
@@ -469,7 +473,10 @@
 
                 resolving.pop();
 
-                return instance;
+                return properties.reduce(function(acc, property) {
+                    return acc[property]
+                }, instance);
+
             };
 
             /**

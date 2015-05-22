@@ -473,14 +473,10 @@
 
                 resolving.pop();
 
-                if(properties.length > 0) {
+                return properties.reduce(function(acc, property) {
+                    return acc[property]
+                }, instance);
 
-                    return properties.reduce(function(a, p) {
-                        return a[p]
-                    }, instance);
-                }
-
-                return instance;
             };
 
             /**

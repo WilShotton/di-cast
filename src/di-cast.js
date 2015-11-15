@@ -71,7 +71,8 @@
                 resolver: null,
                 api: [],
                 Builder: null,
-                isSingleton: false
+                isSingleton: false,
+                defer: false
             };
 
             slice.call(arguments).forEach(function(source) {
@@ -302,6 +303,7 @@
                  *  @param {Array} [config.api] An interface definition for duck typing.
                  *  @param {Boolean} [config.isSingleton] If the mapping should be treated as a singleton.
                  *  @param {Array} [config.using] Any constructor dependencies.
+                 *  @param {Boolean} [config.defer] If the injector should defer to the parent injector.
                  * @returns {DiCast} A reference back to the DiCast instance.
                  */
                 this.toFactory = function(config) {
@@ -444,7 +446,7 @@
              * If no mapping is found an Injection Error is thrown.
              *
              * @method get
-             * @param {String} key The mapping key.
+             * @param {String} keys The mapping key.
              * @return {*} The resolved target.
              */
             this.get = function(keys) {
@@ -467,9 +469,21 @@
 
                 resolving.push(key);
 
-                instance = mappings.hasOwnProperty(key) ?
-                    mappings[key].resolver(mappings[key]) :
-                    parent.get(key);
+                if (mappings.hasOwnProperty(key)) {
+
+                    if (mappings[key].defer && parent.has(key)) {
+
+                        instance = parent.get(key);
+
+                    } else {
+
+                        instance = mappings[key].resolver(mappings[key]);
+                    }
+
+                } else {
+
+                    instance = parent.get(key);
+                }
 
                 resolving.pop();
 

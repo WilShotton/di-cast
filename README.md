@@ -109,6 +109,8 @@ __target__ The value to be returned. It can be anything. __Required.__
 
 __api__ An Array describing the value interface.
 
+__defer__ A Boolean to set whether resolution should be deferred to a parent injector.
+
 
 ## toType mappings.
 
@@ -140,6 +142,8 @@ __api__ An array describing the factory instance interface.
 __isSingleton__ An optional Boolean flag which, when set, will always return the same instance.
 
 __using__ An Array of mapping keys to inject into the factory as constructor arguments when it is instantiated. Dependencies will be resolved and injected lazily.
+
+__defer__ A Boolean to set whether resolution should be deferred to a parent injector.
 
 
 ## toFactory mappings.
@@ -176,6 +180,8 @@ __api__ An Array describing the factory instance interface.
 __isSingleton__ An optional Boolean flag which, when set, will always return the same result.
 
 __using__ An Array of mapping keys to inject into the factory.
+
+__defer__ A Boolean to set whether resolution should be deferred to a parent injector.
 
 
 ## Singleton mappings.

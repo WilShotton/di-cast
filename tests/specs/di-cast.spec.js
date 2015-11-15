@@ -232,6 +232,38 @@ define(
                     expect(child.get('MyValue')).toBe('Parent');
                 });
 
+                it(' should defer to the parent if the defer option is set and the parent has a mapping', function() {
+
+                    var parent = new Injector(),
+                        child = new Injector(parent);
+
+                    parent.map('MyValue').toValue({
+                        target: 'Parent'
+                    });
+
+                    child.map('MyValue').toValue({
+                        target: 'Child',
+                        defer: true
+                    });
+
+                    expect(child.get('MyValue')).toBe('Parent');
+                    //expect(true).toBe(true)
+                });
+
+                it(' should NOT defer to the parent if the defer option is set and the parent has NO mapping', function() {
+
+                    var parent = new Injector(),
+                        child = new Injector(parent);
+
+                    child.map('MyValue').toValue({
+                        target: 'Child',
+                        defer: true
+                    });
+
+                    expect(child.get('MyValue')).toBe('Child');
+                    //expect(true).toBe(true)
+                });
+
                 it(' should throw if the key is not a string', function() {
 
                     expect(function() {

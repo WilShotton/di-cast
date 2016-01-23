@@ -431,11 +431,17 @@
              * @method has
              * @for DiCast
              * @param {String} key The mapping key.
-             * @return {Boolean} true if a mapping is found.
+             * @param {Boolean} local Flag to check in the local injector scope only.
+             * @return {Boolean} true If the mapping exists.
              */
-            this.has = function(key) {
+            this.has = function(key, local) {
 
                 validateType(key, 'String', INVALID_KEY_TYPE);
+
+                if (local) {
+
+                    return mappings.hasOwnProperty(key) || false;
+                }
 
                 return (mappings.hasOwnProperty(key) || parent && parent.has(key)) || false;
             };

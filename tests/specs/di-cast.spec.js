@@ -44,6 +44,7 @@ define(
                 }
             });
 
+            // Note: This test fails in Karma
             it(' should have a stack trace', function() {
 
                 try {
@@ -52,8 +53,6 @@ define(
 
                 } catch(error) {
 
-                    // Pretty vague but PhantomJS based tests return a
-                    // different index to Karma based tests.
                     expect(error.stack.indexOf(NO_MAPPING)).toBeGreaterThan(-1);
                 }
             });
@@ -189,7 +188,19 @@ define(
                         target: 'Parent'
                     });
 
-                    expect(child.get('MyValue')).toBe('Parent');
+                    expect(child.has('MyValue')).toBe(true);
+                });
+
+                it(' should only look in the local scope if the local flag is set to true', function() {
+
+                    var parent = new Injector(),
+                        child = new Injector(parent);
+
+                    parent.map('MyValue').toValue({
+                        target: 'Parent'
+                    });
+
+                    expect(child.has('MyValue', true)).toBe(false);
                 });
 
                 it(' should throw if the key is not a string', function() {

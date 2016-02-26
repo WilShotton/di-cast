@@ -405,6 +405,22 @@
             }
 
             /**
+             * Gets an array of all mappings.
+             *
+             * @method all
+             * @for DiCast
+             * @return {Array} An array of mapping objects.
+             */
+            this.all = function() {
+
+                if(!parent) {
+                    return [mappings];
+                }
+
+                return parent.all().concat([mappings]);
+            };
+
+            /**
              * Initialises a mapping key and returns the different methods for creating a mapping.
              *
              * @method map

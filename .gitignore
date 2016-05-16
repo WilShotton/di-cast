@@ -1,4 +1,12 @@
-bin
+bower_components
 node_modules
-.idea/
+npm-debug.log
+build
+docs
+dist
+output
+.idea
+*.iml
+*.jar
 .DS_Store
+npm-debug.log

@@ -1,3 +1,5 @@
+import ErrorMessages from './error-messages.js'
+
 
 const BASE_MAPPING = {
     target: null,
@@ -35,7 +37,9 @@ const is = (value, type) => Object.prototype
     .indexOf(type.toLowerCase()) !== -1
 
 /**
- * Simple template function
+ * Simple template function pattern matches for {{str}}
+ * in the msg and replaces any matches with the corresponding
+ * value in the context Object
  * 
  * @method template
  * @param {String} msg
@@ -72,15 +76,16 @@ const validateMapping = (key, config, mappings) => {
     }
 
     if (!config.hasOwnProperty('target')) {
-        throw new Error(template(ErrorMessages.MISSING_TARGET), ctx);
+        throw new Error(template(ErrorMessages.MISSING_TARGET, {key}), ctx);
     }
 
     if (mappings.hasOwnProperty(key)) {
-        throw new Error(template(ErrorMessages.MAPPING_EXISTS, ctx))
+        throw new Error(template(ErrorMessages.MAPPING_EXISTS, {key}, ctx))
     }
 }
 
 export default {
+    BASE_MAPPING,
     createMapping,
     is,
     template,

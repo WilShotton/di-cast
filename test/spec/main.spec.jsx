@@ -7,15 +7,6 @@ const ErrorMessages = require('../../src/error-messages.js')
 /*global describe, xdescribe, it, xit, beforeEach, afterEach, spyOn */
 describe('DiCast', () => {
 
-    xdescribe('test', () => {
-
-        it('should pass', () => {
-
-            chai.expect(1).to.equal(1)
-            assert.equal(1, 1)
-        })
-    })
-
     var injector
 
     beforeEach(() => {
@@ -55,12 +46,9 @@ describe('DiCast', () => {
             expect(injector.has('MyValue')).to.equal(false)
         })
 
-        xit('should return true for a mapped key', () => {
+        it('should return true for a mapped key', () => {
 
-            injector.mapValue('MyValue', {target: 'value'})
-
-            expect(injector.has('MyValue')).to.equal(true)
-            // assert(injector.has('MyValue'), true)
+            expect(injector.has('injector')).to.equal(true)
         })
 
         xit('should return true for a key mapped in the parent', () => {
@@ -69,7 +57,6 @@ describe('DiCast', () => {
             const child = new DiCast(injector)
 
             expect(child.has('MyValue')).to.equal(true)
-            // assert(child.has('MyValue'), false)
         })
     })
 })

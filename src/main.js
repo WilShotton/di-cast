@@ -41,7 +41,7 @@ export default function DiCast(
         return mappings.hasOwnProperty(key) || parent.has(key)
     }
 
-    // @TODO: Temporary implementation mappings should be registered
+    // @TODO: Temporary implementation - mappings should be registered
     this.mapValue = (key, config) => {
         Utils.validateMapping(key, config, mappings)
         mappings[key] = ValueMapping(this, config)

@@ -1,7 +1,7 @@
 
 export default {
 
-    CIRCULAR_DEPENDENCY: 'Circular dependency encountered getting {{target}}',
+    CIRCULAR_DEPENDENCY: 'Circular dependency encountered getting {{key}}',
     INVALID_CONFIG: 'The config for {{key}} must be an Object',
     INVALID_KEY: 'The mapping key must be a non empty String',
     INVALID_PARENT: 'The parent injector must be a DiCast instance',

@@ -1,7 +1,7 @@
 import {createMapping, validateMapping} from '../utils'
 
 
-export default (config, injector) => {
+export default config => {
 
     return {
 

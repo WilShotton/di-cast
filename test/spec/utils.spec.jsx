@@ -25,7 +25,7 @@ describe('Utils', () => {
         it('should add new mapping properties', () => {
 
             expect(Utils.createMapping({foo: 'foo'})).to.eql({
-                target: null,
+                // target: null,
                 defer: false,
                 using: [],
                 foo: 'foo'
@@ -62,38 +62,72 @@ describe('Utils', () => {
     
     describe('validateMapping', () => {
 
+        it('should throw if the config is not an Object', () => {
+
+            expect(() => Utils.validateMapping('')).to.throw(Error, ErrorMessages.INVALID_CONFIG)
+        })
+
         it('should throw if the key is not a string', () => {
 
             const msg = new RegExp(ErrorMessages.INVALID_KEY)
-            expect(() => Utils.validateMapping({}, {target: 'foo'}, {})).to.throw(TypeError, msg)
+            expect(() => Utils.validateMapping({target: 'foo'})).to.throw(TypeError, msg)
         })
 
         it('should throw if the key is an empty string', () => {
 
             const msg = new RegExp(ErrorMessages.INVALID_KEY)
-            expect(() => Utils.validateMapping('', {target: 'foo'}, {})).to.throw(Error, msg)
-        })
-
-        it('should throw if the config is not an Object', () => {
-
-            const key = 'foo'
-            const msg = new RegExp(Utils.template(ErrorMessages.INVALID_CONFIG, {key}))
-            expect(() => Utils.validateMapping(key, '', {})).to.throw(Error, msg)
+            expect(() => Utils.validateMapping({key: '', target: 'foo'})).to.throw(Error, msg)
         })
 
         it('should throw if the config target property is missing', () => {
 
             const key = 'foo'
             const msg = new RegExp(Utils.template(ErrorMessages.MISSING_TARGET, {key}))
-            expect(() => Utils.validateMapping(key, {}, {})).to.throw(Error, msg)
+            expect(() => Utils.validateMapping({key})).to.throw(Error, msg)
         })
 
-        it('should throw if a mapping for the given key already exists', () => {
+        it('should throw if the defer property is not a Boolean', () => {
 
-            const mappings = {foo: 'foo'}
-            const key = 'foo'
-            const msg = new RegExp(Utils.template(ErrorMessages.MAPPING_EXISTS, {key}))
-            expect(() => Utils.validateMapping(key, {target: 'foo'}, mappings)).to.throw(Error, msg)
+            const mapping = {
+                key: 'foo',
+                target: 'bar',
+                using: []
+            }
+
+            const msg = new RegExp(Utils.template(ErrorMessages.INVALID_DEFER, mapping))
+            expect(() => Utils.validateMapping(mapping)).to.throw(Error, msg)
+        })
+
+        it('should throw if the using property is not an Array', () => {
+
+            const mapping = {
+                key: 'foo',
+                target: 'bar',
+                defer: false
+            }
+
+            const msg = new RegExp(Utils.template(ErrorMessages.INVALID_USING, mapping))
+            expect(() => Utils.validateMapping(mapping)).to.throw(Error, msg)
+        })
+
+        // it('should throw if a mapping for the given key already exists', () => {
+        //
+        //     const mappings = {foo: 'foo'}
+        //     const key = 'foo'
+        //     const msg = new RegExp(Utils.template(ErrorMessages.MAPPING_EXISTS, {key}))
+        //     expect(() => Utils.validateMapping(key, {target: 'foo'}, mappings)).to.throw(Error, msg)
+        // })
+
+        it('should return the mapping if it is valid', () => {
+
+            const mapping = {
+                key: 'foo',
+                target: 'bar',
+                defer: false,
+                using: []
+            }
+            
+            expect(Utils.validateMapping(mapping)).to.equal(mapping)
         })
     })
 })

@@ -71,6 +71,11 @@ describe('DiCast', () => {
 
     describe('get', () => {
 
+        it('should get a mapping for the injector', function() {
+
+            expect(injector.get('injector')).to.equal(injector)
+        })
+
         it('should get a dependency in the local scope', () => {
 
             const foo = 'foo'

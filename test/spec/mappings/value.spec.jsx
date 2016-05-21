@@ -2,31 +2,49 @@ const expect = require('chai').expect
 const ValueMapping = require('../../../src/mappings/value.js')
 
 
+const config = {
+    key:'foo',
+    target:'bar',
+    defer: false
+}
+
 /*global describe, xdescribe, it, xit, beforeEach, afterEach, spyOn */
 describe('ValueMapping', () => {
 
     describe('instantiation', () => {
 
-        it('should instantiate with or without new', () => {
+        var mapping
 
-            expect(() => new ValueMapping()).to.not.throw(Error)
-            expect(() => ValueMapping()).to.not.throw(Error)
+        beforeEach(() => {
+
+            mapping = ValueMapping(config)
         })
 
-        it('should return a base mapping by default', () => {
+        it('should expose a key property', () => {
 
-            const vo = ValueMapping()
-
-            expect(vo.defer).to.equal(false)
-            expect(vo.target).to.equal(null)
-            expect(vo.using).to.eql([])
+            expect(mapping.key).to.equal(config.key)
         })
 
-        it('should map the instance property to the target property', () => {
+        it('should expose a target property', () => {
 
-            const vo = ValueMapping({}, {target:''})
+            expect(mapping.target).to.equal(config.target)
+        })
 
-            expect(vo.instance).to.equal(vo.target)
+        it('should expose a base mapping', () => {
+
+            expect(mapping.defer).to.equal(config.defer)
+            expect(mapping.using).to.eql([])
+        })
+
+        it('should expose an instance method', () => {
+
+            expect(typeof mapping.instance).to.equal('function')
+        })
+
+        it('should return the target property from instance', () => {
+
+            expect(mapping.instance()).to.equal(mapping.target)
+            expect(mapping.instance()).to.equal(config.target)
         })
     })
 })

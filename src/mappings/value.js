@@ -1,40 +1,12 @@
-import Utils from '../utils'
+import {createMapping, validateMapping} from '../utils'
 
 
-function ValueMapping(injector, config) {
+export default (config, injector) => {
 
-    if (!(this instanceof ValueMapping)) {
-        return new ValueMapping(injector, config)
-    }
+    return {
 
-    this._config = Utils.createMapping(config)
-}
+        ...validateMapping(createMapping(config)),
 
-ValueMapping.prototype = {
-
-    get defer() {
-
-        return this._config.defer
-    },
-
-    get instance() {
-
-        if (!this._config.hasOwnProperty('instance')) {
-            this._config.instance = this._config.target
-        }
-
-        return this._config.instance
-    },
-
-    get target() {
-
-        return this._config.target
-    },
-
-    get using() {
-
-        return this._config.using
+        instance: () => config.target
     }
 }
-
-export default ValueMapping

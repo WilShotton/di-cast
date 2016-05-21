@@ -2,7 +2,7 @@ import ErrorMessages from './error-messages.js'
 
 
 const BASE_MAPPING = {
-    target: null,
+    // target: null,
     defer: false,
     using: []
 }
@@ -55,33 +55,36 @@ const template = (msg, context) => msg.replace(
  * Validate a mapping config
  * 
  * @method validateMapping
- * @param {String} key
- * @param {Object} config
- * @param mappings
+ * @param {Object} mapping
+ * @returns {Object}
  */
-const validateMapping = (key, config, mappings) => {
+const validateMapping = mapping => {
 
-    const ctx = {key}
-
-    if (!is(key, 'String')) {
+    if (!is(mapping, 'Object')) {
+        throw new Error(template(ErrorMessages.INVALID_CONFIG))
+    }
+    
+    if (!is(mapping.key, 'String')) {
         throw new TypeError(ErrorMessages.INVALID_KEY)
     }
 
-    if (key.length === 0) {
+    if (mapping.key.length === 0) {
         throw new Error(ErrorMessages.INVALID_KEY)
     }
 
-    if (!is(config, 'Object')) {
-        throw new Error(template(ErrorMessages.INVALID_CONFIG, ctx))
+    if (!mapping.hasOwnProperty('target')) {
+        throw new Error(template(ErrorMessages.MISSING_TARGET, mapping));
     }
-
-    if (!config.hasOwnProperty('target')) {
-        throw new Error(template(ErrorMessages.MISSING_TARGET, {key}), ctx);
+    
+    if (!is(mapping.defer, 'Boolean')) {
+        throw new Error(template(ErrorMessages.INVALID_DEFER, mapping))
     }
-
-    if (mappings.hasOwnProperty(key)) {
-        throw new Error(template(ErrorMessages.MAPPING_EXISTS, {key}, ctx))
+    
+    if (!is(mapping.using, 'Array')) {
+        throw new Error(template(ErrorMessages.INVALID_USING, mapping))
     }
+    
+    return mapping
 }
 
 export default {

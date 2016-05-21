@@ -1,4 +1,3 @@
-var assert = require('assert')
 const expect = require('chai').expect
 const DiCast = require('../../src/main.js')
 const ErrorMessages = require('../../src/error-messages.js')
@@ -116,8 +115,59 @@ describe('DiCast', () => {
             expect(() => injector.get(key)).to.throw(Error, new RegExp(msg))
         })
 
-        xit('should throw for a circular dependency', () => {
+        it('should access a mapping child', () => {
 
+            injector.mapValue('foo', {target: {bar: 'bar'}})
+
+            expect(injector.get('foo.bar')).to.equal('bar')
+        })
+
+        it('should throw for a missing mapping child', () => {
+
+            const key = 'foo.baz'
+            const msg = Utils.template(ErrorMessages.NO_MAPPING, {key})
+
+            injector.mapValue('foo', {target: {bar: 'bar'}})
+
+            expect(() => injector.get(key)).to.throw(Error, new RegExp(msg))
+        })
+
+        it('should throw for a circular dependency', () => {
+
+            const foo = {
+                key: 'foo',
+                target: bar => bar,
+                defer: false,
+                using: ['bar']
+            }
+            injector.mapFactory(foo.key, foo)
+
+            expect(injector.has(foo.key)).to.equal(true)
+
+            const bar = {
+                key: 'bar',
+                target: foo => foo,
+                defer: false,
+                using: ['foo']
+            }
+            injector.mapFactory(bar.key, bar)
+
+            expect(injector.has(bar.key)).to.equal(true)
+
+            const msg = Utils.template(ErrorMessages.CIRCULAR_DEPENDENCY, foo)
+
+            expect(() => injector.get('foo')).to.throw(Error, new RegExp(msg))
+        })
+    })
+
+    describe('mapValue', () => {
+
+        it('should throw if a mapping already exists', () => {
+
+            const key = 'injector'
+            const msg = Utils.template(ErrorMessages.MAPPING_EXISTS, {key})
+
+            expect(() => injector.mapValue(key, {target: 'injector', defer: false})).to.throw(Error, new RegExp(msg))
         })
     })
 })

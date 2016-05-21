@@ -1,37 +1,60 @@
 const expect = require('chai').expect
+const DiCast = require('../../../src/main.js')
+const ErrorMessages = require('../../../src/error-messages.js')
+const Utils = require('../../../src/utils.js')
 const FactoryMapping = require('../../../src/mappings/factory.js')
 
 
+const injector = DiCast().mapValue('bar', {target: 'bar'})
+
+const config = {
+    key: 'foo',
+    target: bar => bar,
+    defer: false,
+    using: ['bar']
+}
+
 /*global describe, xdescribe, it, xit, beforeEach, afterEach, spyOn */
-xdescribe('FactoryMapping', () => {
+describe('FactoryMapping', () => {
 
-    describe('instantiation', () => {
+    var mapping
 
-        it('should instantiate with or without new', () => {
+    beforeEach(() => {
 
-            expect(() => new FactoryMapping()).to.not.throw(Error)
-            expect(() => FactoryMapping()).to.not.throw(Error)
-        })
+        mapping = FactoryMapping(config, injector)
+    })
 
-        it('should return a base mapping by default', () => {
+    it('should expose a key property', () => {
 
-            const vo = FactoryMapping()
-            expect(vo.defer).to.equal(false)
-            expect(vo.target).to.equal(null)
-            expect(vo.using).to.eql([])
-        })
+        expect(mapping.key).to.equal(config.key)
+    })
 
-        it('should throw if the target is not a function', () => {
+    it('should expose a target property', () => {
 
-            const msg = Utils.template(ErrorMessages.NO_MAPPING, {key})
-            expect(() => FactoryMapping({}, {target:''})).to.throw(Error, new RegExp(msg))
-        })
+        expect(mapping.target).to.equal(config.target)
+    })
 
-        it('should map the instance property to the target property', () => {
+    it('should expose a base mapping', () => {
 
-            const mapping = FactoryMapping({}, {target:() => ''})
+        expect(mapping.defer).to.equal(config.defer)
+        expect(mapping.using).to.eql(['bar'])
+    })
 
-            expect(mapping.instance()).to.equal(mapping.target())
-        })
+    it('should expose an instance method', () => {
+
+        expect(typeof mapping.instance).to.equal('function')
+    })
+
+    it('should expose an injected mapping instance', () => {
+
+        expect(mapping.instance()).to.equal('bar')
+    })
+
+    it('should throw if the target is not a function', () => {
+
+        const conf = Object.assign({}, config, {target:'oops'})
+        const msg = Utils.template(ErrorMessages.INVALID_TARGET, conf)
+
+        expect(() => FactoryMapping(conf, injector)).to.throw(TypeError, new RegExp(msg))
     })
 })

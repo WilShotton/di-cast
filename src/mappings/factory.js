@@ -1,39 +1,30 @@
 import ErrorMessages from '../error-messages.js'
-import Utils from '../utils.js'
-import base from './base.js'
+import {createMapping, is, template, validateMapping} from '../utils'
 
 
-function FactoryMapping(injector, key, config) {
+const validateTarget = mapping => {
 
-    if (!(this instanceof FactoryMapping)) {
-        return new FactoryMapping(injector, config)
+    if (!is(mapping.target, 'Function')) {
+        throw new TypeError(template(ErrorMessages.INVALID_TARGET, mapping))
     }
 
-    this._injector = injector
-    this._key = key
-    this._config = Utils.createMapping(config)
+    return mapping
 }
 
-FactoryMapping.prototype = base
+export default (config, injector) => {
 
-FactoryMapping.prototype.instance = function() {
+    return {
 
-    const injector = this._injector
-    const key = this._key
-    const config = this._config
+        ...validateMapping(validateTarget(createMapping(config))),
 
-    if (!config.hasOwnProperty('instance') || !config.isSingleton) {
+        instance: () => {
 
-        config.instance = config.target.apply(null, config.using.map(key => injector.get(key)))
+            if (!config.hasOwnProperty('instance') || !config.isSingleton) {
 
-        if (config.instance == null) {
-            throw new Error(Utils.template(ErrorMessages.INVALID_FACTORY, {key}))
+                config.instance = config.target.apply(null, config.using.map(key => injector.get(key)))
+            }
+
+            return config.instance
         }
     }
-
-    return config.instance
 }
-
-FactoryMapping.prototype.constructor = FactoryMapping
-
-export default FactoryMapping

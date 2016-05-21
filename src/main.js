@@ -30,8 +30,8 @@ export default function DiCast(
     const mappings = {
 
         injector: createMapping({
-            key: injector,
-            instance: this,
+            key: 'injector',
+            instance: () => this,
             target: this
         })
     }
@@ -48,7 +48,7 @@ export default function DiCast(
      * @return {Boolean}
      */
     this.has = (key, local=false) => {
-        
+
         if (!is(key, 'String')) {
             throw new Error(ErrorMessages.INVALID_KEY)
         }
@@ -56,7 +56,7 @@ export default function DiCast(
         if (local) {
             return mappings.hasOwnProperty(key)
         }
-        
+
         return mappings.hasOwnProperty(key) || parent.has(key)
     }
 
@@ -66,93 +66,101 @@ export default function DiCast(
      * If no mapping is found an Injection Error is thrown.
      *
      * @method get
-     * @param {Array} keys
+     * @param {String} keys
      * @return {*}
      */
     this.get = keys => {
-
+    
         const path = keys.split('.')
-
+    
         const key = path[0]
-
+    
         const getInstance = () => {
-
+    
             if (mappings.hasOwnProperty(key)) {
                 return mappings[key].defer && parent.has(key)
                     ? parent.get(key)
-                    : mappings[key].instance
+                    : mappings[key].instance()
             }
-
+    
             return parent.get(key)
         }
-
+    
         if (!this.has(key)) {
             throw new Error(template(ErrorMessages.NO_MAPPING, {key}))
         }
-
+    
         if (resolving.indexOf(key) !== -1) {
             resolving.push(key)
             throw new Error(template(ErrorMessages.CIRCULAR_DEPENDENCY, {key}))
         }
-
+    
         resolving.push(key)
-
+    
         const instance = getInstance()
-
+    
         resolving.pop()
-
+    
         return path.slice(1).reduce(
-            (acc, property) => acc[property],
+            (acc, property) => {
+
+                const child = acc[property]
+                
+                if (child == null) {
+                    throw new Error(template(ErrorMessages.NO_MAPPING, {key: keys}))
+                }
+                
+                return child
+            },
             instance
         )
     }
 
     // @TODO: Temporary map implementations - mappings should be registered
-    
-    // this.mapFactory = (key, config) => {
-    //
-    //     validateMapping(key, config, mappings)
-    //     if (!is(config.target, 'Function')) {
-    //         throw new Error(ErrorMessages.INVALID_TARGET)
-    //     }
-    //
-    //     mappings[key] = FactoryMapping(this, config)
-    //     return this
-    // }
 
+    /**
+     * Add the mapping to the injector
+     * 
+     * @method map
+     * @private
+     * @param {String} key
+     * @param {Object} mapping
+     * @returns {DiCast}
+     */
     const map = (key, mapping) => {
 
         if (mappings.hasOwnProperty(key)) {
-            throw new Error(Utils.template(ErrorMessages.MAPPING_EXISTS, {key}))
+            throw new Error(template(ErrorMessages.MAPPING_EXISTS, {key}))
         }
 
         mappings[key] = validateMapping(mapping)
 
         return this
     }
-    
+
+    /**
+     * Add a FactoryMapping to the injector
+     *
+     * @method mapFactory
+     * @param {String} key
+     * @param {Object} config
+     * @returns {DiCast}
+     */
+    this.mapFactory = (key, config) => {
+
+        return map(key, FactoryMapping(createMapping({...config, key}), this))
+    }
+
+    /**
+     * Add a ValueMapping to the injector
+     *
+     * @method mapValue
+     * @param {String} key
+     * @param {Object} config
+     * @returns {DiCast}
+     */
     this.mapValue = (key, config) => {
 
-        return map(key, ValueMapping(this, createMapping({
-            ...config,
-            key
-        })))
-
-        // mappings[key] = ValueMapping(this, validateMapping(createMapping({
-        //     ...config,
-        //     key
-        // })))
-        //
-        // const mapping = Utils.createMapping({...config, key})
-        //
-        //
-        //
-        // if (mappings.hasOwnProperty(key)) {
-        //     throw new Error(Utils.template(ErrorMessages.MAPPING_EXISTS, {key}))
-        // }
-        //
-        // mappings[key] = ValueMapping(this, key, config)
-        //
-        // return this
+        return map(key, ValueMapping(createMapping({...config, key})))
     }
 }

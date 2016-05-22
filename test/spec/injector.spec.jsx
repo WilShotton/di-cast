@@ -1,36 +1,36 @@
 const expect = require('chai').expect
-const DiCast = require('../../src/main.js')
+const Injector = require('../../src/injector.js')
 const ErrorMessages = require('../../src/error-messages.js')
 const Utils = require('../../src/utils.js')
 
 
 /*global describe, xdescribe, it, xit, beforeEach, afterEach, spyOn */
-describe('DiCast', () => {
+describe('Injector', () => {
 
     var injector
 
     beforeEach(() => {
 
-        injector = new DiCast()
+        injector = Injector()
     })
 
     describe('instantiation', () => {
 
         it('should instantiate with or without new', () => {
 
-            expect(() => new DiCast()).to.not.throw(Error)
-            expect(() => DiCast()).to.not.throw(Error)
+            expect(() => Injector()).to.not.throw(Error)
+            expect(() => new Injector()).to.not.throw(Error)
         })
 
-        it('should accept a DiCast instance as a parent injector', () => {
+        it('should accept a Injector instance as a parent injector', () => {
 
-            expect(() => new DiCast(injector)).to.not.throw(Error)
+            expect(() => Injector(injector)).to.not.throw(Error)
         })
 
         it('should throw for an invalid parent injector', () => {
 
-            expect(() => new DiCast(null)).to.throw(Error, new RegExp(ErrorMessages.INVALID_PARENT))
-            expect(() => new DiCast({})).to.throw(Error, new RegExp(ErrorMessages.INVALID_PARENT))
+            expect(() => Injector(null)).to.throw(Error, new RegExp(ErrorMessages.INVALID_PARENT))
+            expect(() => Injector({})).to.throw(Error, new RegExp(ErrorMessages.INVALID_PARENT))
         })
     })
 
@@ -54,7 +54,7 @@ describe('DiCast', () => {
         it('should return true for a key mapped in the parent', () => {
 
             injector.mapValue('MyValue', {target: 'value'})
-            const child = new DiCast(injector)
+            const child = Injector(injector)
 
             expect(child.has('MyValue')).to.equal(true)
         })
@@ -62,7 +62,7 @@ describe('DiCast', () => {
         it('should only look in the local scope if the local flag is set', () => {
 
             injector.mapValue('MyValue', {target: 'value'})
-            const child = new DiCast(injector)
+            const child = Injector(injector)
 
             expect(child.has('MyValue', true)).to.equal(false)
         })
@@ -90,7 +90,7 @@ describe('DiCast', () => {
 
             injector.mapValue('foo', {target: foo})
 
-            const child = new DiCast(injector)
+            const child = Injector(injector)
 
             expect(child.has('foo', true)).to.equal(false)
             expect(child.get('foo')).to.equal('foo')
@@ -100,7 +100,7 @@ describe('DiCast', () => {
 
             injector.mapValue('foo', {target: 'parent'})
 
-            const child = new DiCast(injector)
+            const child = Injector(injector)
             child.mapValue('foo', {target: 'child', defer: true})
 
             expect(child.has('foo', true)).to.equal(true)

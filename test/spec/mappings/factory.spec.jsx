@@ -1,11 +1,11 @@
 const expect = require('chai').expect
-const DiCast = require('../../../src/main.js')
+const Injector = require('../../../src/injector.js')
 const ErrorMessages = require('../../../src/error-messages.js')
 const Utils = require('../../../src/utils.js')
 const FactoryMapping = require('../../../src/mappings/factory.js')
 
 
-const injector = DiCast().mapValue('bar', {target: 'bar'})
+const injector = Injector().mapValue('bar', {target: 'bar'})
 
 const config = {
     key: 'foo',
